@@ -1,0 +1,63 @@
+---
+id: IMPL-001
+title: 拡張機能の部品の配置
+type: IMPL
+domain: lens
+status: current
+owner: doctrine-lens-maintainer
+created: 2026-07-28
+updated: 2026-07-28
+sources: []
+depends_on: [SPEC-001, SPEC-002, SPEC-003, SPEC-004, SPEC-005]
+llm_context: task
+---
+
+# 拡張機能の部品の配置
+
+## 実装制約
+
+- 拡張機能の本体は Node で動き、webview は別の閉じた場に置く。両者は取り決めた形の通信だけで結ぶ。
+- webview には内容セキュリティ方針を課す。外部からの読み込みを許さず、
+  実行する `script` には一度きりの識別子を付ける。
+- 上流の CLI を呼ぶのは本体の側だけである。webview は子プロセスを起こさない。
+- 配置の計算は乱数と時刻を使わない。同じ入力から同じ座標を出す。
+- 描画は SVG を手で組み立てる。作図ライブラリを持たない。この決定は ADR-002 にある。
+- 色は編集器の主題の変数から取る。明るい主題と暗い主題の双方で読める配色にする。
+
+## 注意点
+
+- 上流の JSON に知らない項が増えても落とさない。既知の項だけを読み、残りは素通しする。
+- 上流の CLI の呼び出しは束ねる。統治木の変更が続けて起きても、取得は一つに畳む。
+- 取得が失敗しても、直前に成功した地図を消さない。失敗の表示と地図の表示は両立する。
+- 型・status・置き場所の一覧を書かない。これらは上流の判定の結果としてのみ現れる。
+  この制約は REQ-003 が課すものであり、試験が字面で確かめる。
+
+## 対象部品
+
+| 部品 | 位置 | 役割 |
+|---|---|---|
+| 入口 | `src/extension.ts` | 起動、命令の登録、画面の生成 |
+| 統治木の解決 | `src/doctrine/locate.ts` | 統治木とプラグイン実体の場所を決める |
+| CLI の呼び出し | `src/doctrine/cli.ts` | 子プロセスを起こし、標準出力を JSON として読む |
+| 登録簿の取得 | `src/doctrine/registry.ts` | `_registry` をその場で読む |
+| グラフの取得 | `src/doctrine/graph.ts` | 三つの取得を束ね、結果を保つ |
+| 範囲の取得 | `src/doctrine/trace.ts` | `trace-index.py` を呼び、統治外の宣言を当てて絞る |
+| 所見の取得 | `src/doctrine/audit.ts` | `docs-audit.py` を呼び、追跡の所見を取り出す |
+| 深度の計算 | `src/model/depth.ts` | 深度ごとの節点と辺を作る |
+| 追跡の突き合わせ | `src/model/trace.ts` | 範囲を文書ごとに束ね、食い違いと覆いを整える |
+| レンズ | `src/model/lens.ts` | 色・絞り・配置・深度の値と、その適用 |
+| 配置 | `src/model/layout.ts` | 地図・レーン・詳細・一覧の座標計算 |
+| 画面の器 | `src/panel/lensPanel.ts` | webview の生成、通信、再取得の束ね |
+| 画面の中身 | `src/webview/main.ts` | SVG の組み立て、選択、ダイヤルの操作 |
+| 範囲の見出し | `src/codelens/traceLens.ts` | 印が囲む範囲の上に結ばれた文書を示す |
+| 範囲の帯 | `src/codelens/decorations.ts` | 範囲の行に余白の帯を付ける |
+| 経路 | `src/model/paths.ts` | 区切りと大小文字を吸収して突き合わせる |
+| 作業フォルダ | `src/model/workspace.ts` | 統治木を持つフォルダから見るものを選ぶ |
+| 取得の共有 | `src/session.ts` | 取得を持ち、二つの拍で走らせる。画面はその読み手 |
+| 状態の帯 | `src/statusbar.ts` | 取得の様子を地図の外でも示す |
+| 表示の文字列 | `src/l10n.ts` | 訳を一箇所に集め、webview へ渡す |
+| manifest の凍結 | `src/test/manifest.test.ts` | ADR-009/010/011 の性質を字面で守る |
+
+`src/model/` は編集器の機能を使わない。純粋な関数だけで書き、試験から直に呼べるようにする。
+表示の文字列も持たない。文言の要る場所は符号を返し、訳は描き手に委ねる（ADR-007）。
+`src/doctrine/` の六つも同じく編集器を取り込まない。呼び出しの設定は引数で受ける。

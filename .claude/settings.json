@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "doctrine@forest-project-lab": true
+  },
+  "extraKnownMarketplaces": {
+    "forest-project-lab": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/Forest-Project-Lab/doctrine.git"
+      },
+      "autoUpdate": true
+    }
+  }
+}

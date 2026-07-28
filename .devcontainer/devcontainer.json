@@ -1,0 +1,79 @@
+{
+  // Dev Container for Doctrine Lens — the VS Code extension that renders a
+  // doctrine-governed document tree as a zoomable map. Carries the Claude Code
+  // harness it is developed with (doc-manager + the doctrine plugin + Playwright
+  // MCP). Add toolchain features (language runtimes, cloud CLIs) as needed.
+  "name": "doctrine-lens-dev",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+    // Add project-specific features here, e.g.:
+    //   "ghcr.io/devcontainers/features/terraform:1": {},
+    //   "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+  },
+  // OPTIONAL (app dev server). Harmless to keep; remove if you have no web server.
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "dev server",
+      "onAutoForward": "notify"
+    }
+  },
+  // npm install (skips silently if package.json has no deps) + Playwright Chromium
+  // (required by tools/doc-manager fetch) + Claude Code bypassPermissions setup +
+  // doctrine plugin install from the Forest-Project-Lab/doctrine marketplace.
+  // Drop the bypass segment (or set CLAUDE_BYPASS=0 below) to disable bypass.
+  // Drop the doctrine segment (or set CLAUDE_DOCTRINE=0 below) to skip the plugin.
+  "postCreateCommand": "sudo chown -R node:node /home/node/.claude && npm install && npx playwright install --with-deps chromium && bash .devcontainer/setup-claude-bypass.sh && bash .devcontainer/setup-doctrine-plugin.sh",
+  // Persist Claude Code state (memory, conversation history, login credentials)
+  // across container rebuilds. Without this, /home/node/.claude lives only in
+  // the container's writable layer and is wiped on every rebuild. The named
+  // volume survives rebuilds (incl. "Rebuild Without Cache"); only an explicit
+  // `docker volume rm` clears it. A fresh volume starts root-owned, so the
+  // postCreateCommand chowns it back to node before any tooling writes to it.
+  // Volume name is a safe literal so the container starts with no substitution step
+  // (Docker rejects `{{...}}` in volume names). Rename it if you run multiple kit-based
+  // projects at once and want their /home/node/.claude volumes isolated.
+  "mounts": [
+    "source=claude-harness-claude-home,target=/home/node/.claude,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "ms-playwright.playwright",
+        "mathematic.vscode-pdf",
+        "analytic-signal.preview-pdf",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        // OPTIONAL (app-dev formatting). Harmless to keep even without Prettier/Tailwind.
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "playwright.reuseBrowser": true,
+        // Surface the "Bypass permissions" mode in the Claude Code UI.
+        // (The engine default is also set by setup-claude-bypass.sh.)
+        "claudeCode.allowDangerouslySkipPermissions": true,
+        "claudeCode.initialPermissionMode": "bypassPermissions"
+      }
+    }
+  },
+  "remoteUser": "node",
+  "containerEnv": {
+    // Set to "0" to skip Claude Code bypassPermissions auto-setup.
+    "CLAUDE_BYPASS": "1",
+    // Set to "0" to skip the doctrine plugin install (marketplace + install).
+    "CLAUDE_DOCTRINE": "1"
+  }
+}

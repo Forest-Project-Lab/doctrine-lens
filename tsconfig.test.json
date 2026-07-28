@@ -1,0 +1,12 @@
+{
+  // 試験に載せるのは編集器の機能を使わない層だけである（IMPL-001）。
+  // src/panel と src/extension.ts は vscode を取り込むため、ここには含めない。
+  // src/webview は DOM を使うため、同じく含めない。
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "out",
+    "noEmit": false,
+    "sourceMap": false
+  },
+  "include": ["src/doctrine/**/*.ts", "src/model/**/*.ts", "src/test/**/*.ts"]
+}

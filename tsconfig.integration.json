@@ -1,0 +1,18 @@
+{
+  // 拡張機能ホストの中で走る試験。VS Code は CommonJS で読み込むため、
+  // 主たる設定（NodeNext）とは別に CJS で出す。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "rootDir": "src/integration",
+    "outDir": "out-integration",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "sourceMap": false,
+    "types": ["node", "mocha", "vscode"]
+  },
+  "include": ["src/integration/**/*.ts"]
+}

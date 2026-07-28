@@ -1,0 +1,53 @@
+# .vsix に入れないもの。
+#
+# 既定では「ディレクトリの全部」が入る。原本・道具・一次資料・生成物のうち、
+# 配るのは dist/ だけである。書き忘れると 1GB 級の .vsix ができる。
+
+# 原本と型。配るのは束ねた dist/ だけ。
+src/**
+out/**
+out-integration/**
+**/*.ts
+**/*.map
+tsconfig*.json
+esbuild.mjs
+
+# 開発の道具と一次資料。
+# .vsix は既定で「全部入る」ので、作業ディレクトリを足すたびにここへの追記が要る。
+tools/**
+oreilly_ddd_ja/**
+oreilly_datamgmt_en/**
+docs/**
+.preview/**
+.vscode-test/**
+.devcontainer/**
+.github/**
+.vscode/**
+.claude/**
+.mcp.json
+
+# 統治木。配布物ではない（この製品が読む対象であって、中身ではない）。
+doctrine_docs/**
+AGENTS.md
+CLAUDE.md
+
+# 依存。dist/ に束ねてあるので同梱しない。
+node_modules/**
+package-lock.json
+
+# 手元にだけ在るもの・取り違えると外へ出るもの。
+# vsce は minimatch で当てるため、git と違い無指定のパターンは直下にしか効かない。
+# 下位ディレクトリにも効かせるには `**/` を前に置く。
+**/coverage/**
+**/*.log
+**/*.local.*
+**/.env
+**/.env.*
+**/*.vsix
+
+# media/ は Marketplace の頁に出す画面写し。配布物に入れる。
+
+# その他
+.gitignore
+.vscodeignore
+**/.DS_Store

@@ -1,0 +1,20 @@
+{
+  "ext.description": "Render a doctrine-governed document tree as a zoomable map: context map -> domain interior -> document -> the code range it governs.",
+  "cmd.open": "Open the map",
+  "cmd.refresh": "Refresh the map",
+  "cmd.revealActive": "Show the open document on the map",
+  "cmd.openForRange": "Open the document for this range",
+  "cmd.jumpToImpl": "Jump to this document's implementation",
+  "cmd.openById": "Open a document by id",
+  "cmd.revealById": "Show a document on the map by id",
+  "cmd.explainStale": "Explain the fingerprint mismatch",
+  "cmd.selectFolder": "Choose which doctrine tree to show",
+  "cfg.pythonPath": "The python executable that runs the doctrine CLI. Defaults to `python3`.",
+  "cfg.docsRoot": "Path to the doctrine tree, relative to the workspace folder. Empty means look for `doctrine_docs/` first, then a `docs/` that has `_system/`.",
+  "cfg.pluginPath": "Path to the doctrine plugin. Empty means resolve it from the install ledger and cache.",
+  "cfg.timeoutMs": "Upper bound on one CLI call, in milliseconds.",
+  "cfg.autoRefresh": "Refresh the map when a governed `.md` or a marked source file is saved.",
+  "cfg.auditDebounceMs": "How long to wait after a change before running the full audit that decides fingerprint mismatches, in milliseconds. `0` runs it only on an explicit refresh.",
+  "cap.untrusted": "Doctrine Lens runs the doctrine CLI with the configured Python interpreter, so it only works in a trusted folder.",
+  "cap.virtual": "Doctrine Lens runs a local Python CLI against files on disk, so it needs a real filesystem."
+}

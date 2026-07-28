@@ -1,0 +1,20 @@
+{
+  "ext.description": "統治木を、俯瞰から実装のコード範囲まで一枚の地図として見る。文脈の地図 → ドメイン内部 → 文書 → コード範囲。",
+  "cmd.open": "地図を開く",
+  "cmd.refresh": "地図を取り直す",
+  "cmd.revealActive": "いま開いている文書を地図で示す",
+  "cmd.openForRange": "この範囲の文書を開く",
+  "cmd.jumpToImpl": "この文書の実装へ跳ぶ",
+  "cmd.openById": "id で文書を開く",
+  "cmd.revealById": "id で文書を地図に示す",
+  "cmd.explainStale": "指紋の食い違いを説明する",
+  "cmd.selectFolder": "どの統治木を出すかを選ぶ",
+  "cfg.pythonPath": "doctrine の CLI を動かす python の実行ファイル。既定は `python3`。",
+  "cfg.docsRoot": "統治木への相対パス。空なら `doctrine_docs/` を先に、次に `_system/` を持つ `docs/` を探す。",
+  "cfg.pluginPath": "doctrine プラグインの実体パス。空なら導入台帳とキャッシュから解決する。",
+  "cfg.timeoutMs": "CLI 一回あたりの待ち時間の上限（ミリ秒）。",
+  "cfg.autoRefresh": "統治木の `.md` か、印を持つ原本を保存したとき、地図を取り直す。",
+  "cfg.auditDebounceMs": "変更のあと、指紋の食い違いを判じる全件監査を走らせるまでの待ち（ミリ秒）。`0` なら明示の取り直しのときだけ走らせる。",
+  "cap.untrusted": "Doctrine Lens は設定した python で doctrine の CLI を走らせるため、信頼した作業フォルダでだけ動く。",
+  "cap.virtual": "Doctrine Lens はディスク上のファイルに対して手元の Python を走らせるので、実体のあるファイル体系が要る。"
+}

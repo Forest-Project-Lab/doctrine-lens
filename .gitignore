@@ -1,0 +1,39 @@
+# doctrine プラグインがセッション境界で書く作業ファイル
+# （SessionEnd の監査要約 last-audit.json、フックのエラージャーナル doctrine-errors.jsonl 等）
+.claude/.cache/
+
+# 個人スコープの設定（プラグインの個別無効化など）は共有しない
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+node_modules/
+
+# 生成物。原本は src/ にある。統治木の _system/.context-config.json で
+# 追跡の走査からも外してある（指紋の正本を二つ持たないため）。
+dist/
+out/
+.preview/
+*.vsix
+
+# 拡張機能ホストの試験が落としてくる VS Code 本体と、その試験の出力
+.vscode-test/
+out-integration/
+
+# 一次資料（書籍の本文）。読んで事実を REQ の sources へ引くための手元の材料であり、
+# 配布物でも成果物でもない。著作権のある本文なので公開リポジトリへ置かない。
+# 引用元は doctrine_docs/lens/REQ-*.md の sources に、
+# 扱いの判断は doctrine_docs/_system/.md-intake に記録してある。
+oreilly_ddd_ja/
+oreilly_datamgmt_en/
+
+# doc-manager が取ってくる一次資料（npm run docs:refresh の出力）。
+# 第三者の著作物の原本と抽出本文であり、配布物でも成果物でもない。
+# 上の書籍と同じ理由で公開リポジトリへ置かない。
+docs/
+
+# 取り違えると外へ出るもの。公開リポジトリと .vsix の両方で塞ぐ。
+.env
+.env.*
+*.log
+*.local.*
+coverage/
+.npmrc

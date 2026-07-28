@@ -1,0 +1,55 @@
+# 統治と実装の門。手元の `npm run check` と同じものを回し、
+# 編集器の中でしか確かめられない部分も実際の VS Code で回す。
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 統治層の正本は上流にある。同梱せず、ここで取る。
+      - name: doctrine プラグインを取る
+        run: |
+          git clone --depth 1 https://github.com/Forest-Project-Lab/doctrine.git "$RUNNER_TEMP/doctrine"
+          echo "DOCTRINE_PLUGIN=$RUNNER_TEMP/doctrine/plugin" >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - name: 型検査
+        run: npm run typecheck
+
+      - name: 試験
+        run: npm test
+
+      - name: 束ね
+        run: npm run compile
+
+      - name: 統治木の全件監査
+        run: python3 "$DOCTRINE_PLUGIN/scripts/docs-audit.py" --root-from . --fail-on error
+
+      # 拡張機能ホストは Electron なので、X サーバが要る。
+      - name: 拡張機能ホストの試験
+        run: xvfb-run -a npm run test:integration
+
+      - name: 配布物を組む
+        run: npm run package   # devDependencies に固定した vsce を使う（手元と同じ道具）
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doctrine-lens-vsix
+          path: doctrine-lens.vsix

@@ -1,0 +1,206 @@
+{
+  "name": "doctrine-lens",
+  "displayName": "Doctrine Lens",
+  "version": "0.1.0",
+  "publisher": "Forest-Project-Lab",
+  "description": "%ext.description%",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Forest-Project-Lab/doctrine-lens.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Forest-Project-Lab/doctrine-lens/issues"
+  },
+  "homepage": "https://github.com/Forest-Project-Lab/doctrine-lens#readme",
+  "keywords": [
+    "doctrine",
+    "documentation",
+    "traceability",
+    "architecture",
+    "context map",
+    "domain-driven design",
+    "governance",
+    "graph"
+  ],
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "galleryBanner": {
+    "color": "#0D161A",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "workspaceContains:doctrine_docs/_system/**",
+    "workspaceContains:docs/_system/**"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "doctrineLens.open",
+        "title": "%cmd.open%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.refresh",
+        "title": "%cmd.refresh%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.revealActiveDocument",
+        "title": "%cmd.revealActive%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.openDocumentForRange",
+        "title": "%cmd.openForRange%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.jumpToImplementation",
+        "title": "%cmd.jumpToImpl%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.openDocumentById",
+        "title": "%cmd.openById%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.revealDocumentById",
+        "title": "%cmd.revealById%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.explainStale",
+        "title": "%cmd.explainStale%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.selectWorkspaceFolder",
+        "title": "%cmd.selectFolder%",
+        "category": "Doctrine Lens"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "doctrineLens.openDocumentForRange",
+          "group": "navigation@10",
+          "when": "editorTextFocus"
+        },
+        {
+          "command": "doctrineLens.jumpToImplementation",
+          "group": "navigation@11",
+          "when": "editorLangId == markdown"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "doctrineLens.openDocumentById",
+          "when": "false"
+        },
+        {
+          "command": "doctrineLens.revealDocumentById",
+          "when": "false"
+        },
+        {
+          "command": "doctrineLens.explainStale",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Doctrine Lens",
+      "properties": {
+        "doctrineLens.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "%cfg.pythonPath%",
+          "scope": "machine"
+        },
+        "doctrineLens.docsRoot": {
+          "type": "string",
+          "default": "",
+          "description": "%cfg.docsRoot%",
+          "scope": "window"
+        },
+        "doctrineLens.pluginPath": {
+          "type": "string",
+          "default": "",
+          "description": "%cfg.pluginPath%",
+          "scope": "machine"
+        },
+        "doctrineLens.timeoutMs": {
+          "type": "number",
+          "default": 20000,
+          "minimum": 1000,
+          "description": "%cfg.timeoutMs%",
+          "scope": "window"
+        },
+        "doctrineLens.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "%cfg.autoRefresh%",
+          "scope": "window"
+        },
+        "doctrineLens.auditDebounceMs": {
+          "type": "number",
+          "default": 2500,
+          "minimum": 0,
+          "description": "%cfg.auditDebounceMs%",
+          "scope": "window"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build:test": "tsc -p tsconfig.test.json",
+    "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check",
+    "compile": "node esbuild.mjs",
+    "docs:aggregate": "node tools/doc-manager/aggregate-targets.mjs",
+    "docs:check": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-audit.py\" --root-from . --fail-on error",
+    "docs:diff": "node tools/doc-manager/diff.mjs",
+    "docs:extract": "for f in docs/manifest/*.json; do [ -f \"$f\" ] || continue; c=$(basename \"$f\" .json); node tools/doc-manager/extract.mjs \"$c\"; done",
+    "docs:fetch": "node tools/doc-manager/fetch.mjs docs/targets/all.json --timeout=30000",
+    "docs:refresh": "npm run docs:aggregate && npm run docs:fetch && npm run docs:extract && npm run docs:diff",
+    "docs:render": "python3 \"$(node tools/doctrine-path.mjs)/scripts/render-projection.py\" all --docs-root doctrine_docs",
+    "docs:trace": "python3 \"$(node tools/doctrine-path.mjs)/scripts/trace-index.py\" --root . --docs-root doctrine_docs --format json",
+    "package": "vsce package -o doctrine-lens.vsix",
+    "test": "npm run build:test && node --test \"out/test/*.test.js\"",
+    "test:integration": "tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "vscode:prepublish": "npm run compile",
+    "watch": "node esbuild.mjs --watch"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.20.1",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.24.2",
+    "mocha": "^11.7.6",
+    "pdf-parse": "^2.4.5",
+    "playwright": "^1.60.0",
+    "typescript": "^5.9.3"
+  },
+  "l10n": "./l10n",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "%cap.untrusted%"
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "%cap.virtual%"
+    }
+  }
+}
