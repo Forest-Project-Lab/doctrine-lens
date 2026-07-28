@@ -3,7 +3,7 @@
 //
 // 「組み上がった」と「動いた」は別である。ここは後者を確かめる。
 // 深度を降りる・上がる、ダイヤルを回す、の一通りを実際に踏む。
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
@@ -11,6 +11,43 @@ import { chromium } from "playwright";
 const projectRoot = resolve(import.meta.dirname, "..");
 const previewDir = join(projectRoot, ".preview");
 const shotDir = process.argv[2] ?? join(previewDir, "shots");
+
+// 古い束に対して写しを撮らない。
+//
+// preview-webview.mjs が落ちても .preview/ は前回のまま残るので、この道具は
+// 何事も無く走り、直す前の画面を「確かめた」ことにしてしまう。実際に起きた。
+// 直した覚えのある不具合が写しに残り、誰も気づかなかった。
+const freshness = (path) => {
+  try {
+    return statSync(join(projectRoot, path)).mtimeMs;
+  } catch {
+    return null;
+  }
+};
+const preview = freshness(".preview/webview.js");
+if (preview === null) {
+  throw new Error(".preview/webview.js が無い。先に node tools/preview-webview.mjs を走らせること。");
+}
+const newest = (dir) => {
+  let at = 0;
+  let newestPath = "";
+  for (const entry of readdirSync(join(projectRoot, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${entry.name}`;
+    const [childAt, childPath] = entry.isDirectory()
+      ? newest(rel)
+      : [freshness(rel) ?? 0, rel];
+    if (childAt > at) [at, newestPath] = [childAt, childPath];
+  }
+  return [at, newestPath];
+};
+const [srcAt, srcPath] = newest("src");
+if (srcAt > preview) {
+  throw new Error(
+    `${srcPath} が .preview/webview.js より新しい。古い束に写しを撮ろうとしている。` +
+      " 先に node tools/preview-webview.mjs を走らせること。",
+  );
+}
+
 mkdirSync(shotDir, { recursive: true });
 
 const browser = await chromium.launch();
@@ -41,6 +78,12 @@ const state = async () => ({
   notice: (await page.locator("#notice").isVisible())
     ? (await page.locator("#notice").innerText()).replace(/\s+/g, " ").trim()
     : null,
+  // 場面そのものが告げることは別の帯に出る。片方だけ見ると、段を戻したことや
+  // 辺の省略を「何も出ていない」と読み違える。
+  sceneNotice: (await page.locator("#sceneNotice").isVisible())
+    ? (await page.locator("#sceneNotice").innerText()).replace(/\s+/g, " ").trim()
+    : null,
+  legendText: (await page.locator("#legend").innerText()).replace(/\s+/g, " ").trim(),
 });
 
 const steps = [];

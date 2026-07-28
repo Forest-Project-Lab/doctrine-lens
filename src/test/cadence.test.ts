@@ -13,6 +13,7 @@ import { canAudit } from "../doctrine/audit.js";
 import type { RunOptions } from "../doctrine/cli.js";
 import { GraphStore } from "../doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "../doctrine/locate.js";
+import { carryAudit } from "../model/cadence.js";
 
 const PROJECT = resolve(__dirname, "..", "..");
 const options: RunOptions = { pythonPath: "python3", timeoutMs: 60000, cwd: PROJECT };
@@ -86,5 +87,67 @@ test("子プロセスの作業フォルダに、利用者の作業フォルダ�
   assert.ok(
     !/cwd:\s*options\.cwd/.test(source),
     "options.cwd を子プロセスへ渡している",
+  );
+});
+
+// --- 受入基準 10 — 速い拍で判定と時刻が保たれる -------------------------
+//
+// 引き継ぎの規則は src/model/cadence.ts に一つだけ置いてある。session は
+// それを呼ぶだけである（session そのものは編集器を要するので、ここでは
+// 規則を直に確かめる）。
+
+const AT = new Date("2026-01-01T00:00:00.000Z");
+const LATER = new Date("2026-01-02T00:00:00.000Z");
+const HELD = { auditAt: AT, staleIds: new Set(["SPEC-001"]) };
+
+test("001-10. 速い拍では前回の判定と時刻がそのまま保たれる", () => {
+  const next = carryAudit(
+    HELD,
+    { withAudit: false, failed: false, staleIds: null },
+    () => LATER,
+  );
+  assert.equal(next.auditAt, AT, "時刻が進まない");
+  assert.deepEqual([...next.staleIds], ["SPEC-001"], "食い違いの数が 0 へ落ちない");
+});
+
+test("001-10b. 監査を求めた回に判定が返れば、判定も時刻も入れ替わる", () => {
+  const next = carryAudit(
+    HELD,
+    { withAudit: true, failed: false, staleIds: new Set(["SPEC-002"]) },
+    () => LATER,
+  );
+  assert.equal(next.auditAt, LATER);
+  assert.deepEqual([...next.staleIds], ["SPEC-002"]);
+});
+
+test("001-10c. 判定が空で返るのと、取れないのは別である", () => {
+  const cleared = carryAudit(
+    HELD,
+    { withAudit: true, failed: false, staleIds: new Set() },
+    () => LATER,
+  );
+  assert.deepEqual([...cleared.staleIds], [], "食い違いが消えたなら消える");
+  assert.equal(cleared.auditAt, LATER);
+});
+
+test("001-10e. 取得が失敗した回は時刻を進めない", () => {
+  // 失敗した回は直前に成功した結果がそのまま返る。findings が在ることだけを
+  // 見ていると、古い判定に「いま」の時刻が付き、帯が嘘をつく。
+  const next = carryAudit(
+    HELD,
+    { withAudit: true, failed: true, staleIds: new Set(["SPEC-009"]) },
+    () => LATER,
+  );
+  assert.equal(next.auditAt, AT, "失敗した回に時刻を進めない");
+  assert.deepEqual([...next.staleIds], ["SPEC-001"], "前回の判定を保つ");
+});
+
+test("001-10f. session が引き継ぎを自前で書き直していない", () => {
+  // 規則を二箇所に持つと必ず食い違う。session は carryAudit を呼ぶだけにする。
+  const source = readFileSync(join(PROJECT, "src", "session.ts"), "utf8");
+  assert.ok(/carryAudit\(/.test(source), "session が carryAudit を呼んでいない");
+  assert.ok(
+    !/auditAt\s*=\s*.*new Date\(\)/.test(source),
+    "session が時刻を自前で進めている",
   );
 });

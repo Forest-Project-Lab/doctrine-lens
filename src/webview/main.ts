@@ -137,6 +137,9 @@ const svg = el<HTMLElement>("svg") as unknown as SVGSVGElement;
 const canvas = el("canvas");
 const crumbs = el("crumbs");
 const notice = el("notice");
+// 場面そのものが告げること（辺の省略・段の戻し・部分的に取れなかったもの）は
+// 別の帯へ出す。本体が取得のたびに送る「消せ」に巻き込まれないようにするため。
+const sceneNotice = el("sceneNotice");
 const emptyText = el("empty");
 const inspector = el("inspector");
 const legend = el("legend");
@@ -323,9 +326,13 @@ function drawDials(mode: LayoutMode): void {
   );
   // 選び直しのあとも、当てているレンズの名を保つ。保たないと、描き直すたびに
   // 選択が空へ戻り、削除の釦に永久に到達できない。
-  const active = state.savedLenses.some((s) => s.name === state.activeLensName)
-    ? state.activeLensName
-    : "";
+  //
+  // ただし名前だけで保つと逆の嘘をつく。ダイヤルを一つでも回せば、それはもう
+  // その名前のレンズではない。四つの値が今も一致するときだけ名を出す。
+  // 深度は降りる・上がるでも動くので、ここで一括して見るのが漏れない。
+  const held = state.savedLenses.find((s) => s.name === state.activeLensName);
+  const active = held && sameLens(held.lens, state.lens) ? held.name : "";
+  if (active === "") state.activeLensName = "";
   savedLensSelect.value = active;
   el<HTMLButtonElement>("deleteLens").disabled = active === "";
 }
@@ -707,7 +714,13 @@ function drawLegend(scene: Scene, scale: ReadonlyMap<string, string>): void {
   if (scene.depth === 3) {
     const note = document.createElement("span");
     const stale = scene.nodes.some((n) => n.isFocus);
-    note.textContent = stale ? state.strings.legendL3Stale : state.strings.legendL3Clean;
+    // 判定を一度も取れていないときに「一致している」と言ってはならない。
+    // 食い違いが挙がっていないことは、一致を確かめたことではない（ADR-008）。
+    note.textContent = stale
+      ? state.strings.legendL3Stale
+      : state.auditAt
+        ? state.strings.legendL3Clean
+        : state.strings.legendL3Unknown;
     legend.append(note, auditStamp());
     return;
   }
@@ -771,12 +784,12 @@ function drawSceneNotice(scene: Scene): void {
     parts.push(state.strings.rangesUnavailableNote);
   }
   if (parts.length === 0) {
-    if (!notice.classList.contains("error")) notice.hidden = true;
+    sceneNotice.hidden = true;
+    sceneNotice.replaceChildren();
     return;
   }
-  notice.hidden = false;
-  notice.classList.remove("error");
-  notice.replaceChildren(document.createTextNode(parts.join(" ")));
+  sceneNotice.hidden = false;
+  sceneNotice.replaceChildren(document.createTextNode(parts.join(" ")));
 }
 
 // --- 操作 ----------------------------------------------------------------
@@ -827,6 +840,20 @@ function applyLens(lens: Lens, focus: Focus = state.position.focus): void {
   render();
 }
 
+/** 四つの値が等しいか。絞りは中身まで見る。 */
+function sameLens(a: Lens, b: Lens): boolean {
+  const sameList = (x: readonly string[], y: readonly string[]): boolean =>
+    x.length === y.length && x.every((v, i) => v === y[i]);
+  return (
+    a.colorBy === b.colorBy &&
+    a.layout === b.layout &&
+    a.depth === b.depth &&
+    a.filter.currentOnly === b.filter.currentOnly &&
+    sameList(a.filter.domains, b.filter.domains) &&
+    sameList(a.filter.types, b.filter.types)
+  );
+}
+
 function persist(): void {
   // webview 自身の状態として持つ。画面を閉じて開き直すとここから戻る。
   vscode.setState({ lens: state.lens, position: state.position });
@@ -861,13 +888,15 @@ savedLensSelect.addEventListener("change", () => {
   el<HTMLButtonElement>("deleteLens").disabled = !saved;
   if (!saved) return;
   fitted = false;
-  // 深度だけを取り戻すとき、焦点が合わなければ場面の側が戻す。
-  applyLens(saved.lens);
+  // 焦点も併せて戻す。焦点を今のままにすると、深度 1 以上を保存していても
+  // 段だけが黙って落ちる（四つの値のうち深度だけが失われる）。
+  // 焦点の指す文書やドメインが既に無ければ、場面の側が段を戻して理由を告げる。
+  applyLens(saved.lens, saved.focus ?? NO_FOCUS);
 });
 el("saveLens").addEventListener("click", () => {
   // 名前は本体に訊いてもらう。webview の sandbox に `allow-modals` が無いので
   // `window.prompt` は必ず null を返す（実機で保存が無反応だった）。
-  send({ kind: "requestSaveLens", lens: state.lens });
+  send({ kind: "requestSaveLens", lens: state.lens, focus: state.position.focus });
 });
 el("deleteLens").addEventListener("click", () => {
   const name = savedLensSelect.value;
@@ -942,6 +971,15 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   }
   if (message.kind === "savedLenses") {
     state.savedLenses = message.savedLenses;
+    // 保存した直後はその名を選んでおく。選ばないと、保存できたことが画面に出ず、
+    // 消すにも一度選び直さねばならない。
+    if (message.justSaved) state.activeLensName = message.justSaved;
+    render();
+    return;
+  }
+  if (message.kind === "strings") {
+    state.strings = tolerantStrings(message.strings);
+    applyStaticStrings();
     render();
     return;
   }

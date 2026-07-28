@@ -93,13 +93,13 @@
       "editor/context": [
         {
           "command": "doctrineLens.openDocumentForRange",
-          "group": "navigation@10",
-          "when": "editorTextFocus"
+          "group": "navigation@100",
+          "when": "editorTextFocus && doctrineLens.hasTree"
         },
         {
           "command": "doctrineLens.jumpToImplementation",
-          "group": "navigation@11",
-          "when": "editorLangId == markdown"
+          "group": "navigation@101",
+          "when": "editorLangId == markdown && doctrineLens.hasTree"
         }
       ],
       "commandPalette": [
@@ -175,10 +175,11 @@
     "docs:trace": "python3 \"$(node tools/doctrine-path.mjs)/scripts/trace-index.py\" --root . --docs-root doctrine_docs --format json",
     "package": "vsce package -o doctrine-lens.vsix",
     "test": "npm run build:test && node --test \"out/test/*.test.js\"",
-    "test:integration": "tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
+    "test:integration": "npm run compile && tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "vscode:prepublish": "npm run compile",
-    "watch": "node esbuild.mjs --watch"
+    "watch": "node esbuild.mjs --watch",
+    "preview": "node tools/preview-webview.mjs && node tools/shoot-preview.mjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

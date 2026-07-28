@@ -24,7 +24,7 @@ const shim = join(outDir, "html.mjs");
 execFileSync(
   "npx",
   ["esbuild", join(projectRoot, "src/panel/html.ts"), "--bundle", "--format=esm",
-   "--platform=neutral", `--outfile=${shim}`, "--log-level=warning"],
+   "--platform=node", `--outfile=${shim}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
 const { renderHtml } = await import(pathToFileURL(shim).href);
@@ -103,7 +103,7 @@ const l10nBundle = join(outDir, "l10n.mjs");
 execFileSync(
   "npx",
   ["esbuild", join(projectRoot, "src/l10n.ts"), "--bundle", "--format=esm",
-   "--platform=neutral", `--alias:vscode=${vscodeShim}`,
+   "--platform=node", `--alias:vscode=${vscodeShim}`,
    `--outfile=${l10nBundle}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
@@ -120,7 +120,10 @@ const snapshot = {
   staleIds,
   // 本体が訳して渡す一式（ADR-007）。ここでは原文（英語）をそのまま使う。
   strings: STRINGS,
-  auditAt: null,
+  // 監査は実際に走らせている。時刻を null のままにすると、凡例が
+  // 「判定はまだ取れていない」と言いながら食い違いを断定する画面になる。
+  // 上流が返す generated_at を使う（日ごとに決まるので写しが揺れない）。
+  auditAt: audit.generated_at ?? null,
 };
 
 // 器が出す HTML をそのまま使い、script の在処と vscode の代わりだけを差し込む。
@@ -128,7 +131,20 @@ const html = renderHtml(
   { cspSource: "", asWebviewUri: (u) => u },
   { toString: () => "./webview.js" },
 );
-const nonce = /nonce-([A-Za-z0-9]+)/.exec(html)?.[1] ?? "";
+// 器が実際に打った属性から取る。CSP の 'nonce-…' 側を字面で拾うと、
+// 値の字種が変わったとき（Math.random の英数字 → randomBytes の base64url）に
+// 静かに切り取られ、差し込んだ style と script だけが CSP で弾かれて
+// 真っ白な画面を「確かめた」ことになる。実際に起きた。
+// 取った値が器の打った二箇所と食い違っていないことまでここで検める。
+const nonce = /<script nonce="([^"]+)"/.exec(html)?.[1] ?? "";
+if (!nonce) throw new Error("器が出した HTML から nonce を取れない。");
+const occurrences = html.split(`nonce-${nonce}`).length - 1;
+if (occurrences !== 2) {
+  throw new Error(
+    `nonce が CSP と食い違う（'nonce-${nonce}' が ${occurrences} 箇所、2 のはず）。` +
+      "差し込む style と script が弾かれ、白い画面を確かめることになる。",
+  );
+}
 
 // 編集器が webview へ流し込む主題の変数を模す。これを置かないと、
 // stroke に無効な値が入って辺が消えるなど、実環境と食い違った見え方になる。

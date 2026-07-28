@@ -29,6 +29,9 @@ llm_context: task
 - 上流の JSON に知らない項が増えても落とさない。既知の項だけを読み、残りは素通しする。
 - 上流の CLI の呼び出しは束ねる。統治木の変更が続けて起きても、取得は一つに畳む。
 - 取得が失敗しても、直前に成功した地図を消さない。失敗の表示と地図の表示は両立する。
+- 通知の帯は二つに分ける。本体からの通知（取得の失敗・部分的な欠け）と、場面そのものが
+  告げること（段を戻した・辺を省いた）は出所が違う。一つの帯を共有すると、本体が取得の
+  たびに送る「消せ」で場面の通知が必ず消える。
 - 型・status・置き場所の一覧を書かない。これらは上流の判定の結果としてのみ現れる。
   この制約は REQ-003 が課すものであり、試験が字面で確かめる。
 
@@ -42,7 +45,8 @@ llm_context: task
 | 登録簿の取得 | `src/doctrine/registry.ts` | `_registry` をその場で読む |
 | グラフの取得 | `src/doctrine/graph.ts` | 三つの取得を束ね、結果を保つ |
 | 範囲の取得 | `src/doctrine/trace.ts` | `trace-index.py` を呼び、統治外の宣言を当てて絞る |
-| 所見の取得 | `src/doctrine/audit.ts` | `docs-audit.py` を呼び、追跡の所見を取り出す |
+| 所見の取得 | `src/doctrine/audit.ts` | `docs-audit.py` を呼び、追跡の所見を取り出す。監査した木が表示中の木と同じかも検める |
+| 上流の値の型 | `src/doctrine/model.ts` | 上流が返す値の形と、成否を表す `Outcome` |
 | 深度の計算 | `src/model/depth.ts` | 深度ごとの節点と辺を作る |
 | 追跡の突き合わせ | `src/model/trace.ts` | 範囲を文書ごとに束ね、食い違いと覆いを整える |
 | レンズ | `src/model/lens.ts` | 色・絞り・配置・深度の値と、その適用 |
@@ -52,12 +56,15 @@ llm_context: task
 | 範囲の見出し | `src/codelens/traceLens.ts` | 印が囲む範囲の上に結ばれた文書を示す |
 | 範囲の帯 | `src/codelens/decorations.ts` | 範囲の行に余白の帯を付ける |
 | 経路 | `src/model/paths.ts` | 区切りと大小文字を吸収して突き合わせる |
+| 拍の引き継ぎ | `src/model/cadence.ts` | 速い拍と遅い拍のあいだで判定と時刻をどう保つか |
 | 作業フォルダ | `src/model/workspace.ts` | 統治木を持つフォルダから見るものを選ぶ |
 | 取得の共有 | `src/session.ts` | 取得を持ち、二つの拍で走らせる。画面はその読み手 |
 | 状態の帯 | `src/statusbar.ts` | 取得の様子を地図の外でも示す |
+| 通信の取り決め | `src/shared/protocol.ts` | 本体と webview のあいだで交わす値の形 |
+| 画面の器の HTML | `src/panel/html.ts` | 内容セキュリティ方針と、二つの通知の帯を持つ骨組み |
 | 表示の文字列 | `src/l10n.ts` | 訳を一箇所に集め、webview へ渡す |
 | manifest の凍結 | `src/test/manifest.test.ts` | ADR-009/010/011 の性質を字面で守る |
 
 `src/model/` は編集器の機能を使わない。純粋な関数だけで書き、試験から直に呼べるようにする。
 表示の文字列も持たない。文言の要る場所は符号を返し、訳は描き手に委ねる（ADR-007）。
-`src/doctrine/` の六つも同じく編集器を取り込まない。呼び出しの設定は引数で受ける。
+`src/doctrine/` の七つも同じく編集器を取り込まない。呼び出しの設定は引数で受ける。

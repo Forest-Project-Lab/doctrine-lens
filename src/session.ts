@@ -10,6 +10,7 @@ import type { RunOptions } from "./doctrine/cli.js";
 import { GraphStore, type Snapshot } from "./doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "./doctrine/locate.js";
 import { messages } from "./l10n.js";
+import { carryAudit, NO_AUDIT } from "./model/cadence.js";
 import { toRelative } from "./model/paths.js";
 import { chooseCandidate, collectCandidates, type TreeCandidate } from "./model/workspace.js";
 
@@ -67,8 +68,16 @@ export class LensSession {
   #fastTimer: ReturnType<typeof setTimeout> | undefined;
   #auditTimer: ReturnType<typeof setTimeout> | undefined;
   #state: SessionState = EMPTY_STATE;
-  #staleIds: ReadonlySet<string> = new Set();
+  #staleIds: ReadonlySet<string> = NO_AUDIT.staleIds;
   #watchedRoot: string | undefined;
+  /**
+   * 最後に見ていた統治木。
+   *
+   * 状態の candidate ではなくこちらを見る。統治木を持たない窓を一度でも挟むと
+   * candidate が消え、そのあと別の木を開いても「変わった」と判じられなくなる。
+   * 前の木の地図と指紋の食い違いがそのまま新しい木の状態として出る。
+   */
+  #lastDocsRoot: string | undefined;
 
   readonly onDidChange = this.#changed.event;
 
@@ -136,8 +145,9 @@ export class LensSession {
    */
   #forget(): void {
     this.#store.clear();
-    this.#staleIds = new Set();
+    this.#staleIds = NO_AUDIT.staleIds;
     this.#watchedRoot = undefined;
+    this.#lastDocsRoot = undefined;
   }
 
   /**
@@ -170,12 +180,12 @@ export class LensSession {
     const chosen = chooseCandidate(candidates, this.#memento.get<string>(CHOSEN_FOLDER_KEY));
 
     if (!vscode.workspace.workspaceFolders?.length) {
-      this.#staleIds = new Set();
+      this.#forget();
       this.#emit({ ...EMPTY_STATE, unavailable: { text: messages.noWorkspace(), detail: "" } });
       return;
     }
     if (!chosen) {
-      this.#staleIds = new Set();
+      this.#forget();
       // 設定で指したのに見つからない場合と、そもそも無い場合を区別して伝える。
       const override = vscode.workspace
         .getConfiguration("doctrineLens")
@@ -190,9 +200,10 @@ export class LensSession {
       return;
     }
     // 見る木が変わったら、前の木の判定を持ち越さない。
-    if (this.#state.candidate && this.#state.candidate.docsRoot !== chosen.docsRoot) {
+    if (this.#lastDocsRoot !== undefined && this.#lastDocsRoot !== chosen.docsRoot) {
       this.#forget();
     }
+    this.#lastDocsRoot = chosen.docsRoot;
 
     const config = vscode.workspace.getConfiguration("doctrineLens");
     const pluginRoot = locatePluginRoot(chosen.folder, config.get<string>("pluginPath", ""));
@@ -222,15 +233,24 @@ export class LensSession {
         options,
         withAudit,
       );
-      // 監査を飛ばした回は、前回の判定と時刻を保つ（ADR-008）。
-      const auditAt = result.snapshot?.findings
-        ? withAudit
-          ? new Date()
-          : this.#state.auditAt
-        : this.#state.auditAt;
-      if (withAudit && result.snapshot?.findings) {
-        this.#staleIds = staleDocumentIds(result.snapshot.findings);
-      }
+      // 待っているあいだに見る木が変わっていたら、この結果はもう別の木の話である。
+      // 出すと、捨てたはずの地図と食い違いの数が新しい木の状態として現れる。
+      // 新しい木の取り直しは、切り替えた側が既に走らせている。
+      if (this.#lastDocsRoot !== chosen.docsRoot) return;
+
+      // 監査を飛ばした回は、前回の判定と時刻を保つ（ADR-008・受入基準 10）。
+      // 引き継ぎの規則は carryAudit に一つだけ置いてある。
+      const findings = result.failure === null ? result.snapshot?.findings : null;
+      const carried = carryAudit(
+        { auditAt: this.#state.auditAt, staleIds: this.#staleIds },
+        {
+          withAudit,
+          failed: result.failure !== null,
+          staleIds: findings ? staleDocumentIds(findings) : null,
+        },
+      );
+      const auditAt = carried.auditAt;
+      this.#staleIds = carried.staleIds;
       this.#emit({
         snapshot: result.snapshot,
         failure: result.failure,
@@ -258,8 +278,17 @@ export class LensSession {
 
   #emit(patch: Partial<SessionState>): void {
     this.#state = { ...this.#state, ...patch };
+    // 統治木の有無を編集器の文脈へ出す。右クリックの項目をこれで絞る。
+    // 統治木を持たないプロジェクトの全ファイルに項目を挿し込まないため。
+    const hasTree = this.#state.candidate !== null && this.#state.candidate !== undefined;
+    if (hasTree !== this.#hasTree) {
+      this.#hasTree = hasTree;
+      void vscode.commands.executeCommand("setContext", "doctrineLens.hasTree", hasTree);
+    }
     this.#changed.fire(this.#state);
   }
+
+  #hasTree: boolean | undefined;
 
   /**
    * 統治木の `.md` と、印を持ちうる原本の保存を見る。
@@ -293,6 +322,9 @@ export class LensSession {
   scheduleRefresh(): void {
     const config = vscode.workspace.getConfiguration("doctrineLens");
     if (!config.get<boolean>("autoRefresh", true)) return;
+
+    // 木が汚れた。以降の要求が、汚れる前に始まった取得へ相乗りしないようにする。
+    this.#store.markDirty();
 
     if (this.#fastTimer) clearTimeout(this.#fastTimer);
     this.#fastTimer = setTimeout(() => {

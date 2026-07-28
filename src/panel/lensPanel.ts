@@ -28,6 +28,9 @@ function partialName(what: string): string {
 }
 
 export class LensPanel {
+  /** 器の種類。復元器の登録に使う。 */
+  static readonly viewType = VIEW_TYPE;
+
   static #current: LensPanel | undefined;
 
   readonly #panel: vscode.WebviewPanel;
@@ -50,6 +53,30 @@ export class LensPanel {
     });
     LensPanel.#current = new LensPanel(panel, context, session);
     return LensPanel.#current;
+  }
+
+  /**
+   * 編集器が復元した器を受け取る。
+   *
+   * 復元器を登録しないと、窓を開き直したときに地図のタブが黙って消える。
+   * webview 側は `getState` で前回のレンズと位置を持っているので、
+   * 器さえ繋ぎ直せば同じ見え方に戻る。
+   */
+  static revive(
+    panel: vscode.WebviewPanel,
+    context: vscode.ExtensionContext,
+    session: LensSession,
+  ): void {
+    // 既に開いているなら、復元されたほうは捨てる（器は一つだけ持つ）。
+    if (LensPanel.#current) {
+      panel.dispose();
+      return;
+    }
+    panel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "dist")],
+    };
+    LensPanel.#current = new LensPanel(panel, context, session);
   }
 
   static get current(): LensPanel | undefined {
@@ -150,15 +177,18 @@ export class LensPanel {
     return this.#context.workspaceState.get<SavedLens[]>(SAVED_LENSES_KEY, []);
   }
 
-  async #storeLenses(lenses: SavedLens[]): Promise<void> {
+  async #storeLenses(lenses: SavedLens[], justSaved?: string): Promise<void> {
     await this.#context.workspaceState.update(SAVED_LENSES_KEY, lenses);
-    this.#post({ kind: "savedLenses", savedLenses: lenses });
+    this.#post({ kind: "savedLenses", savedLenses: lenses, justSaved });
   }
 
   async #onMessage(message: ToHost): Promise<void> {
     switch (message.kind) {
       case "ready": {
         this.#ready = true;
+        // 文字列は必ず先に渡す。統治木が無い場合 snapshot は来ないので、
+        // snapshot に相乗りさせると空文字の画面になる。
+        this.#post({ kind: "strings", strings: webviewStrings() });
         // 既に取れているならそれを流し、無ければ取りに行く。
         if (this.#session.snapshot) this.#publish(this.#session.state);
         else await this.#session.refresh();
@@ -192,9 +222,9 @@ export class LensPanel {
         // 取り消したときは何もしない。
         if (!name) return;
         const lenses = this.#savedLenses().filter((s) => s.name !== name);
-        lenses.push({ name, lens: message.lens });
+        lenses.push({ name, lens: message.lens, focus: message.focus });
         lenses.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-        await this.#storeLenses(lenses);
+        await this.#storeLenses(lenses, name);
         return;
       }
       case "deleteLens": {

@@ -4,7 +4,7 @@
 // いずれも「書き戻しても型検査も単体試験も通ってしまう」性質のものなので、
 // 字面で止めるより他に手が無い。
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
@@ -133,4 +133,38 @@ test("Marketplace が要る項が揃っている", () => {
   }
   assert.equal(manifest.publisher, "Forest-Project-Lab");
   assert.ok(manifest.engines?.["vscode"], "engines.vscode が無い");
+});
+
+test("IMPL-001 の部品の表が、実在する実装と一対一で対応する", () => {
+  // 表と実体が離れても何も壊れないので、離れたことに誰も気づかない。実際に
+  // 三ファイルが表から抜けたまま残っていた。字面で結び直しておく。
+  const doc = readFileSync(
+    join(PROJECT, "doctrine_docs/lens/implementation/IMPL-001-extension-layout.md"),
+    "utf8",
+  );
+  const listed = new Set(
+    [...doc.matchAll(/^\|[^|]*\|\s*`(src\/[^`]+)`\s*\|/gm)].map((m) => m[1] as string),
+  );
+
+  const actual: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(join(PROJECT, dir), { withFileTypes: true }).sort(
+      (a, b) => (a.name < b.name ? -1 : 1),
+    )) {
+      const rel = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(rel);
+      else if (entry.name.endsWith(".ts")) actual.push(rel);
+    }
+  };
+  walk("src");
+
+  // 試験そのものは部品ではない。表に載せているのは manifest の凍結だけである。
+  const parts = actual.filter(
+    (p) => !p.startsWith("src/test/") && !p.startsWith("src/integration/"),
+  );
+  const missing = parts.filter((p) => !listed.has(p));
+  const gone = [...listed].filter((p) => !actual.includes(p));
+
+  assert.deepEqual(missing, [], `表に載っていない実装がある: ${missing.join(", ")}`);
+  assert.deepEqual(gone, [], `表が実在しないファイルを指している: ${gone.join(", ")}`);
 });

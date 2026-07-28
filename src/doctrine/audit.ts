@@ -5,6 +5,7 @@
 // 指紋が食い違っているかどうかは上流が判じる。こちらは指紋を突き合わせない（ADR-005）。
 import { dirname, join, resolve } from "node:path";
 
+import { forCompare } from "../model/paths.js";
 import { runJson, type RunOptions } from "./cli.js";
 import { fail, ok, type Outcome } from "./model.js";
 
@@ -25,6 +26,8 @@ export interface AuditFinding {
 
 export interface AuditReport {
   findings: AuditFinding[];
+  /** 上流が実際に監査した統治木の絶対経路。 */
+  root?: unknown;
   [extra: string]: unknown;
 }
 
@@ -75,8 +78,10 @@ export function staleDocumentIds(findings: readonly AuditFinding[]): Set<string>
  * 取れないことを呼び手へ伝える。誤った判定を出すより、出さないほうがよい。
  */
 export function canAudit(projectDir: string, docsRoot: string): boolean {
+  // 突き合わせは forCompare を通す。素の `===` だと、経路の大小文字を区別しない
+  // 環境（Windows・macOS）で `C:\Foo` と `c:\foo` が別物に見え、監査が黙って止まる。
   const parent = dirname(resolve(docsRoot));
-  return resolve(projectDir) === parent;
+  return forCompare(resolve(projectDir)) === forCompare(parent);
 }
 
 /**
@@ -109,6 +114,18 @@ export async function fetchTraceFindings(
   if (!outcome.ok) return outcome;
   if (!Array.isArray(outcome.value?.findings)) {
     return fail<AuditFinding[]>("bad-json", 'the value has no "findings"');
+  }
+  // 上流が実際に監査した木を突き合わせる。
+  //
+  // `canAudit` は「作業フォルダの直下に在るか」しか見ない。設定で別の木を指すと、
+  // その条件は満たしたまま、上流は自分で見つけた木のほうを監査する。判定の出所が
+  // 表示している木と食い違い、しかもそれは画面のどこにも出ない。
+  const audited = outcome.value.root;
+  if (typeof audited === "string" && forCompare(resolve(audited)) !== forCompare(resolve(docsRoot))) {
+    return fail<AuditFinding[]>(
+      "absent",
+      `the audit resolved a different tree (${audited})`,
+    );
   }
   return ok(traceFindings(outcome.value.findings));
 }

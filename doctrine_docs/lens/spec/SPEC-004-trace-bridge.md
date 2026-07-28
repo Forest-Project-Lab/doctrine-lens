@@ -96,5 +96,5 @@ llm_context: task
 監査が `trace_stale` を警告として挙げる。実装を直したら
 doctrine プラグインの `trace-index.py` で取り直す。
 
-- sha256:7dea015be4e2e34b7966952b05e2c52242180bdede5bee6540246e7bc7c4076a
+- sha256:e51812ce84b6feed3e682d77938c6a98895326d6800b92e951430558dab789f6
 - sha256:0bbbaf62be7d0a2744bc96ad7c0545c490f061355cca2c9931d2c3cb4b911094

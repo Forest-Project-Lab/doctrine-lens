@@ -21,6 +21,9 @@ function nonce(): string {
  * 訳を増やしたらこの表も増やす（ADR-007）。
  */
 export function renderHtml(webview: Webview, scriptUri: Uri, language = "en"): string {
+  // 帯が二つ在るのは意図である。本体からの通知（#notice）と、場面そのものが
+  // 告げること（#sceneNotice。辺の省略・段の戻し）は出所が違う。一つを共有すると、
+  // 本体が取得のたびに送る「消せ」で場面の通知が必ず消える。
   const n = nonce();
   const csp = [
     "default-src 'none'",
@@ -80,6 +83,7 @@ export function renderHtml(webview: Webview, scriptUri: Uri, language = "en"): s
   </section>
 
   <div class="notice" id="notice" hidden></div>
+  <div class="notice" id="sceneNotice" hidden></div>
 
   <main class="canvas" id="canvas" tabindex="0">
     <svg id="svg" role="img"><title id="svgTitle"></title></svg>
@@ -111,9 +115,10 @@ html, body {
 body {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-rows: auto auto auto auto 1fr auto;
   grid-template-areas:
-    "bar bar" "dials dials" "notice notice" "canvas inspector" "legend legend";
+    "bar bar" "dials dials" "notice notice" "sceneNotice sceneNotice"
+    "canvas inspector" "legend legend";
   height: 100vh; overflow: hidden;
 }
 .bar {
@@ -151,8 +156,10 @@ button.ghost:disabled { opacity: .5; cursor: default; }
   border: 1px solid var(--vscode-dropdown-border);
   border-radius: 3px; padding: 2px 4px; font: inherit; max-width: 14rem;
 }
+#notice { grid-area: notice; }
+#sceneNotice { grid-area: sceneNotice; }
 .notice {
-  grid-area: notice; padding: 8px 12px; font-size: .92em;
+  padding: 8px 12px; font-size: .92em;
   border-bottom: 1px solid var(--vscode-panel-border);
   background: var(--vscode-inputValidation-infoBackground);
   border-left: 3px solid var(--vscode-inputValidation-infoBorder);
@@ -220,7 +227,7 @@ svg.dragging { cursor: grabbing; }
 .hint { opacity: .6; margin-left: auto; white-space: nowrap; }
 @media (max-width: 720px) {
   body { grid-template-columns: 1fr; grid-template-areas:
-    "bar" "dials" "notice" "canvas" "inspector" "legend"; }
+    "bar" "dials" "notice" "sceneNotice" "canvas" "inspector" "legend"; }
   .inspector { width: auto; border-left: none; border-top: 1px solid var(--vscode-panel-border); }
 }
 `;

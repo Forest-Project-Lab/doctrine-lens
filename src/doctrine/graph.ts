@@ -108,9 +108,22 @@ export class GraphStore {
   #inFlight:
     | {
         key: string;
+        /** この取得が始まった時刻。これより後に木が汚れたなら相乗りできない。 */
+        startedAt: number;
         promise: Promise<Outcome<{ snapshot: Snapshot; partial: PartialFetch[] }>>;
       }
     | null = null;
+
+  /**
+   * 世代。`clear()` のたびに進む。
+   *
+   * 走っている取得は止められない。世代を見ずに結果を代入すると、`clear()` の
+   * あとに前の木の取得が着地して、捨てたはずの地図が新しい木の状態として蘇る。
+   */
+  #generation = 0;
+
+  /** 木が汚れた時刻。ファイルの保存で進む。 */
+  #dirtyAt = 0;
 
   /** 直前に成功した取得の結果。一度も成功していなければ `null`。 */
   get snapshot(): Snapshot | null {
@@ -120,6 +133,17 @@ export class GraphStore {
   /** 保持している結果を捨てる。統治木が変わったときに呼ぶ。 */
   clear(): void {
     this.#snapshot = null;
+    this.#generation += 1;
+  }
+
+  /**
+   * 木が変わったことを告げる。ファイルの保存で呼ぶ。
+   *
+   * これを呼んでおくと、以降の要求は「保存より前に始まった取得」に相乗りしない。
+   * 相乗りすると保存前の姿を受け取り、間引きを 0 にしていると取り直されない。
+   */
+  markDirty(now = Date.now()): void {
+    this.#dirtyAt = now;
   }
 
   /**
@@ -135,22 +159,32 @@ export class GraphStore {
     options: RunOptions,
     withAudit = true,
   ): Promise<FetchResult> {
-    const key = JSON.stringify([projectDir, docsRoot, pluginRoot, withAudit]);
-    if (this.#inFlight && this.#inFlight.key !== key) {
-      // 別の要求が走っている。相乗りせず、それが済んでから改めて走らせる。
+    // 設定も鍵に入れる。python の在処や打ち切りを直した直後の取り直しが、
+    // 古い設定で走っている取得に相乗りしては、直した意味が無い。
+    const key = JSON.stringify([projectDir, docsRoot, pluginRoot, withAudit, options]);
+    const requestedAt = Date.now();
+
+    // 相乗りできない取得が走っている間は待つ。`if` で一度だけ待つと、鍵の違う
+    // 待ち手が二つあったとき両方が走り出し、保持する地図が「要求の順」ではなく
+    // 「終わった順」で決まる。済むまで繰り返し待つ。
+    while (this.#inFlight && !this.#canJoin(this.#inFlight, key, requestedAt)) {
       await this.#inFlight.promise.catch(() => undefined);
     }
-    if (!this.#inFlight || this.#inFlight.key !== key) {
+    if (!this.#inFlight) {
+      const startedAt = Date.now();
       const promise = fetchSnapshot(
         projectDir, docsRoot, pluginRoot, options, withAudit,
       ).finally(() => {
-        if (this.#inFlight?.key === key) this.#inFlight = null;
+        if (this.#inFlight?.promise === promise) this.#inFlight = null;
       });
-      this.#inFlight = { key, promise };
+      this.#inFlight = { key, startedAt, promise };
     }
+    const generation = this.#generation;
     const outcome = await this.#inFlight.promise;
     if (outcome.ok) {
-      this.#snapshot = outcome.value.snapshot;
+      // 待っているあいだに木が切り替わっていれば、この結果はもう別の木の話である。
+      // 捨てた地図を蘇らせない。呼び手には返すが、入れ物には残さない。
+      if (generation === this.#generation) this.#snapshot = outcome.value.snapshot;
       return { snapshot: outcome.value.snapshot, failure: null, partial: outcome.value.partial };
     }
     return {
@@ -158,6 +192,21 @@ export class GraphStore {
       failure: { reason: outcome.reason, detail: outcome.detail },
       partial: [],
     };
+  }
+
+  /**
+   * 走っている取得に相乗りしてよいか。
+   *
+   * 要求が同じで、かつその取得が「木が汚れたあと」に始まっているときだけ。
+   * 汚れる前に始まった取得の結果は、要求した側から見れば古い。
+   */
+  #canJoin(
+    inFlight: { key: string; startedAt: number },
+    key: string,
+    requestedAt: number,
+  ): boolean {
+    if (inFlight.key !== key) return false;
+    return !(this.#dirtyAt > inFlight.startedAt && this.#dirtyAt <= requestedAt);
   }
 }
 // doctrine:end SPEC-001

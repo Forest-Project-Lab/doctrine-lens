@@ -4,7 +4,8 @@
 // 例外を外へ出さない。失敗はすべて Outcome の値として返す（SPEC-001 エラー時挙動）。
 // 呼ぶのは読み取り専用の命令だけである。統治木へ書き込む命令を呼んではならない。
 import { execFile } from "node:child_process";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import { fail, ok, type Outcome } from "./model.js";
 
@@ -14,8 +15,10 @@ export interface RunOptions {
   /** 一回あたりの待ち時間の上限（ミリ秒）。 */
   timeoutMs: number;
   /**
-   * 呼び手が居る作業フォルダ。診断のために持つが、子プロセスには渡さない。
-   * 渡すと Windows で cwd の実行体が先に走る（safeCwd を見よ）。
+   * 呼び手が居る作業フォルダ。
+   *
+   * 子プロセスには渡さない。渡すと Windows で cwd の実行体が先に走る
+   * （safeCwd を見よ）。相対値の `pythonPath` を解く基準としてだけ使う。
    */
   cwd: string;
 }
@@ -30,6 +33,24 @@ export interface RunOptions {
  */
 function safeCwd(): string {
   return tmpdir();
+}
+
+/**
+ * `pythonPath` を、起こしてよい形に直す。
+ *
+ * 子プロセスの cwd は捨てる（safeCwd）ので、`.venv/bin/python` のような
+ * 相対値をそのまま渡すと必ず ENOENT になる。相対値は作業フォルダ基準で解く。
+ * `~` は編集器が展開しないので自分で展開する。
+ *
+ * 区切りを含まない名前（`python3`・`py`）はそのまま渡す。PATH から探させる。
+ */
+export function resolvePython(pythonPath: string, cwd: string): string {
+  const raw = pythonPath.trim();
+  if (!raw) return "python3";
+  if (raw.startsWith("~/")) return join(homedir(), raw.slice(2));
+  // 区切りを含まないなら PATH から探す名前である。解いてはならない。
+  if (!/[\\/]/.test(raw)) return raw;
+  return resolve(cwd || ".", raw);
 }
 
 /** 診断に添える標準エラーの長さの上限。全部載せると画面が埋まる。 */
@@ -51,7 +72,7 @@ export async function runJson<T>(args: string[], options: RunOptions): Promise<O
     { kind: "ok"; stdout: string } | { kind: "err"; reason: "spawn" | "exit" | "timeout"; detail: string }
   >((resolvePromise) => {
     execFile(
-      options.pythonPath,
+      resolvePython(options.pythonPath, options.cwd),
       args,
       {
         cwd: safeCwd(),

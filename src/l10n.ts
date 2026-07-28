@@ -131,7 +131,11 @@ export function webviewStrings(): WebviewStrings {
     openDocument: t("Open document"),
     legendL0: t("Nodes are domains. Lines are cross-domain dependencies; the number is how many were collapsed."),
     legendL3Clean: t("Double-click to open the line in the editor. Fingerprints match the record."),
-    legendL3Stale: t("Fingerprints disagree. Check the change, then re-record with npm run docs:trace."),
+    // 「指紋を記録し直す」のは統治仕様の `## 実装の指紋` の節を直すことである。
+    // ここで npm の命令を案内すると、この拡張機能を入れただけの利用者の手元に
+    // 存在しない命令を指す（利用者の側に Node は要らない）。
+    legendL3Stale: t("Fingerprints disagree. Review the change, then update the fingerprint section of the governing specification."),
+    legendL3Unknown: t("Double-click to open the line in the editor. The fingerprint verdict has not been fetched yet."),
     lines: t("lines"),
     edgeCount: t("edges"),
     recoveredDomainGone: t("The focused domain is gone from the graph."),
@@ -186,6 +190,7 @@ export interface WebviewStrings {
   legendL0: string;
   legendL3Clean: string;
   legendL3Stale: string;
+  legendL3Unknown: string;
   lines: string;
   edgeCount: string;
   recoveredDomainGone: string;

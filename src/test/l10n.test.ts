@@ -127,7 +127,9 @@ function stripComments(text: string): string {
 
 function stringLiterals(text: string): string[] {
   const out: string[] = [];
-  for (const m of text.matchAll(/"([^"\\\n]*)"|'([^'\\\n]*)'|`([^`\\]*)`/g)) {
+  // 逃げ（バックスラッシュ）を含むリテラルも見る。含むものを丸ごと飛ばすと、
+  // `"日本語の\n説明"` のような文字列が走査から静かに落ちる。
+  for (const m of text.matchAll(/"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)) {
     const value = m[1] ?? m[2] ?? m[3];
     if (value) out.push(value);
   }

@@ -178,12 +178,15 @@ exists to catch.
 | Fast | registry, `dep-graph`, `trace-index` | on save (coalesced, 400 ms) |
 | Slow | the above plus `docs-audit` | on startup, on explicit refresh, after quiet (2500 ms) |
 
-Measured on this repository (39 documents, 112 files scanned): `dep-graph` 122 ms,
-`trace-index` 488 ms, `docs-audit` 510 ms, registry 28 ms. The last three run in
-parallel, so the fast cadence costs ~490 ms and the slow one ~630 ms. On a large
-repository set `auditDebounceMs: 0` and run the audit only on demand. The screen
-always shows *when* the fingerprint verdict was taken, so a stale verdict never
-reads as a fresh fact.
+Measured on this repository (39 documents, 197 files reached): `dep-graph` 127 ms,
+`trace-index` 645 ms, `docs-audit` 543 ms, registry probe 21 ms. `dep-graph` runs
+first on its own — everything else needs its result to be worth fetching — and the
+remaining three then run in parallel. So the fast cadence costs about
+`127 + max(21, 645)` ≈ 770 ms and the slow one about `127 + max(21, 645, 543)`
+≈ 770 ms; on this tree the audit hides entirely behind `trace-index`. On a large
+repository, where the audit dominates, set `auditDebounceMs: 0` and run it only on
+demand. The screen always shows *when* the fingerprint verdict was taken, so a
+stale verdict never reads as a fresh fact.
 
 ### Deterministic drawing (ADR-002)
 
@@ -219,18 +222,20 @@ npm install
 npm run compile          # produces dist/extension.js and dist/webview.js
 ```
 
-Press `F5` in VS Code to launch an extension host.
+Press `F5` in VS Code to launch an extension host (`.vscode/launch.json` is in
+the repository; it builds first via the default build task).
 
 ```bash
 npm run check            # typecheck → tests → bundle → full governance audit
-npm run test:integration # drives a real VS Code: headlines, commands, loading
+xvfb-run npm run test:integration  # drives a real VS Code: headlines, commands, loading
 npm run package          # builds the .vsix
 npm run docs:trace       # lists marked ranges and their fingerprints
 npm run docs:render      # redraws the projections
 ```
 
 `test:integration` needs GTK3 and an X server (the devcontainer's Dockerfile
-installs them). It is deliberately **not** part of `npm run check`, so an
+installs both, including `xvfb`). Without a display it fails, so run it under
+`xvfb-run` as shown. It is deliberately **not** part of `npm run check`, so an
 environment that cannot run it never reports "not run" as "passed".
 
 When running it from inside VS Code, the parent's `ELECTRON_RUN_AS_NODE` must be
@@ -246,9 +251,12 @@ adding a line to `.vscodeignore`.
 The webview is plain DOM and SVG, so it can be opened in an ordinary browser.
 
 ```bash
-node tools/preview-webview.mjs   # writes .preview/index.html from the real tree
-node tools/shoot-preview.mjs     # drives it and captures .preview/shots/
+npm run preview   # rebuilds .preview/ from src, then drives it and captures shots
 ```
+
+`shoot-preview.mjs` refuses to run against a `.preview/` older than `src/`, so a
+failed rebuild can never be mistaken for a passing visual check — that mistake
+was made here once, and the screenshots in this README were stale because of it.
 
 It uses the real shell (`src/panel/html.ts`) and the real strings
 (`src/l10n.ts`) rather than copies, so what you check matches what ships. Note

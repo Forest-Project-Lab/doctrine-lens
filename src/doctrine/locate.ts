@@ -103,8 +103,15 @@ function fromLedger(pluginsDir: string, projectDir: string): string | null {
   const preferred =
     entries.find((e) => e.projectPath && resolve(e.projectPath) === here) ?? entries[0];
   const installPath = preferred?.installPath;
-  return installPath && existsSync(installPath) ? installPath : null;
+  if (!installPath || !existsSync(installPath)) return null;
+  // 廃版には `.orphaned_at` が付く。台帳は版を上げても古い項が残ることがあるので、
+  // ここでも検める（fromCache と同じ規律）。検めないと、退役した版を黙って走らせる。
+  if (existsSync(join(installPath, ORPHANED))) return null;
+  return installPath;
 }
+
+/** 廃版に付く印。上流が付ける。 */
+const ORPHANED = ".orphaned_at";
 
 function fromCache(pluginsDir: string): string | null {
   const dir = join(pluginsDir, "cache", MARKETPLACE, PLUGIN);
@@ -129,7 +136,7 @@ function fromCache(pluginsDir: string): string | null {
   for (const v of versions) {
     const candidate = join(dir, v.name);
     // 廃版には .orphaned_at が付く。実体が残っていても選ばない。
-    if (!existsSync(join(candidate, ".orphaned_at"))) return candidate;
+    if (!existsSync(join(candidate, ORPHANED))) return candidate;
   }
   return null;
 }
@@ -152,7 +159,11 @@ export function locatePluginRoot(
     const raw = override.trim();
     const expanded = raw.startsWith("~/") ? join(homedir(), raw.slice(2)) : raw;
     const candidate = resolve(projectDir || ".", expanded);
-    return isDirectory(candidate) ? candidate : null;
+    // 「在るディレクトリ」だけでは足りない。取り違えた先を返すと、失敗は
+    // 「プラグインが見つからない」ではなく「CLI が失敗した」として現れ、
+    // 読み手が設定を疑えない。実体であることまでここで見る。
+    if (!isDirectory(candidate)) return null;
+    return existsSync(join(candidate, "scripts", "docs-audit.py")) ? candidate : null;
   }
   const pluginsDir = join(configDir, "plugins");
   return fromLedger(pluginsDir, projectDir) ?? fromCache(pluginsDir);

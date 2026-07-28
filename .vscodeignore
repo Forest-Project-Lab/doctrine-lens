@@ -45,7 +45,12 @@ package-lock.json
 **/.env.*
 **/*.vsix
 
-# media/ は Marketplace の頁に出す画面写し。配布物に入れる。
+# media/ は Marketplace の頁に出す画面写し。配布物には入れない。
+#
+# vsce は README の相対リンクを GitHub raw の絶対 URL へ書き換える。Marketplace の
+# 頁も編集器の詳細欄も、その書き換えた先を読む。同梱しても誰も参照しないまま
+# 配布物の八割を占める。写しはリポジトリに置いてあれば足りる。
+media/**
 
 # その他
 .gitignore

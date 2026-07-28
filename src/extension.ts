@@ -109,8 +109,22 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
+    // 窓を開き直したときに地図のタブを繋ぎ直す。登録しないと黙って消える。
+    vscode.window.registerWebviewPanelSerializer(LensPanel.viewType, {
+      deserializeWebviewPanel: (panel) => {
+        LensPanel.revive(panel, context, session);
+        return Promise.resolve();
+      },
+    }),
+
     // コードが変わると指紋が動く。保存のたびに取り直す（拍の分け方は session が持つ）。
-    vscode.workspace.onDidSaveTextDocument(() => session.scheduleRefresh()),
+    // 作業フォルダの外や、ファイル以外のスキームの保存では取り直さない。
+    // 上流の CLI を三〜四本起こす操作を、無関係な保存で毎回走らせない。
+    vscode.workspace.onDidSaveTextDocument((document) => {
+      if (document.uri.scheme !== "file") return;
+      if (!session.toRelativePath(document.uri)) return;
+      session.scheduleRefresh();
+    }),
   );
 
   void session.refresh(true);
