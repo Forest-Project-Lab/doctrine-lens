@@ -58,6 +58,18 @@ export class LensPanel {
   readonly #disposables: vscode.Disposable[] = [];
   #ready = false;
 
+  /**
+   * 直前に組んだ明細。同じ起点・同じ取得なら組み直さない。
+   *
+   * カーソルが動くたびに組み直す設計なので、矢印キー一回ごとに全部を組む。
+   * 起点は「印が囲む範囲」の単位なので、その範囲の中で動いている間は
+   * 答えが変わらない。実測で 6000 文書の木の組み立てに 2 秒かかる
+   * （`descendantCounts` が節点ごとに幅優先を回すため O(V²) である）。
+   * 打鍵のたびに 2 秒待たせないために、鍵が同じなら前の結果をそのまま出す。
+   */
+  #last: { readonly key: string; readonly view: ToWebview & { kind: "view" } } | null = null;
+  #lastSnapshot: unknown = null;
+
   static show(context: vscode.ExtensionContext, session: LensSession): LensPanel {
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
     if (LensPanel.#current) {
@@ -181,17 +193,29 @@ export class LensPanel {
     const snapshot = state.snapshot;
     if (snapshot) {
       const { id, openFile } = this.#originId();
-      const consequence = buildConsequence(snapshot.graph, id, {
-        findings: snapshot.findings ?? [],
-        ranges: snapshot.ranges ?? [],
-        reverseOrphans: new Set(snapshot.reverseOrphans),
-      });
-      const view = buildView(consequence, snapshot.docMeta, viewStrings(), {
-        openFile,
-        auditAt: state.auditAt ? formatTime(state.auditAt) : "",
-        titlesMissing: snapshot.docMeta.size === 0,
-      });
-      this.#post({ kind: "view", view });
+      const auditAt = state.auditAt ? formatTime(state.auditAt) : "";
+      // 鍵は「答えを変えうるもの」だけで組む。取得は同一性で見る（中身は不変である）。
+      const key = JSON.stringify([id, openFile, auditAt]);
+      if (this.#last?.key === key && this.#lastSnapshot === snapshot) {
+        this.#post(this.#last.view);
+      } else {
+        const consequence = buildConsequence(snapshot.graph, id, {
+          findings: snapshot.findings ?? [],
+          ranges: snapshot.ranges ?? [],
+          reverseOrphans: new Set(snapshot.reverseOrphans),
+        });
+        const message = {
+          kind: "view" as const,
+          view: buildView(consequence, snapshot.docMeta, viewStrings(), {
+            openFile,
+            auditAt,
+            titlesMissing: snapshot.docMeta.size === 0,
+          }),
+        };
+        this.#last = { key, view: message };
+        this.#lastSnapshot = snapshot;
+        this.#post(message);
+      }
     }
 
     if (state.failure) {

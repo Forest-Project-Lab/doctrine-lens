@@ -388,8 +388,9 @@ author's job; the unit suite fails if a row stops matching the source.
 and `src/panel/html.ts`. `npm run test:integration` loads the real extension, so
 it reaches activation, command registration, the CodeLens headlines and the
 document↔code commands. What is left with **no automated gate at all** is
-`src/statusbar.ts`'s wiring, `src/codelens/decorations.ts`'s wiring, and the
-message handlers in `src/panel/lensPanel.ts` that the preview does not send.
+`src/statusbar.ts`'s wiring, `src/codelens/decorations.ts`'s wiring, and
+`src/panel/lensPanel.ts` — both the message handlers the preview does not send
+and the code that decides the origin from the cursor and caches the last result.
 Defects were injected into exactly those places and every gate stayed green.
 The decisions behind them (`src/model/status.ts`, `src/model/trace.ts`) are
 unit-tested; the few lines that copy those decisions into editor objects are not.
