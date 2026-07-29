@@ -210,7 +210,10 @@ export class GraphStore {
       const promise = this.#fetch(
         projectDir, docsRoot, pluginRoot, options, withAudit,
       ).finally(() => {
-        if (this.#inFlight?.promise === promise) this.#inFlight = null;
+        // 待ち合わせが直列化しているので、ここが走る時点で走っている取得は
+        // 必ずこれ自身である（別の取得が登録されるのは、待ち手が await から
+        // 戻ったあと、つまりこの後である）。同一性の検めは到達しないので置かない。
+        this.#inFlight = null;
       });
       this.#inFlight = { key, startedAt, promise };
     }

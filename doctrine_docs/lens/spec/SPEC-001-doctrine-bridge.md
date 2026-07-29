@@ -91,6 +91,12 @@ llm_context: task
 
 ## エラー時挙動
 
+設定そのものが受け付けられない場合は、取得の失敗と分けて伝える（取り直しても直らない）。
+待ち時間は使う直前に丸める。負だと子プロセスの起動が同期的に例外を投げ、
+32bit を超えると実行環境が 1 ミリ秒へ潰す（あらゆる取得が数ミリ秒で「時間切れ」になり、
+しかも案内は設定した値をそのまま刷るので嘘をつく）。
+
+
 | 事象 | 挙動 |
 |---|---|
 | 統治木が無い | 地図を出さず、統治木が無い旨と初期化の手順を画面に示す。異常として扱わない |
@@ -123,11 +129,11 @@ llm_context: task
 監査が `trace_stale` を警告として挙げる。実装を直したら
 doctrine プラグインの `trace-index.py` で取り直す。
 
-- sha256:ab0b143a2840b363cb1bf94e39dfae13dd747027389fbcf776e8bdd05af1dba4
-- sha256:bab4e6d1da5937b420796f21bde51112f2497f79b308c5e64bea10eb99df109f
+- sha256:3f2e6b8e916e4733fcd737769f5ef857272953e211d0c99d2056e1696f53e256
+- sha256:ee80996e97cc2319ae3978e7da0a5e0dded0bfc9699fc979c34e3327d9e5027e
 - sha256:ae48dc1f54fabaa4c1f30fecf63931b1f5fcfa4628cb33448854b9bfee3b4390
-- sha256:971413c1652bd32ea7265cbd606ff6f63a911fe77b179a1ab3ff99f93fc2260f
-- sha256:07b625a2f015909273ed6cffc457391971b5552204774b569b3ce1ef587aa688
+- sha256:bd6d99ed7e11b1ff334ea708193fa11495654cf6694b7eb229a89b0382816543
+- sha256:6b86bd1ed3d55f2060237c6c9be1ca165855cb0cc34a9c05d042137532f2ed2d
 - sha256:2ab6ae8b224dd20a99f1764d5dd6960abdf586117871b5d6ddf34b3cd7c73d09
 - sha256:0d27886c0ddf9a5c04fbc9a30178d72312d32e85b08755db4b9ab60b41363b87
 - sha256:2a9f70c295f7e4434f9c1091db89c59bc70488b6864efd2134a8d8f5822a71fc

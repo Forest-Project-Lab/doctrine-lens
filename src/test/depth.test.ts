@@ -279,3 +279,50 @@ test("domain を書き忘れた文書のドメインにも降りられる", () =
   assert.equal(l1.depth, 1, "段が立つ（黙って L0 へ落ちない）");
   assert.deepEqual(l1.nodes.map((n) => n.key), ["SPEC-100"], "その文書が出る");
 });
+
+test("自己依存の文書を L2 で開いても、箱が増えず線も食い違わない", () => {
+  // 上流は自己ループを実際に返す（depends_on と impacts の二本）。監査は
+  // warn としか言わないので、その統治木のまま地図を開く人が居る。
+  const graph = {
+    nodes: [node("SPEC-900", "SPEC", "x", "current", {
+      depends_on: ["SPEC-900"], impacts: ["SPEC-900"],
+    })],
+    edges: [
+      { src: "SPEC-900", dst: "SPEC-900", field: "depends_on", kind: "intra_domain" },
+      { src: "SPEC-900", dst: "SPEC-900", field: "impacts", kind: "intra_domain" },
+    ],
+  };
+  const scene = buildScene(graph, lensAt(2), { domain: "x", docId: "SPEC-900" }, REGISTRY);
+  const layout = layoutScene(scene, "detail", REGISTRY);
+  const boxes = layout.nodes.filter((p) => p.key === "SPEC-900");
+  assert.equal(boxes.length, 1, "同じ文書の箱が増えてはならない");
+  assert.deepEqual(layout.edges, [], "自己ループの線は引かない");
+});
+
+test("L2 で空ドメインの文書が消えたら、そのドメインの L1 へ戻る（L0 まで落とさない）", () => {
+  // 「空を無いとして扱う」誤りは depth.ts の二箇所にある。片方だけ直しても、
+  // もう一方は同じ落ち方をする。L2 からの復帰がその片割れである。
+  const graph = {
+    nodes: [node("SPEC-100", "SPEC", "", "current"), node("SPEC-101", "SPEC", "", "current")],
+    edges: [],
+  };
+  const scene = buildScene(graph, lensAt(2), { domain: "", docId: "SPEC-999" }, REGISTRY);
+  assert.equal(scene.depth, 1, "同じドメインの L1 へ戻る");
+  assert.equal(scene.recovered, "doc-gone");
+  assert.deepEqual(scene.nodes.map((n) => n.key).sort(), ["SPEC-100", "SPEC-101"]);
+});
+
+test("配置は自己ループを描かず、同じ鍵の箱を一つに保つ", () => {
+  const graph = {
+    nodes: [node("A-001", "SPEC", "d", "current"), node("B-001", "SPEC", "d", "current")],
+    edges: [
+      { src: "A-001", dst: "A-001", field: "depends_on", kind: "intra_domain" },
+      { src: "A-001", dst: "B-001", field: "depends_on", kind: "intra_domain" },
+    ],
+  };
+  const scene = buildScene(graph, lensAt(1), { domain: "d", docId: null }, REGISTRY);
+  const layout = layoutScene(scene, "lane", REGISTRY);
+  assert.equal(layout.edges.length, 1, "自己ループを引いている");
+  assert.equal(layout.edges[0]?.edge.dst, "B-001");
+  assert.equal(new Set(layout.nodes.map((p) => p.slot)).size, layout.nodes.length, "置き場所が重なる");
+});

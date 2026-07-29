@@ -12,8 +12,24 @@ import { renderHtml } from "./html.js";
 const VIEW_TYPE = "doctrineLens.map";
 const SAVED_LENSES_KEY = "doctrineLens.savedLenses";
 
+/**
+ * 保存レンズの入れ物の鍵。統治木ごとに分ける。
+ *
+ * ExtensionContext は作業空間に一つしか無いので、鍵を固定すると作業フォルダを
+ * 二つ持つ作業空間で一つの一覧を共有する。ADR-006 が想定しているまさにその構成で、
+ * 木を切り替えても一覧が変わらず、他方の木で保存した組を選ぶと焦点の文書が
+ * 無いので段が戻る。README・CHANGELOG・SPEC-003 はいずれも「作業フォルダごと」と
+ * 書いてあるので、そのとおりにする。
+ *
+ * 木を持たないときは固定の鍵へ落とす（保存の入口がそもそも出ない）。
+ */
+function lensesKey(docsRoot: string | undefined): string {
+  return docsRoot ? `${SAVED_LENSES_KEY}:${docsRoot}` : SAVED_LENSES_KEY;
+}
+
 /** 失敗の種類ごとの案内。読み手が次に何をすればよいかまで書く（ADR-007）。 */
 function adviceFor(reason: string): string {
+  if (reason === "bad-setting") return messages.badSetting();
   if (reason === "spawn-failed") return messages.spawnFailed();
   if (reason === "bad-json") return messages.badJson();
   if (reason === "timeout") return messages.timedOut();
@@ -187,12 +203,16 @@ export class LensPanel {
     }
   }
 
+  #key(): string {
+    return lensesKey(this.#session.state.candidate?.docsRoot);
+  }
+
   #savedLenses(): SavedLens[] {
-    return this.#context.workspaceState.get<SavedLens[]>(SAVED_LENSES_KEY, []);
+    return this.#context.workspaceState.get<SavedLens[]>(this.#key(), []);
   }
 
   async #storeLenses(lenses: SavedLens[], justSaved?: string): Promise<void> {
-    await this.#context.workspaceState.update(SAVED_LENSES_KEY, lenses);
+    await this.#context.workspaceState.update(this.#key(), lenses);
     this.#post({ kind: "savedLenses", savedLenses: lenses, justSaved });
   }
 
@@ -202,7 +222,11 @@ export class LensPanel {
         this.#ready = true;
         // 文字列は必ず先に渡す。統治木が無い場合 snapshot は来ないので、
         // snapshot に相乗りさせると空文字の画面になる。
-        this.#post({ kind: "strings", strings: webviewStrings() });
+        this.#post({
+          kind: "strings",
+          strings: webviewStrings(),
+          language: vscode.env.language,
+        });
         // 既に取れているならそれを流し、無ければ取りに行く。
         if (this.#session.snapshot) this.#publish(this.#session.state);
         else await this.#session.refresh();

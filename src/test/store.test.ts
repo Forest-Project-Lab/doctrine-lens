@@ -7,10 +7,13 @@
 //
 // 三巡目でここへ入れた直しは、どれも試験が無く、個別に潰しても全件が通っていた。
 import assert from "node:assert/strict";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
 import type { RunOptions } from "../doctrine/cli.js";
-import { GraphStore, type FetchSnapshot, type Snapshot } from "../doctrine/graph.js";
+import { fetchSnapshot, GraphStore, type FetchSnapshot, type Snapshot } from "../doctrine/graph.js";
 import { ok, type Outcome } from "../doctrine/model.js";
 
 const OPTIONS: RunOptions = { pythonPath: "python3", timeoutMs: 1000, cwd: "/w" };
@@ -235,4 +238,68 @@ test("失敗しても、直前に成功した結果を入れ物が保つ", async
   assert.ok(second.failure);
   assert.equal(second.snapshot, kept, "直前に成功した結果が返る");
   assert.equal(store.snapshot, kept, "入れ物の中身も消えない");
+});
+
+// --- 部分的に取れなかったものの理由と詳細 --------------------------------
+//
+// 名前だけに潰すと、恒久的な設定の誤り（表示している木と上流が監査した木が違う、
+// など）が一時的な取得の失敗と同じ見え方になり、直し方の手がかりが画面に残らない。
+
+test("部分的な失敗の理由と詳細が、呼び手まで届く", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-partial-"));
+  try {
+    // グラフだけ返し、登録簿・範囲・監査は落ちる偽のプラグインを置く。
+    const scripts = join(dir, "plugin", "scripts");
+    mkdirSync(scripts, { recursive: true });
+    writeFileSync(
+      join(scripts, "dep-graph.py"),
+      'import json,sys;json.dump({"nodes":[],"edges":[]},sys.stdout)',
+      "utf8",
+    );
+    for (const name of ["trace-index.py", "docs-audit.py"]) {
+      writeFileSync(join(scripts, name), 'import sys;sys.stderr.write("BOOM-" + __file__);sys.exit(3)', "utf8");
+    }
+    // 登録簿は `-c` で読むので、_registry を置かなければ落ちる。
+
+    const outcome = await fetchSnapshot(dir, join(dir, "doctrine_docs"), join(dir, "plugin"), {
+      pythonPath: "python3",
+      timeoutMs: 20000,
+      cwd: dir,
+    });
+    assert.ok(outcome.ok, "グラフが取れれば取得そのものは成功する");
+    if (!outcome.ok) return;
+
+    const partial = outcome.value.partial;
+    assert.deepEqual(
+      [...partial.map((p) => p.what)].sort(),
+      ["findings", "ranges", "registry"],
+      "三つとも部分的な失敗として挙がる",
+    );
+    for (const item of partial) {
+      assert.ok(item.reason, `${item.what}: 理由が空`);
+      assert.ok(item.detail, `${item.what}: 詳細が空（名前だけに潰している）`);
+    }
+    const ranges = partial.find((p) => p.what === "ranges");
+    assert.ok(ranges?.detail.includes("BOOM"), "上流が言ったことをそのまま運ぶ");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("走り終えた取得は、あとから来た要求の待ち相手にならない", async () => {
+  // 走っている取得の同一性を検めずに片づけると、別の取得を消したり、
+  // 済んだものを待ち続けたりする。
+  const { fetch, pending } = stubFetch();
+  const store = new GraphStore(fetch);
+  const first = store.refresh("/w", "/w/a", "/p", OPTIONS);
+  await Promise.resolve();
+  await settleLast(pending);
+  await first;
+
+  // 済んだあとの要求は、待たずにすぐ走る。
+  const second = store.refresh("/w", "/w/b", "/p", OPTIONS);
+  await Promise.resolve();
+  assert.equal(pending.length, 2, "済んだ取得を待ち続けている");
+  await settleLast(pending);
+  assert.equal((await second).snapshot?.docsRoot, "/w/b");
 });

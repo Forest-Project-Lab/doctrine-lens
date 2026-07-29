@@ -70,6 +70,8 @@ export type ToWebview =
        */
       readonly kind: "strings";
       readonly strings: WebviewStrings;
+      /** 編集器の表示言語（`vscode.env.language`）。日付の書式に使う。 */
+      readonly language: string;
     }
   | {
       readonly kind: "savedLenses";

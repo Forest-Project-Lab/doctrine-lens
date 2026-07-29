@@ -37,3 +37,4 @@ docs/
 *.local.*
 coverage/
 .npmrc
+.mutate-restore.json

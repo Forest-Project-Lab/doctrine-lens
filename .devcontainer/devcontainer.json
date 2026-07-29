@@ -26,7 +26,7 @@
   // npm install (skips silently if package.json has no deps) + Playwright Chromium
   // (required by tools/doc-manager fetch) + Claude Code bypassPermissions setup +
   // doctrine plugin install from the Forest-Project-Lab/doctrine marketplace.
-  // Drop the bypass segment (or set CLAUDE_BYPASS=0 below) to disable bypass.
+  // The bypass segment is a no-op unless CLAUDE_BYPASS=1 is set below (it is "0").
   // Drop the doctrine segment (or set CLAUDE_DOCTRINE=0 below) to skip the plugin.
   "postCreateCommand": "sudo chown -R node:node /home/node/.claude && npm install && npx playwright install --with-deps chromium && bash .devcontainer/setup-claude-bypass.sh && bash .devcontainer/setup-doctrine-plugin.sh",
   // Persist Claude Code state (memory, conversation history, login credentials)

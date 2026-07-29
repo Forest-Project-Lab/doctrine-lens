@@ -65,6 +65,8 @@ export type Outcome<T> =
  */
 export type FailureReason =
   | "absent"
+  /** 設定そのものが受け付けられない。取り直しても直らない（利用者が直す）。 */
+  | "bad-setting"
   | "spawn-failed"
   | "exit-nonzero"
   | "bad-json"

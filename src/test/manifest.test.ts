@@ -4,7 +4,7 @@
 // いずれも「書き戻しても型検査も単体試験も通ってしまう」性質のものなので、
 // 字面で止めるより他に手が無い。
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
@@ -167,4 +167,98 @@ test("IMPL-001 の部品の表が、実在する実装と一対一で対応す�
 
   assert.deepEqual(missing, [], `表に載っていない実装がある: ${missing.join(", ")}`);
   assert.deepEqual(gone, [], `表が実在しないファイルを指している: ${gone.join(", ")}`);
+});
+
+
+test("突然変異の表が実在の行を指し、潰したままの行が残っていない", () => {
+  // 道具が途中で殺されると、潰れたソースが作業ツリーに残る。残ったまま
+  // 全件が緑になることがある（潰しの多くは一つの試験しか赤くしない）。
+  // 表の `from` がすべて実在することを、ここで毎回検める。表が古いことも同時に分かる。
+  const tool = readFileSync(join(PROJECT, "tools", "mutate-check.mjs"), "utf8");
+  const rows = [
+    ...tool.matchAll(/label: "([^"]+)",\s*\n\s*file: "([^"]+)",\s*\n\s*from: (.+),\s*\n\s*to: /g),
+  ];
+  assert.ok(rows.length >= 20, `表を読み取れていない（${rows.length} 件）`);
+
+  const missing: string[] = [];
+  for (const [, label, file, literal] of rows) {
+    const from = parseLiteral(literal as string);
+    const source = readFileSync(join(PROJECT, file as string), "utf8");
+    if (!source.includes(from)) missing.push(`${label} (${file})`);
+  }
+  assert.deepEqual(
+    missing,
+    [],
+    `表が指す行が実在しない（表が古いか、潰したまま残っている）:\n${missing.join("\n")}`,
+  );
+
+  // 戻し方の記録が残っていれば、前回の走行が途中で死んでいる。
+  assert.ok(
+    !existsSync(join(PROJECT, ".mutate-restore.json")),
+    "前回の突然変異が途中で止まっている。npm run mutate を一度回すと元へ戻る。",
+  );
+});
+
+/** 表に書いてある文字列リテラル（`'…'` か `"…"`）を、値へ解く。 */
+function parseLiteral(literal: string): string {
+  const text = literal.trim();
+  const quote = text[0] as string;
+  const body = text.slice(1, -1);
+  let out = "";
+  for (let i = 0; i < body.length; i += 1) {
+    const c = body[i] as string;
+    if (c !== "\\") {
+      out += c;
+      continue;
+    }
+    const next = body[i + 1];
+    i += 1;
+    if (next === "n") out += "\n";
+    else if (next === quote) out += quote;
+    else out += next ?? "";
+  }
+  return out;
+}
+
+
+test(".vsix に入る一覧が凍結してある（作業中のファイルが配布物へ混ざらない）", () => {
+  // 既定では「全部入る」ので、根に置いた実験用のファイルがそのまま配られる。
+  // 実際に `.preview-r/` と `.probe-*.mjs` が混ざった。`.vscodeignore` を
+  // 「全部落として名指しで戻す」形にしたうえで、戻す一覧をここで凍結する。
+  const ignore = readFileSync(join(PROJECT, ".vscodeignore"), "utf8");
+  const lines = ignore
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"));
+
+  assert.equal(lines[0], "**", "全部を落としてから戻す形になっていない");
+
+  const shipped = lines.filter((line) => line.startsWith("!")).map((line) => line.slice(1));
+  assert.deepEqual(
+    [...shipped].sort(),
+    [
+      "CHANGELOG.md",
+      "LICENSE",
+      "README.md",
+      "dist/extension.js",
+      "dist/webview.js",
+      "icon.png",
+      "l10n/bundle.l10n.ja.json",
+      "package.json",
+      "package.nls.ja.json",
+      "package.nls.json",
+    ],
+    "配布物に入るものが変わっている。意図した変更なら、この一覧も直すこと。",
+  );
+
+  // 落としきれていない行（`!` でも `**` でもないパターン）が残っていないか。
+  const stray = lines.filter((line) => line !== "**" && !line.startsWith("!"));
+  assert.deepEqual(stray, [], `落とす側の行が残っている: ${stray.join(", ")}`);
+
+  // main が指す束が、配る一覧に載っていること。
+  const manifest = JSON.parse(readFileSync(join(PROJECT, "package.json"), "utf8")) as {
+    main: string;
+  };
+  const main = manifest.main.replace(/^\.\//, "");
+  assert.ok(shipped.includes(main), `main（${main}）が配布物に入らない`);
 });

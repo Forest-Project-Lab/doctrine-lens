@@ -102,6 +102,17 @@ interface State {
   auditAt: string | null;
   /** いま当てている保存済みレンズの名。当てていなければ空。 */
   activeLensName: string;
+  /** 編集器の表示言語。日付の書式に使う。届く前は空。 */
+  language: string;
+  /**
+   * 本体からグラフを一度でも受け取ったか。
+   *
+   * 受け取る前の描画で「消えた」と判じてはならない。器を開き直した直後は
+   * グラフが空なので、取り戻した焦点も絞りの値も『グラフから消えた』ように
+   * 見え、段が L0 へ落ち、絞りが黙って外れる。しかもその上書きが保存され、
+   * 前回の値は永久に失われる（実際に起きた）。
+   */
+  received: boolean;
 }
 
 const state: State = {
@@ -117,6 +128,8 @@ const state: State = {
   strings: PENDING_STRINGS,
   auditAt: null,
   activeLensName: "",
+  language: "",
+  received: false,
 };
 
 /** 場面を組むときに渡す、グラフの外から来る値。 */
@@ -254,7 +267,11 @@ function arrowDefs(): SVGDefsElement {
 function render(): void {
   const scene = currentScene();
   // 焦点が消えて段が戻されていたら、位置を場面に合わせる。
-  if (scene.depth !== state.position.depth || scene.focus !== state.position.focus) {
+  // グラフが届く前は「消えた」ではなく「まだ来ていない」なので、合わせない。
+  if (
+    state.received &&
+    (scene.depth !== state.position.depth || scene.focus !== state.position.focus)
+  ) {
     state.position = { depth: scene.depth, focus: scene.focus };
     state.lens = withDepth(state.lens, scene.depth);
   }
@@ -269,10 +286,13 @@ function render(): void {
 
   drawCrumbs(scene);
   drawDials(mode);
-  drawSvg(scene, layout, scale);
+  // 検分欄と帯を先に確定させる。あとから出すと、地図を合わせるときに測った
+  // 幅が「これから 320px 縮む幅」になり、焦点の箱と片方の列が画面の外へ出る
+  // （初めて検分欄が開く描画で必ず起きた）。
   drawInspector(scene);
-  drawLegend(scene, scale);
   drawSceneNotice(scene);
+  drawSvg(scene, layout, scale);
+  drawLegend(scene, scale);
 
   emptyText.hidden = scene.nodes.length > 0;
   if (scene.nodes.length === 0) {
@@ -341,9 +361,12 @@ function drawDials(mode: LayoutMode): void {
   );
   // 選んでいた値が消えていたら、表示だけでなくレンズも外す。外したことは
   // 場面の帯に出す（黙って絞りが変わってはならない）。
+  // グラフが届く前は選択肢が空なので、ここで落とすと取り戻した絞りが消える。
   droppedFilters = [];
-  if (keptType === null) droppedFilters.push(state.lens.filter.types[0] ?? "");
-  if (keptDomain === null) droppedFilters.push(state.lens.filter.domains[0] ?? "");
+  if (state.received && keptType === null) droppedFilters.push(state.lens.filter.types[0] ?? "");
+  if (state.received && keptDomain === null) {
+    droppedFilters.push(state.lens.filter.domains[0] ?? "");
+  }
   if (droppedFilters.length > 0) {
     state.lens = withFilter(state.lens, {
       ...state.lens.filter,
@@ -352,8 +375,22 @@ function drawDials(mode: LayoutMode): void {
     });
   }
   currentOnlyBox.checked = state.lens.filter.currentOnly;
-  currentOnlyBox.disabled = state.registry === null;
-  currentOnlyBox.title = state.registry === null ? state.strings.registryUnavailable : "";
+
+  // L2 と L3 は「この文書とその隣」「この文書のコード範囲」を出す段であり、
+  // 絞りは効かない（隣は絞りに関わらず見せる。SPEC-002）。効かないダイヤルを
+  // 動かせるままにすると、回しても何も起きないので壊れて見える。
+  const filtersApply = state.lens.depth <= 1;
+  const why = filtersApply ? "" : state.strings.filterNotAtThisDepth;
+  for (const dial of [filterTypeSelect, filterDomainSelect]) {
+    dial.disabled = !filtersApply;
+    dial.title = why;
+  }
+  currentOnlyBox.disabled = !filtersApply || state.registry === null;
+  currentOnlyBox.title = !filtersApply
+    ? why
+    : state.registry === null
+      ? state.strings.registryUnavailable
+      : "";
 
   savedLensSelect.replaceChildren(
     optionEl("", state.strings.savedLensPlaceholder),
@@ -678,7 +715,13 @@ function drawNode(
 
 /** 一度も動かしていなければ、全体が入る倍率へ合わせる。 */
 let fitted = false;
+/** 利用者が自分で動かしたか。動かしたあとは、こちらから位置を奪わない。 */
+let movedByHand = false;
+/** 直前に合わせた場面の大きさ。器の大きさが変わったときに合わせ直すのに使う。 */
+let lastLayoutSize: { width: number; height: number } | null = null;
+
 function fitIfUnset(layout: Layout): void {
+  lastLayoutSize = { width: layout.width, height: layout.height };
   if (fitted || layout.width === 0 || layout.height === 0) return;
   const box = canvas.getBoundingClientRect();
   if (box.width === 0 || box.height === 0) return;
@@ -693,6 +736,21 @@ function fitIfUnset(layout: Layout): void {
   view.ty = (box.height - layout.height * view.scale) / 2;
   fitted = true;
 }
+
+/**
+ * 器の大きさが変わったら合わせ直す。
+ *
+ * 検分欄が開く・編集器の欄を出す・窓を狭める、のいずれでも canvas は縮む。
+ * 合わせ直さないと、地図が画面の外へ出たまま戻らない（巻く手立ても無い）。
+ * 自分で動かしたあとは奪わない。
+ */
+const observer = new ResizeObserver(() => {
+  if (movedByHand || !lastLayoutSize) return;
+  fitted = false;
+  fitIfUnset(lastLayoutSize as Layout);
+  applyViewport();
+});
+observer.observe(canvas);
 
 function drawInspector(scene: Scene): void {
   // L3 では、焦点の文書そのものを示す（節点は範囲であり、上流の項を持たない）。
@@ -882,8 +940,13 @@ function recoveredText(reason: RecoveredReason): string {
 function auditStamp(): HTMLElement {
   const stamp = document.createElement("span");
   stamp.style.cssText = "opacity:.7";
+  // 書式は編集器の表示言語に合わせる。既定の toLocaleString は動いている機械の
+  // 地域に従うので、日本語表示なのに英語圏の書式が出る（実際にそうなっていた）。
   stamp.textContent = state.auditAt
-    ? state.strings.auditAsOf.replace("{0}", new Date(state.auditAt).toLocaleString())
+    ? state.strings.auditAsOf.replace(
+        "{0}",
+        new Date(state.auditAt).toLocaleString(state.language || undefined),
+      )
     : state.strings.auditNever;
   return stamp;
 }
@@ -938,6 +1001,7 @@ function goDown(key: string): void {
   state.lens = withDepth(state.lens, next.depth);
   state.selected = next.focus.docId;
   fitted = false;
+  movedByHand = false;
   persist();
   render();
 }
@@ -949,6 +1013,7 @@ function goUp(): void {
   state.lens = withDepth(state.lens, next.depth);
   state.selected = next.focus.docId;
   fitted = false;
+  movedByHand = false;
   persist();
   render();
 }
@@ -983,6 +1048,10 @@ colorBySelect.addEventListener("change", () => {
   applyLens(withColorBy(state.lens, colorBySelect.value as ColorBy));
 });
 layoutSelect.addEventListener("change", () => {
+  // 配置が変われば座標系ごと変わる。合わせ直さないと、レーンから地図へ回した
+  // だけで下端の箱が画面の外へ出る。
+  fitted = false;
+  movedByHand = false;
   applyLens(withLayout(state.lens, layoutSelect.value as LayoutMode));
 });
 filterTypeSelect.addEventListener("change", () => {
@@ -1008,6 +1077,7 @@ savedLensSelect.addEventListener("change", () => {
   el<HTMLButtonElement>("deleteLens").disabled = !saved;
   if (!saved) return;
   fitted = false;
+  movedByHand = false;
   // 焦点も併せて戻す。焦点を今のままにすると、深度 1 以上を保存していても
   // 段だけが黙って落ちる（四つの値のうち深度だけが失われる）。
   // 焦点の指す文書やドメインが既に無ければ、場面の側が段を戻して理由を告げる。
@@ -1040,7 +1110,9 @@ el("refresh").addEventListener("click", () => send({ kind: "refresh" }));
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Backspace") return;
   const target = event.target as Element | null;
-  if (target?.closest("input, select, textarea, button, [contenteditable]")) return;
+  // 文字を編集している最中だけ譲る。釦は Backspace で押されるものではないので、
+  // 除くと、パンくずを押した直後に案内どおりの操作が効かなくなる。
+  if (target?.closest("input, select, textarea, [contenteditable]")) return;
   event.preventDefault();
   goUp();
 });
@@ -1055,6 +1127,7 @@ svg.addEventListener("pointerdown", (event) => {
 });
 svg.addEventListener("pointermove", (event) => {
   if (!dragging) return;
+  movedByHand = true;
   view.tx = event.clientX - dragging.x;
   view.ty = event.clientY - dragging.y;
   applyViewport();
@@ -1067,6 +1140,7 @@ svg.addEventListener("pointerup", endDrag);
 svg.addEventListener("pointercancel", endDrag);
 svg.addEventListener("wheel", (event) => {
   event.preventDefault();
+  movedByHand = true;
   const box = svg.getBoundingClientRect();
   const px = event.clientX - box.left;
   const py = event.clientY - box.top;
@@ -1097,6 +1171,9 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
     state.staleIds = new Set(message.staleIds);
     state.strings = tolerantStrings(message.strings);
     state.auditAt = message.auditAt;
+    // ここで初めて「グラフを受け取った」状態になる。これより前の描画では、
+    // 取り戻した焦点や絞りを「消えた」と判じてはならない。
+    state.received = true;
     applyStaticStrings();
     render();
     return;
@@ -1111,6 +1188,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
   }
   if (message.kind === "strings") {
     state.strings = tolerantStrings(message.strings);
+    state.language = message.language;
     applyStaticStrings();
     render();
     return;
@@ -1137,6 +1215,7 @@ window.addEventListener("message", (event: MessageEvent<ToWebview>) => {
     const found = state.graph.nodes.find((n) => n.id === message.docId);
     if (!found) return;
     fitted = false;
+    movedByHand = false;
     state.selected = found.id;
     applyLens(withDepth(state.lens, 2), { domain: found.domain, docId: found.id });
   }

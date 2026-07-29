@@ -115,6 +115,33 @@ export function headlinesForPath(
  * 重なりがあるときは、始まりが最も後ろのもの（最も内側）を返す。
  * 入れ子は上流が誤りとして挙げるので、ここで解こうとはしない。
  */
+/**
+ * その保存で取り直すべきか。
+ *
+ * `relPath` は作業フォルダからの相対（`/` 区切り）。作業フォルダの外なら
+ * 呼び手が `null` を渡す。
+ *
+ * 何でも取り直すと、無関係な一回の保存で上流の CLI が七本走る（速い拍と
+ * 遅い拍の両方が走るため）。この木での実測で一回あたり数秒かかる。
+ * README も設定の説明も SPEC-005 も「統治の .md か印を持つ原本のとき」と
+ * 書いてあるので、そのとおりにする。
+ */
+export function shouldRefreshOnSave(
+  relPath: string | null,
+  docsRootRelative: string | null,
+  ranges: readonly TraceRange[] | null,
+): boolean {
+  if (!relPath) return false;
+  // 統治木の中の `.md`。統治木の場所は作業フォルダからの相対で受ける。
+  if (docsRootRelative && relPath.toLowerCase().endsWith(".md")) {
+    if (relPath === docsRootRelative || relPath.startsWith(`${docsRootRelative}/`)) return true;
+  }
+  // 印を持つ原本。上流が返した範囲に載っているかで判じる（印の綴りを持たない）。
+  // 範囲がまだ取れていないときは取り直す。取れるまで一度も動かないより良い。
+  if (ranges === null) return true;
+  return ranges.some((r) => r.path === relPath);
+}
+
 /** 帯の一本。行は編集器と同じ 0 始まり。 */
 export interface Band {
   readonly id: string;

@@ -12,6 +12,7 @@ import { locateDocsRoot, locatePluginRoot } from "./doctrine/locate.js";
 import { messages } from "./l10n.js";
 import { carryAudit, NO_AUDIT } from "./model/cadence.js";
 import { toRelative } from "./model/paths.js";
+import { shouldRefreshOnSave } from "./model/trace.js";
 import { chooseCandidate, collectCandidates, type TreeCandidate } from "./model/workspace.js";
 
 /** 統治木が続けて変わったときに取得を畳む待ち時間（速い拍）。 */
@@ -167,6 +168,20 @@ export class LensSession {
     return toRelative(folder, uri.fsPath);
   }
 
+  /**
+   * その保存で取り直すべきか（SPEC-005 制約）。
+   *
+   * 判じるのは src/model/trace.ts の純粋な関数である。ここは編集器の位置を
+   * 相対パスへ直して渡すだけ。
+   */
+  wantsRefreshFor(uri: vscode.Uri): boolean {
+    const relPath = this.toRelativePath(uri);
+    const folder = this.#state.candidate?.folder;
+    const docsRoot = this.#state.candidate?.docsRoot;
+    const docsRel = folder && docsRoot ? toRelative(folder, docsRoot) : null;
+    return shouldRefreshOnSave(relPath, docsRel, this.#state.snapshot?.ranges ?? null);
+  }
+
   /** 上流が使う相対パスを、編集器の位置へ直す。 */
   toUri(relPath: string): vscode.Uri | null {
     const folder = this.#state.candidate?.folder;
@@ -186,6 +201,8 @@ export class LensSession {
 
     if (!vscode.workspace.workspaceFolders?.length) {
       this.#forget();
+      // 見る先が無くなったのに 3 秒ごとの見張りが残ると、閉じたあとも回り続ける。
+      this.#stopWaiting();
       this.#emit({ ...EMPTY_STATE, unavailable: { text: messages.noWorkspace(), detail: "" } });
       return;
     }
@@ -212,17 +229,29 @@ export class LensSession {
       this.#forget();
     }
     this.#lastDocsRoot = chosen.docsRoot;
-    this.#stopWaiting();
+    // まだ木を持たない作業フォルダが残っているなら、見張りは続ける。
+    // 二つ目のフォルダに木を敷いたときに切り替えの選択肢が出るようにするため。
+    if (candidates.length >= (vscode.workspace.workspaceFolders?.length ?? 0)) {
+      this.#stopWaiting();
+    } else {
+      this.#waitForTree();
+    }
 
     const config = vscode.workspace.getConfiguration("doctrineLens");
-    const pluginRoot = locatePluginRoot(chosen.folder, config.get<string>("pluginPath", ""));
+    const override = config.get<string>("pluginPath", "").trim();
+    const pluginRoot = locatePluginRoot(chosen.folder, override);
     if (!pluginRoot) {
-      this.#staleIds = new Set();
+      this.#staleIds = NO_AUDIT.staleIds;
+      // 設定で指したのに解決できない場合と、そもそも入っていない場合を分ける。
+      // 分けないと、入っているのに指定を誤った利用者へ「導入せよ」と案内して
+      // しまい、直し方に辿り着けない。
       this.#emit({
         ...EMPTY_STATE,
         candidate: chosen,
         candidateCount: candidates.length,
-        unavailable: { text: messages.noPlugin(), detail: messages.noPluginDetail() },
+        unavailable: override
+          ? { text: messages.pluginPathRejected(override), detail: "" }
+          : { text: messages.noPlugin(), detail: messages.noPluginDetail() },
       });
       return;
     }
@@ -320,16 +349,18 @@ export class LensSession {
       this.#watchers.push(watcher);
     };
 
-    if (target) {
-      watch(target, "**/*.md");
-      return;
-    }
-    // まだ木が無い。敷かれるのを待つ。
+    if (target) watch(target, "**/*.md");
+
+    // 木がまだ無いフォルダも見る。
     //
     // 一つ目のフォルダだけを見ると、二つ目以降に敷かれた木を取り落とす。
     // 拡張子を `.md` に絞ると、`_system/` を作った時点では何も起きない。
     // どちらも「案内どおりに敷いたのに何も起きない」に化ける。
+    // 一つ見つけたあとも他のフォルダを見続ける。見るのをやめると、二つ目に
+    // 木を敷いても切り替えの選択肢が出ない（ADR-006 が想定する構成である）。
+    const withTree = new Set(this.candidates().map((c) => c.folder));
     for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      if (withTree.has(folder.uri.fsPath)) continue;
       watch(folder.uri.fsPath, "{doctrine_docs,docs}/**");
     }
   }
@@ -344,9 +375,10 @@ export class LensSession {
    */
   #waitForTree(): void {
     if (this.#waitTimer) return;
+    // 見張りが見るのは「木を持つフォルダの数が変わったか」だけである。
+    // 数が変わったときに取り直せば、その回で監視も張り直される。
     this.#waitTimer = setInterval(() => {
-      if (this.candidates().length === 0) return;
-      this.#stopWaiting();
+      if (this.candidates().length === this.#state.candidateCount) return;
       void this.refresh();
     }, TREE_POLL_MS);
   }

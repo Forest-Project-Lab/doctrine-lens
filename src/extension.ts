@@ -120,12 +120,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     // コードが変わると指紋が動く。保存のたびに取り直す（拍の分け方は session が持つ）。
-    // 作業フォルダの外や、ファイル以外のスキームの保存では取り直さない。
-    // 上流の CLI を三〜四本起こす操作を、無関係な保存で毎回走らせない。
+    // ただし、統治の `.md` か印を持つ原本のときだけである。何でも取り直すと、
+    // 無関係な一回の保存で上流の CLI が七本走る（速い拍と遅い拍の両方）。
+    // 判定は src/model/trace.ts の純粋な関数が持つ。
     vscode.workspace.onDidSaveTextDocument((document) => {
       if (document.uri.scheme !== "file") return;
-      if (!session.toRelativePath(document.uri)) return;
-      session.scheduleRefresh();
+      if (session.wantsRefreshFor(document.uri)) session.scheduleRefresh();
     }),
   );
 

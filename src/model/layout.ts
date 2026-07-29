@@ -191,6 +191,11 @@ function layoutDetail(scene: Scene): Layout {
   const incoming: string[] = [];
   const outgoing: string[] = [];
   for (const edge of scene.edges) {
+    // 自己ループは辺を引く側で落とすので、ここでも同じ規律で落とす。
+    // 落とさないと、自分自身に依存している文書が左右と中央の三箇所に並び、
+    // 線は一本も引かれない（上流は自己依存を warn としか言わないので、
+    // その統治木は生き残る。直しに来た人がこれを見る）。
+    if (edge.src === edge.dst) continue;
     if (edge.dst === focusKey && !incoming.includes(edge.src)) incoming.push(edge.src);
     if (edge.src === focusKey && !outgoing.includes(edge.dst)) outgoing.push(edge.dst);
   }

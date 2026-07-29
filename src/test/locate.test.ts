@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 
 import { canAudit, fetchTraceFindings } from "../doctrine/audit.js";
-import { resolvePython, runJson, type RunOptions } from "../doctrine/cli.js";
+import { clampTimeout, resolvePython, runJson, type RunOptions } from "../doctrine/cli.js";
 import { locatePluginRoot } from "../doctrine/locate.js";
 
 function scratch(): string {
@@ -157,17 +157,54 @@ test("統治木が根直下でなければ判定を取りに行かない", () =>
 
 // --- python の在処 -------------------------------------------------------
 
-test("区切りを含む pythonPath は作業フォルダ基準で解く", () => {
-  // 子プロセスの作業フォルダは捨てるので、相対値をそのまま渡すと必ず ENOENT。
-  assert.equal(resolvePython(".venv/bin/python", "/w"), "/w/.venv/bin/python");
-  assert.equal(resolvePython("./python", "/w"), "/w/python");
-  assert.equal(resolvePython("/usr/bin/python3", "/w"), "/usr/bin/python3");
+test("作業フォルダ基準の相対値は受け付けない（ADR-010）", () => {
+  // 受けると、開いたリポジトリが同梱した実行体が走る。pythonPath を machine scope
+  // にしてある意味が消える。ADR-010 は作業フォルダごとの切り替えを諦めている。
+  assert.equal(resolvePython(".venv/bin/python"), null);
+  assert.equal(resolvePython("./python"), null);
+  assert.equal(resolvePython("../python"), null);
+  assert.equal(resolvePython("sub/dir/python"), null);
+  // 絶対値と ~/ は受ける。
+  assert.equal(resolvePython("/usr/bin/python3"), "/usr/bin/python3");
+  assert.ok(resolvePython("~/venv/bin/python")?.endsWith("/venv/bin/python"));
+  assert.ok(!resolvePython("~/venv/bin/python")?.startsWith("~"), "~ を展開する");
 });
 
-test("相対値の pythonPath で実際に子プロセスが起きる", async () => {
-  // 子プロセスの作業フォルダは捨てる（Windows で cwd の実行体が先に走るため）。
-  // だから相対値は起こす前に解いておかないと、`.venv/bin/python` のような
-  // ごく普通の設定が必ず ENOENT になる。関数だけでなく、呼び出し口まで見る。
+test("受け付けない pythonPath は例外ではなく、直せる失敗として返る", async () => {
+  const outcome = await runJson<unknown>(["-c", "print(1)"], {
+    pythonPath: ".venv/bin/python",
+    timeoutMs: 5000,
+    cwd: "/w",
+  });
+  assert.equal(outcome.ok, false);
+  if (!outcome.ok) {
+    assert.equal(outcome.reason, "bad-setting", "取り直しても直らないことを伝える");
+    assert.ok(outcome.detail.includes("pythonPath"), "どの設定かを言う");
+  }
+});
+
+test("待ち時間は子プロセスへ渡してよい形に丸める", () => {
+  assert.equal(clampTimeout(20000), 20000);
+  // 負を渡すと execFile が同期的に投げ、「失敗は Outcome で返す」約束が破れる。
+  assert.equal(clampTimeout(-1), 1000);
+  assert.equal(clampTimeout(0), 1000);
+  // 32bit を超えると Node が 1ms へ潰す。あらゆる取得が数ミリ秒で時間切れになる。
+  assert.equal(clampTimeout(2147483648), 2147483647);
+  assert.equal(clampTimeout(3600000000), 2147483647);
+  assert.equal(clampTimeout(Number.NaN), 20000);
+  assert.equal(clampTimeout(Number.POSITIVE_INFINITY), 20000);
+});
+
+test("負の待ち時間でも例外を投げず、Outcome で返る", async () => {
+  const outcome = await runJson<unknown>(["-c", 'print(\'{"ok":1}\')'], {
+    pythonPath: "python3",
+    timeoutMs: -1,
+    cwd: "/w",
+  });
+  assert.equal(outcome.ok, true, "丸めたうえで普通に走る");
+});
+
+test("絶対値の pythonPath で実際に子プロセスが起きる", async () => {
   const dir = scratch();
   try {
     const real = execFileSync("sh", ["-c", "command -v python3"], { encoding: "utf8" }).trim();
@@ -177,23 +214,68 @@ test("相対値の pythonPath で実際に子プロセスが起きる", async ()
     writeFileSync(script, 'print(\'{"ok": true}\')', "utf8");
 
     const outcome = await runJson<{ ok: boolean }>([script], {
-      pythonPath: "bin/python",
+      pythonPath: join(dir, "bin", "python"),
       timeoutMs: 15000,
       cwd: dir,
     });
     assert.ok(
       outcome.ok,
-      `相対値の pythonPath で起こせない: ${outcome.ok ? "" : `${outcome.reason} ${outcome.detail}`}`,
+      `絶対値の pythonPath で起こせない: ${outcome.ok ? "" : `${outcome.reason} ${outcome.detail}`}`,
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
+test("子プロセスの作業フォルダは、誰でも書ける場所ではない", async () => {
+  // `-c` の問い合わせは sys.path[0] に作業フォルダを入れる。/tmp をそのまま
+  // 渡すと、同じ機械の別の利用者が置いた json.py が先に読まれる（再現済み）。
+  const outcome = await runJson<{ cwd: string; head: string[] }>(
+    ["-c", "import json,os,sys;json.dump({'cwd':os.getcwd(),'head':sys.path[:1]},sys.stdout)"],
+    { pythonPath: "python3", timeoutMs: 15000, cwd: "/w" },
+  );
+  assert.ok(outcome.ok);
+  if (outcome.ok) {
+    assert.notEqual(outcome.value.cwd, tmpdir(), "tmpdir をそのまま渡している");
+    assert.ok(outcome.value.cwd.includes("doctrine-lens-run-"), "私有の場所であること");
+  }
+});
+
 test("区切りを含まない名前は PATH から探させる（解いてはならない）", () => {
-  assert.equal(resolvePython("python3", "/w"), "python3");
-  assert.equal(resolvePython("py", "/w"), "py");
-  assert.equal(resolvePython("  python3  ", "/w"), "python3");
-  assert.equal(resolvePython("", "/w"), "python3", "空なら既定へ落とす");
-  assert.equal(resolvePython("   ", "/w"), "python3");
+  assert.equal(resolvePython("python3"), "python3");
+  assert.equal(resolvePython("py"), "py");
+  assert.equal(resolvePython("  python3  "), "python3");
+  assert.equal(resolvePython(""), "python3", "空なら既定へ落とす");
+  assert.equal(resolvePython("   "), "python3");
+});
+
+test("台帳は、このプロジェクト向けの登録を先に見る", () => {
+  // 複数のプロジェクトで別々の版を入れていると、先頭を無条件に採ると
+  // 別のプロジェクト向けの版が走る。
+  const dir = scratch();
+  try {
+    const other = join(dir, "他所");
+    const mine = join(dir, "自分");
+    for (const p of [other, mine]) {
+      mkdirSync(join(p, "scripts"), { recursive: true });
+      writeFileSync(join(p, "scripts", "docs-audit.py"), "", "utf8");
+    }
+    mkdirSync(join(dir, "plugins"), { recursive: true });
+    writeFileSync(
+      join(dir, "plugins", "installed_plugins.json"),
+      JSON.stringify({
+        plugins: {
+          "doctrine@forest-project-lab": [
+            { projectPath: "/どこか別の場所", installPath: other },
+            { projectPath: dir, installPath: mine },
+          ],
+        },
+      }),
+      "utf8",
+    );
+    assert.equal(locatePluginRoot(dir, "", dir), mine, "このプロジェクト向けの登録を選ぶ");
+    assert.equal(locatePluginRoot("/無関係", "", dir), other, "無ければ先頭へ落ちる");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

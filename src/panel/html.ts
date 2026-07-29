@@ -107,6 +107,12 @@ export function renderHtml(webview: Webview, scriptUri: Uri, language = "en"): s
 // `[hidden] { display: none !important; }` が要るのは、display を当てた要素でも
 // hidden を効かせるためである。これが無いと、隠したはずの覆いがキャンバス全面の
 // クリックを飲み込む（実際に起きた欠陥）。
+//
+// canvas の行を `minmax(0, 1fr)` にしてあるのは、素の `1fr` が中身の最小の高さを
+// 下回れないためである。通知が長い回に canvas の高さが 0 まで潰れ、地図が一つも
+// 見えなくなる。`.notice` の `max-height` と `overflow-y` も同じ理由で要る。
+// 上流の traceback が三本ぶん来ると数千字になり、body は overflow:hidden なので
+// 巻く手立てが無い（実際に地図が消えた）。
 const STYLE = `
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -120,7 +126,7 @@ html, body {
 body {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto auto 1fr auto;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
   grid-template-areas:
     "bar bar" "dials dials" "notice notice" "sceneNotice sceneNotice"
     "canvas inspector" "legend legend";
@@ -165,6 +171,7 @@ button.ghost:disabled { opacity: .5; cursor: default; }
 #sceneNotice { grid-area: sceneNotice; }
 .notice {
   padding: 8px 12px; font-size: .92em;
+  max-height: 30vh; overflow-y: auto;
   border-bottom: 1px solid var(--vscode-panel-border);
   background: var(--vscode-inputValidation-infoBackground);
   border-left: 3px solid var(--vscode-inputValidation-infoBorder);

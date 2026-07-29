@@ -23,10 +23,19 @@ export const messages = {
       "It must stay inside the workspace folder and end in doctrine_docs, or a docs directory that has a _system subdirectory.",
     ),
 
+  pluginPathRejected: (value: string): string =>
+    t(
+      "The doctrineLens.pluginPath setting ({0}) does not point at the doctrine plugin. Point it at the directory that contains scripts/docs-audit.py — inside a clone that is the plugin/ subdirectory.",
+      value,
+    ),
+
   noPlugin: (): string => t("The doctrine plugin was not found."),
   noPluginDetail: (): string =>
     "claude plugin marketplace add https://github.com/Forest-Project-Lab/doctrine.git\n" +
     "claude plugin install doctrine@forest-project-lab --scope project",
+
+  badSetting: (): string =>
+    t("A Doctrine Lens setting is not usable. Check doctrineLens.pythonPath: it must be an absolute path, a \"~/\" path, or a bare command name."),
 
   spawnFailed: (): string =>
     t("Cannot start python. Check the doctrineLens.pythonPath setting."),
@@ -145,6 +154,7 @@ export function webviewStrings(): WebviewStrings {
     recoveredDocGone: t("The focused document is gone from the graph."),
     danglingEdges: t("Some edges were not drawn because one end is missing from the graph."),
     filterValueGone: t("The filter on \"{0}\" was lifted because that value is no longer in the graph.", "{0}"),
+    filterNotAtThisDepth: t("Filters apply to the context map and the domain interior. This depth shows the document and what it is bound to."),
     registryUnavailable: t("The registry could not be read, so the current-only filter and lane order are off."),
     rangesUnavailableNote: t("Code ranges could not be fetched, so L3 is unavailable."),
     auditAsOf: t("Fingerprint verdict as of {0}", "{0}"),
@@ -201,6 +211,7 @@ export interface WebviewStrings {
   recoveredDocGone: string;
   danglingEdges: string;
   filterValueGone: string;
+  filterNotAtThisDepth: string;
   registryUnavailable: string;
   rangesUnavailableNote: string;
   auditAsOf: string;

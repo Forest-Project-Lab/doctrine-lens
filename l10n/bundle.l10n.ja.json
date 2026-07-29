@@ -1,6 +1,7 @@
 {
   "(no value)": "（値なし）",
   "(saved lenses)": "（保存したレンズ）",
+  "A Doctrine Lens setting is not usable. Check doctrineLens.pythonPath: it must be an absolute path, a \"~/\" path, or a bare command name.": "Doctrine Lens の設定が使えない。doctrineLens.pythonPath を確かめる（絶対パス、「~/」で始まる値、または区切りを含まない命令名のいずれか）。",
   "All": "すべて",
   "Bound code ranges": "結ばれたコード範囲",
   "Bound code ranges ({0})": "結ばれたコード範囲 ({0})",
@@ -29,6 +30,7 @@
   "Fetching…": "取得中…",
   "Filter by domain": "ドメインで絞る",
   "Filter by type": "型で絞る",
+  "Filters apply to the context map and the domain interior. This depth shows the document and what it is bound to.": "絞りが効くのは文脈の地図とドメイン内部である。この段は文書と、それに結ばれたものを出す。",
   "Fingerprint verdict as of {0}": "指紋の判定の時点 {0}",
   "Fingerprint verdict not fetched yet": "指紋の判定を未取得",
   "Fingerprints disagree. Review the change, then update the fingerprint section of the governing specification.": "指紋が食い違っている。変更を確かめ、統治仕様の『実装の指紋』の節を記録し直す。",
@@ -63,6 +65,7 @@
   "The doctrine plugin was not found.": "doctrine プラグインが見つからない。",
   "The doctrine tree has no documents.": "統治木に文書が無い。",
   "The doctrineLens.docsRoot setting ({0}) does not point at a usable tree.": "設定 doctrineLens.docsRoot（{0}）が使える統治木を指していない。",
+  "The doctrineLens.pluginPath setting ({0}) does not point at the doctrine plugin. Point it at the directory that contains scripts/docs-audit.py — inside a clone that is the plugin/ subdirectory.": "doctrineLens.pluginPath の設定（{0}）が doctrine プラグインを指していない。scripts/docs-audit.py を持つディレクトリを指す（上流の複製なら plugin/ の側）。",
   "The filter on \"{0}\" was lifted because that value is no longer in the graph.": "「{0}」で絞っていたが、その値がグラフから消えたので絞りを外した。",
   "The focused document is gone from the graph.": "焦点の文書がグラフから消えた。",
   "The focused domain is gone from the graph.": "焦点のドメインがグラフから消えた。",

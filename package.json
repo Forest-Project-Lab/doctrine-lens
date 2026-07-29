@@ -143,7 +143,8 @@
           "default": 20000,
           "minimum": 1000,
           "description": "%cfg.timeoutMs%",
-          "scope": "window"
+          "scope": "window",
+          "maximum": 2147483647
         },
         "doctrineLens.autoRefresh": {
           "type": "boolean",

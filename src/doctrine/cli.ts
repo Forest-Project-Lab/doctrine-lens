@@ -4,8 +4,9 @@
 // 例外を外へ出さない。失敗はすべて Outcome の値として返す（SPEC-001 エラー時挙動）。
 // 呼ぶのは読み取り専用の命令だけである。統治木へ書き込む命令を呼んではならない。
 import { execFile } from "node:child_process";
+import { mkdtempSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { isAbsolute, join } from "node:path";
 
 import { fail, ok, type Outcome } from "./model.js";
 
@@ -23,35 +24,77 @@ export interface RunOptions {
   cwd: string;
 }
 
+let privateCwd: string | undefined;
+
 /**
- * 子プロセスの作業フォルダに、利用者の作業フォルダを渡さない（ADR-010）。
+ * 子プロセスの作業フォルダ。利用者の作業フォルダは渡さない（ADR-010）。
  *
  * Windows の実行体の探索は、名前に区切りが無いとき PATH より先に cwd を見る。
  * `pythonPath` の既定は区切りの無い `python3` なので、細工したリポジトリの根に
  * `python3.exe` を置かれるだけで、設定を一切上書きせずにそれが走る。
- * 渡す引数はすべて絶対パスで、cwd に依存する処理は一つも無い。だから捨ててよい。
+ *
+ * `tmpdir()` をそのまま渡してはならない。Linux の `/tmp` は誰でも書けるので、
+ * `-c` で呼ぶ問い合わせが `/tmp/json.py` を先に読む（同じ機械の別の利用者が
+ * 任意のコードを走らせられる。実際に再現した）。自分だけが書ける空の場所を作る。
  */
 function safeCwd(): string {
-  return tmpdir();
+  if (privateCwd) return privateCwd;
+  try {
+    privateCwd = mkdtempSync(join(tmpdir(), "doctrine-lens-run-"));
+  } catch {
+    // 作れない環境では tmpdir へ落とす。問い合わせの側でも探索路を塞いである。
+    privateCwd = tmpdir();
+  }
+  return privateCwd;
 }
 
 /**
- * `pythonPath` を、起こしてよい形に直す。
+ * `pythonPath` を、起こしてよい形に直す。受け付けないなら `null`。
  *
- * 子プロセスの cwd は捨てる（safeCwd）ので、`.venv/bin/python` のような
- * 相対値をそのまま渡すと必ず ENOENT になる。相対値は作業フォルダ基準で解く。
- * `~` は編集器が展開しないので自分で展開する。
+ * 受けるのは三つだけである。
+ *   - 区切りを含まない名前（`python3`・`py`）。PATH から探させる。
+ *   - `~/` で始まる値。利用者の home を基準に解く。
+ *   - 絶対パス。
  *
- * 区切りを含まない名前（`python3`・`py`）はそのまま渡す。PATH から探させる。
+ * 作業フォルダ基準の相対値（`.venv/bin/python`）は受けない。
+ *
+ * 受けると、ADR-010 の保証がそのまま破れるためである。`pythonPath` を machine
+ * scope にしてあるのは「開いたリポジトリが実行体を差し替えられない」ためだが、
+ * 相対値を作業フォルダ基準で解くと、値そのものはリポジトリに書けなくても
+ * 解決先はリポジトリが握る。一度 `.venv/bin/python` と設定した利用者は、
+ * 以後どのリポジトリを開いても、そのリポジトリが同梱した実行体を走らせる
+ * （起動直後の取り直しで走るので、地図を開く操作すら要らない。実際に再現した）。
+ * ADR-010 は「作業フォルダごとの切り替えはできなくなる。これは受け入れる」と
+ * 書いてあり、実装はその通りでなければならない。
  */
-export function resolvePython(pythonPath: string, cwd: string): string {
+export function resolvePython(pythonPath: string): string | null {
   const raw = pythonPath.trim();
   if (!raw) return "python3";
   if (raw.startsWith("~/")) return join(homedir(), raw.slice(2));
   // 区切りを含まないなら PATH から探す名前である。解いてはならない。
   if (!/[\\/]/.test(raw)) return raw;
-  return resolve(cwd || ".", raw);
+  return isAbsolute(raw) ? raw : null;
 }
+
+/**
+ * 待ち時間を、子プロセスへ渡してよい形に丸める。
+ *
+ * `execFile` の `timeout` は符号なし 32bit である。負を渡すと同期的に例外を
+ * 投げ（「失敗はすべて Outcome で返す」という約束が破れる）、32bit を超えると
+ * Node が 1 ミリ秒へ潰す（あらゆる取得が数ミリ秒で「時間切れ」になり、
+ * しかも案内は設定した値をそのまま刷るので嘘をつく）。どちらも実際に再現した。
+ * 設定は利用者が手で書けるので、使う直前にここで丸める。
+ */
+export function clampTimeout(timeoutMs: number): number {
+  const value = Math.trunc(timeoutMs);
+  if (!Number.isFinite(value)) return DEFAULT_TIMEOUT_MS;
+  return Math.min(Math.max(value, MIN_TIMEOUT_MS), MAX_TIMEOUT_MS);
+}
+
+const DEFAULT_TIMEOUT_MS = 20000;
+const MIN_TIMEOUT_MS = 1000;
+/** `execFile` の timeout は符号なし 32bit。これを超えると Node が 1ms へ潰す。 */
+const MAX_TIMEOUT_MS = 2147483647;
 
 /** 診断に添える標準エラーの長さの上限。全部載せると画面が埋まる。 */
 const DETAIL_LIMIT = 2000;
@@ -68,15 +111,29 @@ function clip(text: string): string {
  * （知らない項が増えても落とさない。SPEC-001 受入基準 3）。
  */
 export async function runJson<T>(args: string[], options: RunOptions): Promise<Outcome<T>> {
+  const command = resolvePython(options.pythonPath);
+  if (command === null) {
+    // 設定そのものが受け付けられない。取得の失敗ではないので、そう伝える。
+    return fail<T>(
+      "bad-setting",
+      `doctrineLens.pythonPath must be an absolute path, a "~/" path, ` +
+        `or a bare command name; got "${options.pythonPath}"`,
+    );
+  }
+  const timeoutMs = clampTimeout(options.timeoutMs);
+
   const result = await new Promise<
     { kind: "ok"; stdout: string } | { kind: "err"; reason: "spawn" | "exit" | "timeout"; detail: string }
   >((resolvePromise) => {
+    // execFile は引数が受け付けられない値だと同期的に投げる。投げさせない
+    // （この層の約束は「失敗はすべて Outcome の値で返す」である）。
+    try {
     execFile(
-      resolvePython(options.pythonPath, options.cwd),
+      command,
       args,
       {
         cwd: safeCwd(),
-        timeout: options.timeoutMs,
+        timeout: timeoutMs,
         // 大きな統治木でも標準出力が切れないようにする。
         maxBuffer: 64 * 1024 * 1024,
         encoding: "utf8",
@@ -93,7 +150,8 @@ export async function runJson<T>(args: string[], options: RunOptions): Promise<O
           resolvePromise({
             kind: "err",
             reason: "timeout",
-            detail: `timeout after ${options.timeoutMs} ms`,
+            // 丸めたあとの値を刷る。設定した値をそのまま刷ると、丸めた回に嘘をつく。
+            detail: `timeout after ${timeoutMs} ms`,
           });
           return;
         }
@@ -102,7 +160,7 @@ export async function runJson<T>(args: string[], options: RunOptions): Promise<O
           resolvePromise({
             kind: "err",
             reason: "spawn",
-            detail: `${options.pythonPath}: ${code}`,
+            detail: `${command}: ${code}`,
           });
           return;
         }
@@ -113,6 +171,9 @@ export async function runJson<T>(args: string[], options: RunOptions): Promise<O
         });
       },
     );
+    } catch (error) {
+      resolvePromise({ kind: "err", reason: "spawn", detail: String(error) });
+    }
   });
 
   if (result.kind === "err") {

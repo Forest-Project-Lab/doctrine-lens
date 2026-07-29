@@ -231,12 +231,17 @@ the repository; it builds first via the default build task).
 
 ```bash
 npm run check            # typecheck → tests → bundle → full governance audit
-npm run mutate           # breaks each fix in turn, proves a test catches it (slow)
+npm run mutate           # breaks the listed fixes in turn, checks a test fails (slow)
 xvfb-run npm run test:integration  # drives a real VS Code: headlines, commands, loading
 npm run package          # builds the .vsix
-npm run docs:trace       # lists marked ranges and their fingerprints
+npm run docs:trace       # lists every marked range, build output included*
 npm run docs:render      # redraws the projections
 ```
+
+\* `docs:trace` scans the whole tree, so it also lists the copies of the markers
+that land in `out/` and `dist/`. The audit applies `trace_exempt` from
+`doctrine_docs/_system/.context-config.json` and ignores them; this listing does
+not. Read it as "every marker on disk", not "every governed range".
 
 `test:integration` needs GTK3 and an X server (the devcontainer's Dockerfile
 installs both, including `xvfb`). Without a display it fails, so run it under
@@ -258,6 +263,14 @@ The webview is plain DOM and SVG, so it can be opened in an ordinary browser.
 ```bash
 npm run preview   # rebuilds .preview/ from src, then drives it and captures shots
 ```
+
+`npm run mutate` breaks, one at a time, each fix listed in `tools/mutate-check.mjs`
+and checks that a unit test turns red. It covers only what `tsconfig.test.json`
+compiles — `src/doctrine/`, `src/model/`, `src/shared/` — so `src/webview/`,
+`src/panel/`, `src/session.ts` and `src/extension.ts` are **not** covered by it;
+those are covered by `npm run preview` and `npm run test:integration`. Adding a
+row when you add a fix is the author's job; the unit suite fails if a row stops
+matching the source.
 
 `preview-webview.mjs` bundles the webview from `src/` itself — it does not copy
 `dist/` — so what you look at is always the current source. `shoot-preview.mjs`

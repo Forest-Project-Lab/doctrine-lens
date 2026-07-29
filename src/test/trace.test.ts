@@ -23,6 +23,7 @@ import { bandsForPath,
   rangeAtLine,
   rangesForDocument,
   rangesForPath,
+  shouldRefreshOnSave,
   summarizeCoverage,
 } from "../model/trace.js";
 import { node, REGISTRY, twoDomainGraph } from "./fixture.js";
@@ -376,4 +377,55 @@ test("ファイルの行数を超えた範囲は末尾へ寄せる", () => {
     bandsForPath(ranges, "src/a.ts", new Set(), 9),
     [{ id: "SPEC-001", begin: 9, end: 9, stale: false }],
   );
+});
+
+// --- 保存の合図（SPEC-005 制約） -----------------------------------------
+
+test("統治の .md と印を持つ原本の保存だけで取り直す", () => {
+  const ranges = [
+    { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 9, fingerprint: "sha256:a" },
+  ];
+  // 統治木の中の .md。
+  assert.equal(shouldRefreshOnSave("doctrine_docs/lens/SPEC-001.md", "doctrine_docs", ranges), true);
+  // 印を持つ原本。
+  assert.equal(shouldRefreshOnSave("src/a.ts", "doctrine_docs", ranges), true);
+
+  // 無関係な保存では取り直さない。一回の保存で上流の CLI が七本走っていた。
+  assert.equal(shouldRefreshOnSave("notes.txt", "doctrine_docs", ranges), false);
+  assert.equal(shouldRefreshOnSave("package.json", "doctrine_docs", ranges), false);
+  assert.equal(shouldRefreshOnSave("node_modules/x/y.js", "doctrine_docs", ranges), false);
+  assert.equal(shouldRefreshOnSave("src/b.ts", "doctrine_docs", ranges), false);
+  // 統治木の外の .md も対象外。
+  assert.equal(shouldRefreshOnSave("README.md", "doctrine_docs", ranges), false);
+  // 作業フォルダの外。
+  assert.equal(shouldRefreshOnSave(null, "doctrine_docs", ranges), false);
+});
+
+test("範囲がまだ取れていないうちは取り直す（取れるまで動かないよりよい）", () => {
+  assert.equal(shouldRefreshOnSave("src/a.ts", "doctrine_docs", null), true);
+});
+
+test("統治木の名前が違っても効く（docs/ を使う木）", () => {
+  assert.equal(shouldRefreshOnSave("docs/lens/SPEC-001.md", "docs", []), true);
+  assert.equal(shouldRefreshOnSave("docsx/lens/SPEC-001.md", "docs", []), false, "前方一致だけで通さない");
+});
+
+test("経路の突き合わせが Windows の区切りを吸収する", () => {
+  const ranges = [
+    { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 9, fingerprint: "sha256:a" },
+  ];
+  // 編集器から来る経路は環境ごとの区切りを持つ。揃えないと Windows でだけ外れる。
+  assert.equal(rangesForPath(ranges, "src\\a.ts").length, 1, "\\ を / に揃えていない");
+  assert.equal(rangesForPath(ranges, "src/a.ts").length, 1);
+  assert.equal(rangesForPath(ranges, "src/b.ts").length, 0);
+});
+
+test("上流が終わりを始まりより手前に返しても、帯の行が逆さにならない", () => {
+  // 索引が壊れている木でも、編集器へ渡す範囲は begin <= end でなければならない。
+  const ranges = [
+    { id: "SPEC-001", path: "src/a.ts", begin_line: 40, end_line: 10, fingerprint: "sha256:a" },
+  ];
+  const band = bandsForPath(ranges, "src/a.ts", new Set(), 999)[0];
+  assert.ok(band);
+  assert.ok(band.begin <= band.end, `逆さの帯が出ている: ${band.begin}-${band.end}`);
 });
