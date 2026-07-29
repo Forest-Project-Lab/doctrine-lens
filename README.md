@@ -23,39 +23,42 @@ That is the **origin**. You select nothing; the screen follows the cursor.
 Follows the cursor                                                   [Refresh]
 
   コード側の面
-  SPEC-005 · lens/spec/SPEC-005-code-side-surface.md · current · 2026-07-28
+  SPEC-005 · lens/spec/SPEC-005-code-side-surface.md · current · 2026-07-29
 
   4 documents to fix · 4 code ranges · 3 with nowhere to fix
   broken 1 · missing 0 · cycles 0
 
-  Wave 1   directly on the origin                                          2
+  Wave 1   directly on the origin                                2 documents
   ×  帰結の明細                       SPEC-006                              2
      Has SPEC-005 in depends_on. Its premise changes.
      記録した実装の指紋と、いまのコードの指紋が食い違う (src/doctrine/titles.ts,
      src/model/consequence.ts, src/model/view.ts, src/webview/main.ts)。
      src/doctrine/titles.ts:1-137
      src/model/consequence.ts:1-493
-     src/model/view.ts:1-209
+     src/model/view.ts:1-218
      src/webview/main.ts:1-174
-  ?  コード側の面の受入               TEST-005                              0
+  ?  コード側の面の受入               TEST-005
      Has SPEC-005 in depends_on. Its premise changes.
 
-  Wave 2   not settled until wave 1 is done                                2
-  ?  拡張機能の部品の配置             IMPL-001                              0
+  Wave 2   not settled until wave 1 is done                      2 documents
+  ?  拡張機能の部品の配置             IMPL-001
      Depends on SPEC-005 through SPEC-006.
-  ?  帰結の明細の受入                 TEST-006                              0
+  ?  帰結の明細の受入                 TEST-006
      Depends on SPEC-005 through SPEC-006.
 
   40 documents are not reachable from the origin and are not listed
-  5 findings sit outside the origin
+  2 findings sit outside the origin
+  The number on the right of a row is how many others it settles once fixed
   Upstream docs-audit ran all checks at 2026-07-29 09:14
   × broken   + missing   ? nowhere to fix   ! fix   ~ review
 ```
 
-That is real output from this repository's own tree, mid-rewrite: `SPEC-006` is
-`×` because its recorded fingerprints no longer match the code, and it carries
-two documents behind it, so it sorts first. `TEST-005` is `?` — it depends on the
-origin, but has no code bound to it, so there is nowhere to make the change.
+That is this repository's own tree, captured mid-rewrite. `SPEC-006` is `×`
+because its recorded fingerprints did not yet match the code, and the `2` on its
+right says two more documents settle once it is fixed — which is why it sorts
+first. `TEST-005` is `?`: it depends on the origin, but has no code bound to it,
+so there is nowhere to make the change. Rows with nothing behind them show no
+number at all, because a number that is always zero is noise.
 
 ### Five symbols, strictly exclusive
 
