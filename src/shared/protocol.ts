@@ -40,6 +40,13 @@ export interface WaveView {
   readonly heading: string;
   /** 見出しに添える一文（「起点に直接ぶら下がる」）。 */
   readonly note: string;
+  /**
+   * 見出しの右端に置く件数（「2 文書」）。
+   *
+   * 単位の語を付けるのは、行の右端の数（「後ろに N」）と同じ位置に出るためである。
+   * 裸の数を二種類、同じ場所に置くと、どちらがどちらか読めない。
+   */
+  readonly count: string;
   readonly rows: readonly RowView[];
 }
 

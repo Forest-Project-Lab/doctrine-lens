@@ -28,6 +28,8 @@ export interface ViewStrings {
   readonly summaryJudgements: string;
   /** `第 {0} 波` */
   readonly waveHeading: string;
+  /** 波の見出しの右端に置く件数。`{0} 文書` */
+  readonly waveCount: string;
   /** 第 1 波に添える一文 */
   readonly waveFirstNote: string;
   /** 第 2 波以降に添える一文。`{0}` は一つ前の番号 */
@@ -54,6 +56,8 @@ export interface ViewStrings {
   readonly footAuditNever: string;
   /** `題名を取れなかった文書がある` */
   readonly footNoTitles: string;
+  /** 行の右端の数が何かを言う一文 */
+  readonly footBehind: string;
   /** 波が決まらない旨。`{0}` は件数 */
   readonly cycleNote: string;
   /** 記号の語彙。順に 壊れている・足りない・場所が要る・直す・見直す */
@@ -151,6 +155,7 @@ export function buildView(
       wave.distance === 1
         ? strings.waveFirstNote
         : fill(strings.waveLaterNote, String(wave.distance - 1)),
+    count: fill(strings.waveCount, String(wave.rows.length)),
     rows: wave.rows.map((row) => rowView(row, originId, meta, strings)),
   }));
 
@@ -184,6 +189,10 @@ export function buildView(
   }
   if (cycles.length > 0) {
     footnotes.push(fill(strings.cycleNote, String(cycles.length)));
+  }
+  // 右端の数は説明の無い記号である。説明しないなら出してはいけない。
+  if (consequence.waves.some((w) => w.rows.some((r) => r.behind > 0))) {
+    footnotes.push(strings.footBehind);
   }
   if (context.titlesMissing) footnotes.push(strings.footNoTitles);
   footnotes.push(context.auditAt ? fill(strings.footAudit, context.auditAt) : strings.footAuditNever);

@@ -140,6 +140,24 @@ test("006-5b. 題名が取れない行は id を主文へ落とし、脚注に�
   assert.ok(view.footnotes.includes("題名が無い"), "取れなかったことを言う");
 });
 
+test("006-2c. 右端の数に説明が付き、意味の違う二つの数が同じ形にならない", () => {
+  // 波の見出しの数（件数）と、行の右端の数（後ろに N）は同じ位置に出る。
+  // 裸の数を二種類そこへ置くと、どちらがどちらか読めない。
+  const graph = graphOf(["O", "W", "X", "Y"], ["O>W", "O>X", "X>Y"]);
+  const view = buildView(buildConsequence(graph, "O", NO_CONTEXT), new Map(), strings(), CONTEXT);
+  assert.equal(view.waves[0]?.count, "2 文書", "波の件数は単位の語を伴う");
+  assert.ok(
+    view.footnotes.some((f) => f.includes("右端の数")),
+    `右端の数の説明が無い: ${view.footnotes}`,
+  );
+});
+
+test("006-2d. 右端の数が一つも無いときは、その説明を出さない", () => {
+  const graph = graphOf(["O", "A"], ["O>A"]);
+  const view = buildView(buildConsequence(graph, "O", NO_CONTEXT), new Map(), strings(), CONTEXT);
+  assert.ok(!view.footnotes.some((f) => f.includes("右端の数")), "説明だけが浮く");
+});
+
 test("006-6. 出していないものの件数が脚注に出る", () => {
   const graph = graphOf(["O", "P", "余り1", "余り2"], ["O>P"]);
   const c = buildConsequence(graph, "O", NO_CONTEXT);
@@ -319,6 +337,7 @@ function strings(): Parameters<typeof buildView>[2] {
     summaryCounts: "{0} 文書 / コード {1} / 場所無し {2}",
     summaryJudgements: "壊れている {0} / 足りない {1} / 循環 {2}",
     waveHeading: "第 {0} 波",
+    waveCount: "{0} 文書",
     waveFirstNote: "直に載る",
     waveLaterNote: "第 {0} 波の後",
     reasonDirect: "depends_on に {0}",
@@ -332,6 +351,7 @@ function strings(): Parameters<typeof buildView>[2] {
     footAudit: "監査 {0}",
     footAuditNever: "監査まだ",
     footNoTitles: "題名が無い",
+    footBehind: "右端の数は片づけると確定に向かう件数",
     cycleNote: "循環 {0}",
     legendBroken: "×",
     legendMissing: "+",

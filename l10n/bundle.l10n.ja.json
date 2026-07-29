@@ -1,4 +1,7 @@
 {
+  "! fix": "! 直す",
+  "+ missing": "+ 足りない",
+  "? nowhere to fix": "? 直す場所が無い",
   "A Doctrine Lens setting is not usable. Check doctrineLens.pythonPath: it must be an absolute path, a \"~/\" path, or a bare command name.": "Doctrine Lens の設定が使えない。doctrineLens.pythonPath を確かめる（絶対パス、「~/」で始まる値、または区切りを含まない命令名のいずれか）。",
   "Cannot open {0}.": "{0} を開けない。",
   "Cannot start python. Check the doctrineLens.pythonPath setting.": "python を起動できない。設定 doctrineLens.pythonPath を確かめる。",
@@ -34,6 +37,7 @@
   "The doctrine plugin was not found.": "doctrine プラグインが見つからない。",
   "The doctrineLens.docsRoot setting ({0}) does not point at a usable tree.": "設定 doctrineLens.docsRoot（{0}）が使える統治木を指していない。",
   "The doctrineLens.pluginPath setting ({0}) does not point at the doctrine plugin. Point it at the directory that contains scripts/docs-audit.py — inside a clone that is the plugin/ subdirectory.": "doctrineLens.pluginPath の設定（{0}）が doctrine プラグインを指していない。scripts/docs-audit.py を持つディレクトリを指す（上流の複製なら plugin/ の側）。",
+  "The number on the right of a row is how many others it settles once fixed": "行の右端の数は、その行を片づけると確定に向かう件数",
   "The recorded fingerprint for {0} and the current code disagree. Check the change, then re-record the fingerprint.": "{0} の記録した指紋と、いまのコードの指紋が食い違っている。変更を確かめ、確認したら指紋を取り直す。",
   "There is only one doctrine tree, so there is nothing to choose: {0}": "統治木はこれ一つなので、選ぶまでもない: {0}",
   "This document is not in the doctrine tree, or has no id in its frontmatter.": "この文書は統治木の中に無いか、frontmatter に id を持たない。",
@@ -53,13 +57,9 @@
   "not settled until wave {0} is done": "第 {0} 波を直してから決まる",
   "the registry": "登録簿",
   "what is missing": "足りていないもの",
-  "× broken": "× 壊れている",
-  "+ missing": "+ 足りない",
-  "? nowhere to fix": "? 直す場所が無い",
-  "! fix": "! 直す",
-  "~ review": "~ 見直す",
   "{0} cycles: those documents have no wave until the cycle is broken": "循環 {0} 件。その文書は循環を解くまで波が決まらない",
   "{0} declares that it impacts this.": "{0} が影響すると宣言している。",
+  "{0} documents": "{0} 文書",
   "{0} documents are not reachable from the origin and are not listed": "起点に繋がらない {0} 文書は出していない",
   "{0} documents to fix · {1} code ranges · {2} with nowhere to fix": "直すことになる {0} 文書 ・ コード {1} か所 ・ 直す場所が無い {2} 件",
   "{0} findings sit outside the origin": "起点の外に所見 {0} 件",
@@ -67,5 +67,7 @@
   "{0} is not in the doctrine tree.": "{0} は統治木に無い。",
   "{0} stale": "{0} 件が食い違い",
   "{0} was not found. It may disappear when the list is refreshed.": "{0} が見つからない。明細を取り直すと消えるかもしれない。",
-  "{0}:{1}-{2}": "{0}:{1}-{2}"
+  "{0}:{1}-{2}": "{0}:{1}-{2}",
+  "~ review": "~ 見直す",
+  "× broken": "× 壊れている"
 }

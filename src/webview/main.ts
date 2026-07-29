@@ -116,7 +116,7 @@ function draw(view: ConsequenceView): void {
     heading.append(
       text("span", "", wave.heading),
       text("span", "note", wave.note),
-      text("span", "count", String(wave.rows.length)),
+      text("span", "count", wave.count),
     );
     section.append(heading);
     for (const row of wave.rows) section.append(drawRow(row));
