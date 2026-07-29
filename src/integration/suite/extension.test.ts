@@ -172,6 +172,23 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     ).then(undefined, () => undefined);
   });
 
+  it("id を指した文書の帰結は、その文書を開いてから出る（起点を渡さない）", async () => {
+    // 画面へ「この id を起点にせよ」と渡すと、カーソルに従う状態と渡された
+    // 起点を保つ状態の二つを持つことになり、二つ目がいつ解けるかを説明できない。
+    // 文書を開けば、それが編集中のものになり、既にある規則がそのまま働く。
+    const away = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(resolve(PROJECT, "esbuild.mjs")),
+    );
+    await vscode.window.showTextDocument(away);
+
+    await vscode.commands.executeCommand("doctrineLens.revealDocumentById", "SPEC-006");
+    const opened = vscode.window.visibleTextEditors.map((e) => e.document.fileName);
+    assert.ok(
+      opened.some((f) => f.includes("SPEC-006")),
+      `指した文書が開いていない: ${opened.join(", ")}`,
+    );
+  });
+
   it("明細の画面が開き、いま開いている位置が起点になる", async () => {
     // 起点は利用者が選ばない。印が囲む範囲の中にカーソルを置いた状態で開くと、
     // その範囲が指す文書が起点になる（SPEC-006 受入基準 1）。

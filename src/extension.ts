@@ -56,8 +56,15 @@ export function activate(context: vscode.ExtensionContext): void {
       LensPanel.show(context, session);
     }),
 
-    vscode.commands.registerCommand("doctrineLens.revealDocumentById", (docId?: string) => {
+    vscode.commands.registerCommand("doctrineLens.revealDocumentById", async (docId?: string) => {
       if (!docId) return;
+      // 指した文書を**開いてから**画面を出す。
+      //
+      // 画面へ「この id を起点にせよ」と渡さない。渡すと、画面はカーソルに従う
+      // 状態と、渡された起点を保つ状態の二つを持つことになる。二つ目の状態は
+      // 「いつ解けるか」を利用者に説明できない（ADR-012 が退けた形である）。
+      // 文書を開けば、それが編集中のものになり、既にある規則がそのまま働く。
+      await openDocumentById(session, docId);
       LensPanel.show(context, session);
     }),
 
