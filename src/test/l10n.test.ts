@@ -121,8 +121,48 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
+/**
+ * 注釈を落とす。文字列の中の `//` を注釈と誤らない。
+ *
+ * 素朴に `//` 以降を消すと、`const SVG_NS = "http://…"` のような行では
+ * 同じ行に置いた表示文字列まで丸ごと消え、走査から静かに落ちる。
+ * リテラルの中に居るあいだは注釈の開始と見なさない、一文字ずつの走査にする。
+ */
 function stripComments(text: string): string {
-  return text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+  let out = "";
+  let quote = "";
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i] as string;
+    if (quote) {
+      out += c;
+      if (c === "\\") {
+        out += text[i + 1] ?? "";
+        i += 1;
+      } else if (c === quote) {
+        quote = "";
+      }
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+      out += c;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") i += 1;
+      out += "\n";
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i += 1;
+      out += " ";
+      continue;
+    }
+    out += c;
+  }
+  return out;
 }
 
 function stringLiterals(text: string): string[] {

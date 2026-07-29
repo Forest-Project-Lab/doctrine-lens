@@ -16,7 +16,7 @@ import {
   withLayout,
   type Lens,
 } from "../model/lens.js";
-import type { SavedLens } from "../shared/protocol.js";
+import { toSavedLens, type SavedLens } from "../shared/protocol.js";
 import { node, REGISTRY, twoDomainGraph } from "./fixture.js";
 
 const graph = twoDomainGraph();
@@ -118,10 +118,12 @@ test("5. 保存した組を選び直すと、四つの値が保存時と一致�
   const moved = withDepth(withColorBy(withLayout(saved, "map"), "domain"), 0);
   assert.notDeepEqual(moved, saved, "先に別の状態へ移っている");
 
-  // 記録を往復させる（本体は workspaceState に JSON として持つ）。
+  // 記録は本体と同じ組み立てで作り、JSON を往復させる
+  // （本体は workspaceState に JSON として持つ）。
   const record = JSON.parse(
-    JSON.stringify({ name: "見る組", lens: saved, focus: savedFocus }),
+    JSON.stringify(toSavedLens("見る組", saved, savedFocus)),
   ) as SavedLens;
+  assert.deepEqual(record.focus, savedFocus, "記録が焦点を運んでいない");
 
   // 選び直す。webview がするのと同じく、レンズと焦点を対で当てる。
   const scene = buildScene(graph, record.lens, record.focus ?? NO_FOCUS, REGISTRY);

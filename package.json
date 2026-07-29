@@ -173,13 +173,14 @@
     "docs:refresh": "npm run docs:aggregate && npm run docs:fetch && npm run docs:extract && npm run docs:diff",
     "docs:render": "python3 \"$(node tools/doctrine-path.mjs)/scripts/render-projection.py\" all --docs-root doctrine_docs",
     "docs:trace": "python3 \"$(node tools/doctrine-path.mjs)/scripts/trace-index.py\" --root . --docs-root doctrine_docs --format json",
+    "mutate": "node tools/mutate-check.mjs",
     "package": "vsce package -o doctrine-lens.vsix",
+    "preview": "node tools/preview-webview.mjs && node tools/shoot-preview.mjs",
     "test": "npm run build:test && node --test \"out/test/*.test.js\"",
     "test:integration": "npm run compile && tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "vscode:prepublish": "npm run compile",
-    "watch": "node esbuild.mjs --watch",
-    "preview": "node tools/preview-webview.mjs && node tools/shoot-preview.mjs"
+    "watch": "node esbuild.mjs --watch"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

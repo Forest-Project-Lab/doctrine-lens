@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 
 import { staleDocumentIds } from "./doctrine/audit.js";
 import type { RunOptions } from "./doctrine/cli.js";
-import { GraphStore, type Snapshot } from "./doctrine/graph.js";
+import { GraphStore, type PartialFetch, type Snapshot } from "./doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "./doctrine/locate.js";
 import { messages } from "./l10n.js";
 import { carryAudit, NO_AUDIT } from "./model/cadence.js";
@@ -16,6 +16,9 @@ import { chooseCandidate, collectCandidates, type TreeCandidate } from "./model/
 
 /** 統治木が続けて変わったときに取得を畳む待ち時間（速い拍）。 */
 const FAST_COALESCE_MS = 400;
+
+/** 統治木がまだ無いあいだ、敷かれたかを見に行く間隔。 */
+const TREE_POLL_MS = 3000;
 
 const CHOSEN_FOLDER_KEY = "doctrineLens.chosenFolder";
 
@@ -29,7 +32,7 @@ export interface SessionState {
   readonly snapshot: Snapshot | null;
   readonly unavailable: Unavailable | null;
   readonly failure: { reason: string; detail: string } | null;
-  readonly partial: readonly string[];
+  readonly partial: readonly PartialFetch[];
   readonly busy: boolean;
   /** いま見ている統治木。候補が無ければ `null`。 */
   readonly candidate: TreeCandidate | null;
@@ -64,7 +67,8 @@ export class LensSession {
   readonly #memento: vscode.Memento;
   readonly #changed = new vscode.EventEmitter<SessionState>();
   readonly #disposables: vscode.Disposable[] = [];
-  #watcher: vscode.FileSystemWatcher | undefined;
+  readonly #watchers: vscode.FileSystemWatcher[] = [];
+  #waitTimer: ReturnType<typeof setInterval> | undefined;
   #fastTimer: ReturnType<typeof setTimeout> | undefined;
   #auditTimer: ReturnType<typeof setTimeout> | undefined;
   #state: SessionState = EMPTY_STATE;
@@ -99,7 +103,8 @@ export class LensSession {
   dispose(): void {
     if (this.#fastTimer) clearTimeout(this.#fastTimer);
     if (this.#auditTimer) clearTimeout(this.#auditTimer);
-    this.#watcher?.dispose();
+    this.#stopWaiting();
+    for (const watcher of this.#watchers.splice(0)) watcher.dispose();
     for (const item of this.#disposables.splice(0)) item.dispose();
     this.#changed.dispose();
   }
@@ -186,6 +191,9 @@ export class LensSession {
     }
     if (!chosen) {
       this.#forget();
+      // 敷かれるのを待つ。監視が取り落としても数秒で追いつく。
+      this.#installWatcher();
+      this.#waitForTree();
       // 設定で指したのに見つからない場合と、そもそも無い場合を区別して伝える。
       const override = vscode.workspace
         .getConfiguration("doctrineLens")
@@ -204,6 +212,7 @@ export class LensSession {
       this.#forget();
     }
     this.#lastDocsRoot = chosen.docsRoot;
+    this.#stopWaiting();
 
     const config = vscode.workspace.getConfiguration("doctrineLens");
     const pluginRoot = locatePluginRoot(chosen.folder, config.get<string>("pluginPath", ""));
@@ -296,21 +305,55 @@ export class LensSession {
    * 監視は保存の合図にだけ使う。何が変わったかは上流に問い直して知る。
    */
   #installWatcher(): void {
-    this.#watcher?.dispose();
-    this.#watcher = undefined;
+    for (const watcher of this.#watchers.splice(0)) watcher.dispose();
     // いま見ている木を監視する。作業フォルダの一つ目に固定すると、
     // docsRoot で下位を指した木や、二つ目のフォルダの木の変更を拾わない。
     const target = this.#state.candidate?.docsRoot;
-    const base = target ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!base) return;
-    const pattern = target
-      ? new vscode.RelativePattern(vscode.Uri.file(target), "**/*.md")
-      : new vscode.RelativePattern(vscode.Uri.file(base), "{doctrine_docs,docs}/**/*.md");
-    this.#watcher = vscode.workspace.createFileSystemWatcher(pattern);
     const schedule = (): void => this.scheduleRefresh();
-    this.#watcher.onDidChange(schedule);
-    this.#watcher.onDidCreate(schedule);
-    this.#watcher.onDidDelete(schedule);
+    const watch = (base: string, glob: string): void => {
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(vscode.Uri.file(base), glob),
+      );
+      watcher.onDidChange(schedule);
+      watcher.onDidCreate(schedule);
+      watcher.onDidDelete(schedule);
+      this.#watchers.push(watcher);
+    };
+
+    if (target) {
+      watch(target, "**/*.md");
+      return;
+    }
+    // まだ木が無い。敷かれるのを待つ。
+    //
+    // 一つ目のフォルダだけを見ると、二つ目以降に敷かれた木を取り落とす。
+    // 拡張子を `.md` に絞ると、`_system/` を作った時点では何も起きない。
+    // どちらも「案内どおりに敷いたのに何も起きない」に化ける。
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      watch(folder.uri.fsPath, "{doctrine_docs,docs}/**");
+    }
+  }
+
+  /**
+   * 木が敷かれるのを軽く待つ。
+   *
+   * 監視だけに頼ると、監視が武装し終わる前に木が作られた回を取り落とす。
+   * 実測で、案内どおりに敷いても半分の回は何も起こらなかった。取りこぼしても
+   * 数秒で追いつくよう、木が無いあいだだけ場所の解決を試す。
+   * 解決は statSync を数回するだけで、上流の CLI は起こさない。
+   */
+  #waitForTree(): void {
+    if (this.#waitTimer) return;
+    this.#waitTimer = setInterval(() => {
+      if (this.candidates().length === 0) return;
+      this.#stopWaiting();
+      void this.refresh();
+    }, TREE_POLL_MS);
+  }
+
+  #stopWaiting(): void {
+    if (this.#waitTimer) clearInterval(this.#waitTimer);
+    this.#waitTimer = undefined;
   }
 
   /**

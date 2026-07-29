@@ -318,16 +318,20 @@ export function buildScene(
     }
   }
 
+  // 焦点のドメインの有無は `!== null` で見る。真偽で見ると、上流が
+  // `domain` を空文字で返した文書（frontmatter に書き忘れた文書。上流は落とさず
+  // 空で返し、監査が別に挙げる）のドメインへ降りられない。押しても何も起きず、
+  // 何も言わない箱になる。直しに来た人がまさに踏む形である。
   if (lens.depth >= 2 && focus.docId) {
     const doc = all.get(focus.docId);
     if (doc) return buildLevel2(all, graph.edges, doc);
-    if (focus.domain && [...visible.values()].some((n) => n.domain === focus.domain)) {
+    if (focus.domain !== null && [...visible.values()].some((n) => n.domain === focus.domain)) {
       return { ...buildLevel1(visible, graph.edges, focus.domain), recovered: "doc-gone" };
     }
     return { ...buildLevel0(visible, all, graph.edges), recovered: "doc-gone" };
   }
 
-  if (lens.depth >= 1 && focus.domain) {
+  if (lens.depth >= 1 && focus.domain !== null) {
     const present = [...visible.values()].some((n) => n.domain === focus.domain);
     if (present) return buildLevel1(visible, graph.edges, focus.domain);
     return { ...buildLevel0(visible, all, graph.edges), recovered: "domain-gone" };

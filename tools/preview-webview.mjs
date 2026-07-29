@@ -9,10 +9,14 @@
 //   使い方: node tools/preview-webview.mjs [出力先ディレクトリ]
 //   既定の出力先は .preview/。開くのは .preview/index.html。
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 // readFileSync は統治外の宣言（trace_exempt）を読むためにも使う。
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+
+import { build } from "esbuild";
+
+import { webviewOptions } from "../esbuild.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 const outDir = resolve(process.argv[2] ?? join(projectRoot, ".preview"));
@@ -187,7 +191,15 @@ window.addEventListener("DOMContentLoaded", () => {
 </script>`;
 
 writeFileSync(join(outDir, "index.html"), html.replace("</head>", `${stub}\n</head>`), "utf8");
-copyFileSync(join(projectRoot, "dist/webview.js"), join(outDir, "webview.js"));
+
+// webview の束は、ここで src から組み立てる。dist/ を写してはならない。
+//
+// 写していたときは、この道具を走らせるだけで .preview/webview.js の日付が
+// 「いま」になり、中身は最後に npm run compile した時点のままだった。
+// shoot-preview.mjs の鮮度の門はその日付を見るので、絶対に発火しなかった。
+// つまり src を壊しても「画面の誤り 0」と読める状態が残っていた（四巡目で発覚）。
+// 束ね方は esbuild.mjs から借りる。写しを持つと、また片方だけが古びる。
+await build(webviewOptions(join(outDir, "webview.js")));
 
 console.log(
   `${join(outDir, "index.html")} を書いた（節点 ${snapshot.graph.nodes.length}・` +

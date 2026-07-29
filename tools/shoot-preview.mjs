@@ -87,52 +87,115 @@ const state = async () => ({
 });
 
 const steps = [];
-const record = async (label, name) => {
+const failures = [];
+
+/**
+ * 一段ぶん記録し、期待した状態になっているかを検める。
+ *
+ * 誤りが出ないことだけを合否にすると、操作が丸ごと効かなくなっても「通った」に
+ * なる。実際、写しの題と中身が食い違っていても誰も気づかなかった。
+ * ここは「その操作が効いたか」を毎回検める。
+ */
+const record = async (label, name, expected = {}) => {
   await shot(name);
-  steps.push({ label, ...(await state()) });
+  const now = await state();
+  steps.push({ label, ...now });
+  for (const [key, want] of Object.entries(expected)) {
+    const got = now[key];
+    const ok = typeof want === "function" ? want(got) : got === want;
+    if (!ok) {
+      failures.push(`${label}: ${key} が ${JSON.stringify(got)}（期待: ${String(want)}）`);
+    }
+  }
 };
 
-await record("L0 文脈の地図", "01-L0");
+const crumbEndsWith = (tail) => (value) => value.startsWith(tail);
+const some = (n) => (value) => value > 0;
+
+await record("L0 文脈の地図", "01-L0", {
+  crumbs: crumbEndsWith("Context map "),
+  layout: "map",
+  nodes: some(),
+});
 
 // 降りる（ダブルクリック）。
-await page.locator('.node[data-key="lens"]').dblclick();
-await record("L1 lens ドメイン内部", "02-L1");
+await page.locator('.node[data-key="lens"]').first().dblclick();
+await record("L1 lens ドメイン内部", "02-L1", {
+  crumbs: crumbEndsWith("Context map › lens "),
+  layout: "lane",
+  nodes: some(),
+});
 
-// 色のダイヤルを回す。深度と配置が保たれることを見る。
+// 色のダイヤルを回す。深度と配置が保たれることを見る（REQ-002）。
 await page.selectOption("#colorBy", "status");
-await record("L1 色を status に", "03-L1-status");
+await record("L1 色を status に", "03-L1-status", {
+  colorBy: "status",
+  layout: "lane",
+  crumbs: crumbEndsWith("Context map › lens "),
+});
 
-// 絞りを効かせる。
+// 絞りを効かせる。効いたことは、節点が減ることで見る。
+const beforeFilter = await state();
 await page.selectOption("#filterType", "SPEC");
-await record("L1 型を SPEC に絞る", "04-L1-filter");
+await record("L1 型を SPEC に絞る", "04-L1-filter", {
+  nodes: (value) => value > 0 && value < beforeFilter.nodes,
+  layout: "lane",
+});
 await page.selectOption("#filterType", "");
 
 // さらに降りる。印を持つ仕様を選び、L3 まで行けるようにする。
-await page.locator('.node[data-key="SPEC-002"]').dblclick();
-await record("L2 文書の細部", "05-L2");
+await page.locator('.node[data-key="SPEC-002"]').first().dblclick();
+await record("L2 文書の細部", "05-L2", {
+  crumbs: crumbEndsWith("Context map › lens › SPEC-002 "),
+  layout: "detail",
+  inspector: true,
+});
 
 // L2 の焦点そのものを選ぶと L3 へ降りる（SPEC-002）。
-await page.locator('.node[data-key="SPEC-002"]').dblclick();
-await record("L3 コード範囲", "06-L3");
+await page.locator('.node[data-key="SPEC-002"]').first().dblclick();
+await record("L3 コード範囲", "06-L3", {
+  crumbs: crumbEndsWith("Context map › lens › SPEC-002 › "),
+  layout: "list",
+  nodes: some(),
+});
 
 // L3 の範囲を押すと、本体へ「開け」が飛ぶ。編集器が無いので送った内容だけを見る。
 await page.locator(".node").first().dblclick();
 const sent = await page.evaluate(() => window.__sent ?? []);
 const openRange = sent.filter((m) => m.kind === "openRange");
+if (openRange.length === 0) {
+  failures.push("L3 の範囲を押しても本体へ openRange が飛ばない");
+}
 
 // 上がる（Backspace）。L3 → L2 → L1 → L0。
-await page.locator("#canvas").focus();
+// 焦点をわざと canvas の外へ置いてから打つ。降りた直後に焦点が地図から
+// 外れていても上がれることまで見る（外れると案内どおりに動かない欠陥があった）。
+await page.locator("#colorBy").focus();
+await page.locator("body").click({ position: { x: 5, y: 400 } });
 await page.keyboard.press("Backspace");
-await record("L3 から L2 へ戻る", "07-up-L2");
+await record("L3 から L2 へ戻る", "07-up-L2", {
+  crumbs: crumbEndsWith("Context map › lens › SPEC-002 "),
+  layout: "detail",
+});
 await page.keyboard.press("Backspace");
-await record("L1 へ戻る", "08-up-L1");
+await record("L1 へ戻る", "08-up-L1", {
+  crumbs: crumbEndsWith("Context map › lens "),
+  layout: "lane",
+});
 await page.keyboard.press("Backspace");
-await record("L0 へ戻る", "09-up-L0");
+await record("L0 へ戻る", "09-up-L0", {
+  crumbs: crumbEndsWith("Context map "),
+  layout: "map",
+});
 
 await browser.close();
 
-console.log(JSON.stringify({ steps, openRange, errors }, null, 2));
+console.log(JSON.stringify({ steps, openRange, errors, failures }, null, 2));
 if (errors.length > 0) {
   console.error(`\n画面で ${errors.length} 件の誤りが出た。`);
-  process.exit(1);
 }
+if (failures.length > 0) {
+  console.error(`\n期待どおりに動かなかった操作が ${failures.length} 件:`);
+  for (const line of failures) console.error(`  - ${line}`);
+}
+if (errors.length > 0 || failures.length > 0) process.exit(1);

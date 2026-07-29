@@ -26,7 +26,20 @@ export interface Snapshot {
 }
 
 /** 部分的に取れなかったものの名前。表示は呼び手が訳す（ADR-007）。 */
-export type PartialFetch = "registry" | "ranges" | "findings";
+/** 部分的に取れなかったもの。 */
+export interface PartialFetch {
+  readonly what: "registry" | "ranges" | "findings";
+  /** 取れなかった理由の符号。表示の文言は呼び手が訳す（ADR-007）。 */
+  readonly reason: string;
+  /**
+   * 診断の詳細。上流が返した文言や、突き合わせで分かった食い違いが入る。
+   *
+   * 名前だけに潰すと、恒久的な設定の誤り（表示している木と上流が監査した木が
+   * 違う、など）が一時的な取得の失敗と同じ見え方になり、直し方の手がかりが
+   * 画面のどこにも残らない。
+   */
+  readonly detail: string;
+}
 
 /** 画面が受け取る取得の結果。前回の値と、今回の失敗が同時に立ちうる。 */
 export interface FetchResult {
@@ -71,9 +84,15 @@ export async function fetchSnapshot(
   ]);
 
   const partial: PartialFetch[] = [];
-  if (!registryOutcome.ok) partial.push("registry");
-  if (!rangesOutcome.ok) partial.push("ranges");
-  if (findingsOutcome && !findingsOutcome.ok) partial.push("findings");
+  if (!registryOutcome.ok) {
+    partial.push({ what: "registry", reason: registryOutcome.reason, detail: registryOutcome.detail });
+  }
+  if (!rangesOutcome.ok) {
+    partial.push({ what: "ranges", reason: rangesOutcome.reason, detail: rangesOutcome.detail });
+  }
+  if (findingsOutcome && !findingsOutcome.ok) {
+    partial.push({ what: "findings", reason: findingsOutcome.reason, detail: findingsOutcome.detail });
+  }
 
   return ok({
     snapshot: {
@@ -95,7 +114,23 @@ export async function fetchSnapshot(
  * 同じ入れ物に対する取得は同時に一つだけ走る。走っている間に来た要求は、
  * その一つの結果を共有する。取得が終わったあとに来た要求は改めて走る。
  */
+export type FetchSnapshot = typeof fetchSnapshot;
+
 export class GraphStore {
+  /**
+   * 実際に取りに行く関数。
+   *
+   * 差し替えられるようにしてあるのは試験のためである。束ねと世代の規律は
+   * 上流を起こさずには確かめられず、実物の CLI で確かめようとすると
+   * 時間に依存した不安定な試験になる。ここを差し替えれば、走行中の切り替えや
+   * 保存の割り込みを決定的に踏める。
+   */
+  readonly #fetch: FetchSnapshot;
+
+  constructor(fetch: FetchSnapshot = fetchSnapshot) {
+    this.#fetch = fetch;
+  }
+
   #snapshot: Snapshot | null = null;
   /**
    * 走っている取得と、その要求の同一性。
@@ -172,7 +207,7 @@ export class GraphStore {
     }
     if (!this.#inFlight) {
       const startedAt = Date.now();
-      const promise = fetchSnapshot(
+      const promise = this.#fetch(
         projectDir, docsRoot, pluginRoot, options, withAudit,
       ).finally(() => {
         if (this.#inFlight?.promise === promise) this.#inFlight = null;

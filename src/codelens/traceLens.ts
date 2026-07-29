@@ -7,13 +7,9 @@ import * as vscode from "vscode";
 
 import type { GraphNode } from "../doctrine/model.js";
 import { messages } from "../l10n.js";
-import { headlinesForPath, type RangeHeadline } from "../model/trace.js";
+import { headlinesForPath, toEditorLine, type RangeHeadline } from "../model/trace.js";
 import type { LensSession } from "../session.js";
 
-/** 上流が返す行は 1 始まり。編集器は 0 始まり。変換はこの一箇所だけで行う。 */
-export function toEditorLine(upstreamLine: number): number {
-  return Math.max(0, upstreamLine - 1);
-}
 
 export class TraceLensProvider implements vscode.CodeLensProvider {
   readonly #session: LensSession;

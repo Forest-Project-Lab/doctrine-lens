@@ -100,10 +100,15 @@ export function renderHtml(webview: Webview, scriptUri: Uri, language = "en"): s
 }
 
 // 色は編集器の主題の変数から取る。明るい主題と暗い主題の双方で読める（IMPL-001）。
+//
+// 説明はここに置く。CSS の注釈として中へ書くと、そのまま webview へ配られる。
+// 配るものに読み手の居ない文章を混ぜない（走査もそれを表示文字列と見なす）。
+//
+// `[hidden] { display: none !important; }` が要るのは、display を当てた要素でも
+// hidden を効かせるためである。これが無いと、隠したはずの覆いがキャンバス全面の
+// クリックを飲み込む（実際に起きた欠陥）。
 const STYLE = `
 * { box-sizing: border-box; }
-/* display を当てた要素でも hidden が効くようにする。これが無いと、隠したはずの
-   覆いがキャンバス全面のクリックを飲み込む（実際に起きた欠陥）。 */
 [hidden] { display: none !important; }
 html, body {
   height: 100%; margin: 0; padding: 0;

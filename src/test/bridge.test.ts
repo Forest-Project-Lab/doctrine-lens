@@ -233,9 +233,47 @@ function sourceFiles(dir: string): string[] {
   return out;
 }
 
-/** 注釈を落とす。語彙の走査が説明文に反応しないようにするため。 */
+/**
+ * 注釈を落とす。語彙の走査が説明文に反応しないようにするため。
+ *
+ * 文字列の中の `//` を注釈と誤らない（誤ると、同じ行のリテラルが走査から落ちる）。
+ * 実装は l10n.test.ts と同じ規律である。
+ */
 function stripComments(text: string): string {
-  return text.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+  let out = "";
+  let quote = "";
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i] as string;
+    if (quote) {
+      out += c;
+      if (c === "\\") {
+        out += text[i + 1] ?? "";
+        i += 1;
+      } else if (c === quote) {
+        quote = "";
+      }
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      quote = c;
+      out += c;
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "/") {
+      while (i < text.length && text[i] !== "\n") i += 1;
+      out += "\n";
+      continue;
+    }
+    if (c === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i < text.length && !(text[i] === "*" && text[i + 1] === "/")) i += 1;
+      i += 1;
+      out += " ";
+      continue;
+    }
+    out += c;
+  }
+  return out;
 }
 
 /** 文字列リテラルの中身を集める。 */

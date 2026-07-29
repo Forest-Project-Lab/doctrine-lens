@@ -115,6 +115,43 @@ export function headlinesForPath(
  * 重なりがあるときは、始まりが最も後ろのもの（最も内側）を返す。
  * 入れ子は上流が誤りとして挙げるので、ここで解こうとはしない。
  */
+/** 帯の一本。行は編集器と同じ 0 始まり。 */
+export interface Band {
+  readonly id: string;
+  readonly begin: number;
+  readonly end: number;
+  /** 指紋が食い違っているか。帯の種類（色）がこれで決まる。 */
+  readonly stale: boolean;
+}
+
+/** 上流が返す行は 1 始まり。編集器は 0 始まり。変換はこの一箇所だけで行う。 */
+export function toEditorLine(upstreamLine: number): number {
+  return Math.max(0, upstreamLine - 1);
+}
+
+/**
+ * そのファイルに出す帯を組む。
+ *
+ * 帯の行と種類を決めるのはここだけで、編集器の型は使わない。分けてあるのは、
+ * 「食い違いが帯に出る」ことを編集器を起こさずに確かめられるようにするためである
+ * （TEST-005）。呼び手は返ってきた行をそのまま編集器の範囲へ写す。
+ *
+ * `lastLine` を超える行は末尾へ寄せる（SPEC-005 エラー時挙動）。
+ */
+export function bandsForPath(
+  ranges: readonly TraceRange[],
+  relPath: string,
+  staleIds: ReadonlySet<string>,
+  lastLine: number,
+): Band[] {
+  const limit = Math.max(0, lastLine);
+  return rangesForPath(ranges, relPath).map((range) => {
+    const begin = Math.min(toEditorLine(range.begin_line), limit);
+    const end = Math.min(toEditorLine(range.end_line), limit);
+    return { id: range.id, begin, end: Math.max(begin, end), stale: staleIds.has(range.id) };
+  });
+}
+
 export function rangeAtLine(
   ranges: readonly TraceRange[],
   relPath: string,

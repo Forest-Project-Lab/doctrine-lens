@@ -1,12 +1,9 @@
 {
   "recommendations": [
     "anthropic.claude-code",
-    "mathematic.vscode-pdf",
-    "analytic-signal.preview-pdf",
     "ms-playwright.playwright",
-    "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode",
-    "bradlc.vscode-tailwindcss"
+    "mathematic.vscode-pdf",
+    "analytic-signal.preview-pdf"
   ],
   "unwantedRecommendations": []
 }

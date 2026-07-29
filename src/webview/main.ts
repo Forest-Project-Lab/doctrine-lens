@@ -189,6 +189,21 @@ interface Point {
 /** 矢印の先が縁に食い込まないように空ける間。 */
 const ARROW_GAP = 7;
 
+/** 往復する辺を法線方向へずらす量。線と札の双方に同じだけ掛ける。 */
+const BIDIRECTIONAL_GAP = 9;
+
+/** `point` を、`refA`→`refB` の法線方向へ `by` だけずらす。 */
+function offset(point: Point, refA: Placed, refB: Placed, by: number): Point {
+  if (by === 0) return point;
+  const a = center(refA);
+  const b = center(refB);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return point;
+  return { x: point.x + (-dy / length) * by, y: point.y + (dx / length) * by };
+}
+
 function center(placed: Placed): Point {
   return { x: placed.x + placed.w / 2, y: placed.y + placed.h / 2 };
 }
@@ -270,7 +285,11 @@ function render(): void {
 function drawCrumbs(scene: Scene): void {
   crumbs.replaceChildren();
   const steps: { label: string; depth: Depth }[] = [{ label: state.strings.breadcrumbRoot, depth: 0 }];
-  if (scene.focus.domain) steps.push({ label: scene.focus.domain, depth: 1 });
+  // 空文字のドメインも一段として出す。落とすと、その段が無かったことになり、
+  // 上がる操作が L1 を飛ばして L0 まで落ちる。
+  if (scene.focus.domain !== null) {
+    steps.push({ label: scene.focus.domain || state.strings.noValue, depth: 1 });
+  }
   if (scene.focus.docId) steps.push({ label: scene.focus.docId, depth: 2 });
   if (scene.depth === 3) steps.push({ label: state.strings.breadcrumbCode, depth: 3 });
 
@@ -310,12 +329,28 @@ function drawDials(mode: LayoutMode): void {
   );
   layoutSelect.value = mode;
 
-  fillFilterOptions(filterTypeSelect, distinctValues("type"), state.lens.filter.types[0] ?? "");
-  fillFilterOptions(
+  const keptType = fillFilterOptions(
+    filterTypeSelect,
+    distinctValues("type"),
+    state.lens.filter.types[0] ?? "",
+  );
+  const keptDomain = fillFilterOptions(
     filterDomainSelect,
     distinctValues("domain"),
     state.lens.filter.domains[0] ?? "",
   );
+  // 選んでいた値が消えていたら、表示だけでなくレンズも外す。外したことは
+  // 場面の帯に出す（黙って絞りが変わってはならない）。
+  droppedFilters = [];
+  if (keptType === null) droppedFilters.push(state.lens.filter.types[0] ?? "");
+  if (keptDomain === null) droppedFilters.push(state.lens.filter.domains[0] ?? "");
+  if (droppedFilters.length > 0) {
+    state.lens = withFilter(state.lens, {
+      ...state.lens.filter,
+      types: keptType === null ? [] : state.lens.filter.types,
+      domains: keptDomain === null ? [] : state.lens.filter.domains,
+    });
+  }
   currentOnlyBox.checked = state.lens.filter.currentOnly;
   currentOnlyBox.disabled = state.registry === null;
   currentOnlyBox.title = state.registry === null ? state.strings.registryUnavailable : "";
@@ -324,17 +359,33 @@ function drawDials(mode: LayoutMode): void {
     optionEl("", state.strings.savedLensPlaceholder),
     ...state.savedLenses.map((s) => optionEl(s.name, s.name)),
   );
-  // 選び直しのあとも、当てているレンズの名を保つ。保たないと、描き直すたびに
-  // 選択が空へ戻り、削除の釦に永久に到達できない。
+  // 「どの組を当てたか」と「いまもその組のままか」は別のことである。
   //
-  // ただし名前だけで保つと逆の嘘をつく。ダイヤルを一つでも回せば、それはもう
-  // その名前のレンズではない。四つの値が今も一致するときだけ名を出す。
-  // 深度は降りる・上がるでも動くので、ここで一括して見るのが漏れない。
+  // 一致だけで名を出すと、場面が段を戻したり焦点を移したりしただけで名が消え、
+  // その組を消す手立てが無くなる（削除の送り口が選択欄の値を読んでいたため）。
+  // 逆に名だけで出すと、別の文書を見ているのにその組を当てていると嘘をつく。
+  // だから、消す対象は state が覚え、選択欄は「いまもその組のままか」を映す。
   const held = state.savedLenses.find((s) => s.name === state.activeLensName);
-  const active = held && sameLens(held.lens, state.lens) ? held.name : "";
-  if (active === "") state.activeLensName = "";
-  savedLensSelect.value = active;
-  el<HTMLButtonElement>("deleteLens").disabled = active === "";
+  if (!held) state.activeLensName = "";
+  const unchanged =
+    held !== undefined &&
+    sameLens(held.lens, state.lens) &&
+    sameFocus(held.focus, state.position.focus);
+  // 変わっていれば選択欄は札へ戻す。戻すことで、同じ名をもう一度選んだときに
+  // change が出て当て直せる（値が同じままだと change が出ない）。
+  savedLensSelect.value = unchanged ? state.activeLensName : "";
+  const remove = el<HTMLButtonElement>("deleteLens");
+  remove.disabled = held === undefined;
+  remove.title = held ? held.name : "";
+}
+
+/** 選んでいた絞りの値が消えて外れたもの。場面の帯に出す。 */
+let droppedFilters: string[] = [];
+
+/** 焦点が等しいか。焦点を持たない古い記録は焦点無しとして扱う。 */
+function sameFocus(a: Focus | undefined, b: Focus): boolean {
+  const left = a ?? NO_FOCUS;
+  return left.domain === b.domain && left.docId === b.docId;
 }
 
 /** 列の見出しを訳す。`data` のときだけ上流の値をそのまま出す（ADR-007）。 */
@@ -389,13 +440,24 @@ function distinctValues(key: "type" | "domain"): string[] {
   return [...ordered, ...rest];
 }
 
+/**
+ * 絞りのダイヤルを埋める。
+ *
+ * 選んでいた値がグラフから消えたときは `null` を返す。呼び手はそれを見て
+ * レンズの側の絞りも外す。表示だけを「すべて」へ落としてレンズを残すと、
+ * 画面は「すべて」と言いながら一つも節点を通さず、しかも select の値が
+ * 既に空なので「すべて」を選び直しても change が出ず、そのダイヤルからは
+ * 二度と解けない（実際に起きた）。
+ */
 function fillFilterOptions(
   select: HTMLSelectElement,
   values: readonly string[],
   selected: string,
-): void {
+): string | null {
   select.replaceChildren(optionEl("", state.strings.all), ...values.map((v) => optionEl(v, v)));
-  select.value = values.includes(selected) ? selected : "";
+  const kept = !selected || values.includes(selected);
+  select.value = kept ? selected : "";
+  return kept ? selected : null;
 }
 
 function drawSvg(scene: Scene, layout: Layout, scale: ReadonlyMap<string, string>): void {
@@ -409,19 +471,39 @@ function drawSvg(scene: Scene, layout: Layout, scale: ReadonlyMap<string, string
   root.setAttribute("id", "viewport");
   svg.append(root);
 
-  const placedByKey = new Map<string, Placed>(layout.nodes.map((p) => [p.key, p]));
-
   root.append(arrowDefs());
 
   // 辺を先に描く。節点の下へ回すため。
+  //
+  // どの箱からどの箱へ引くかは配置が決めてある。ここで鍵から引き直すと、
+  // 同じ鍵の箱が二つある配置（L2 の詳細）で片方に辺が集まり、もう片方が
+  // 辺を持たない箱として浮く（実際に起きた）。
   const edgeLayer = svgEl("g");
-  for (const edge of scene.edges) {
-    const from = placedByKey.get(edge.src);
-    const to = placedByKey.get(edge.dst);
-    if (!from || !to || edge.src === edge.dst) continue;
+  // 同じ組に往復がある辺を数える。ドメイン越しの依存は相手の ICD 宛に限られるので、
+  // 二つのドメインが互いを指す形はごく普通に起きる。同じ直線の上に二本重ねると、
+  // 線も、畳んだ本数の札も重なって読めなくなる（L0 で数の意味を凡例が説明している
+  // その場面で、数だけが読めなくなっていた）。法線方向へ振り分けて分ける。
+  const pairKey = (a: string, b: string): string => (a < b ? `${a}\u0000${b}` : `${b}\u0000${a}`);
+  const twoWay = new Set<string>();
+  const seen = new Set<string>();
+  for (const { edge } of layout.edges) {
+    const back = `${edge.dst}\u0000${edge.src}`;
+    if (seen.has(back)) twoWay.add(pairKey(edge.src, edge.dst));
+    seen.add(`${edge.src}\u0000${edge.dst}`);
+  }
+
+  for (const { edge, from, to } of layout.edges) {
     // 中心どうしを結ぶと線が箱を貫き、ラベルに重なる。矩形の縁で止める。
-    const start = borderPoint(from, center(to));
-    const end = borderPoint(to, center(from), ARROW_GAP);
+    // ずらす向きは、辺の向きに依らない一定の基準で決める。from/to をそのまま
+    // 使うと、逆向きの辺では法線も符号も同時に反転して打ち消し合い、二本が
+    // 同じ側へ寄ってしまう（実測で札が 5.8 px しか離れなかった）。
+    const forward = edge.src < edge.dst;
+    const [refA, refB] = forward ? [from, to] : [to, from];
+    const shift = twoWay.has(pairKey(edge.src, edge.dst))
+      ? (forward ? 1 : -1) * BIDIRECTIONAL_GAP
+      : 0;
+    const start = offset(borderPoint(from, center(to)), refA, refB, shift);
+    const end = offset(borderPoint(to, center(from), ARROW_GAP), refA, refB, shift);
     const line = svgEl("line", {
       class: "edge",
       x1: start.x, y1: start.y, x2: end.x, y2: end.y,
@@ -430,10 +512,15 @@ function drawSvg(scene: Scene, layout: Layout, scale: ReadonlyMap<string, string
     });
     edgeLayer.append(line);
     if (edge.weight > 1) {
+      // 札は線からさらに離す。線だけをずらしても、札は両方の中点に寄って重なる。
+      // 往復のときは向きの符号ぶんだけ法線方向へ押し出し、そうでないときは
+      // 従来どおり少し上へ置く。
+      const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+      const at = shift === 0 ? { x: mid.x, y: mid.y - 5 } : offset(mid, refA, refB, shift * 1.6);
       const label = svgEl("text", {
         class: "edge-label",
-        x: (start.x + end.x) / 2,
-        y: (start.y + end.y) / 2 - 5,
+        x: at.x,
+        y: at.y,
         "text-anchor": "middle",
       });
       label.textContent = `${edge.weight} ${state.strings.edgeCount}`;
@@ -458,6 +545,31 @@ function drawSvg(scene: Scene, layout: Layout, scale: ReadonlyMap<string, string
 
   fitIfUnset(layout);
   root.setAttribute("transform", `translate(${view.tx} ${view.ty}) scale(${view.scale})`);
+  restoreFocus();
+}
+
+/**
+ * 描き直したあとに焦点を戻す。
+ *
+ * SVG の中身は毎回総取り替えなので、焦点を持っていた節点は必ず消える。
+ * 戻さないと、キーボードだけの利用者は段を移るたびに Tab を打ち直すことになり、
+ * 読み上げも「いまどこに居るか」を失う。
+ * 直前の焦点が地図の中に在ったときだけ戻す（ダイヤルを触っている最中に奪わない）。
+ */
+function restoreFocus(): void {
+  const active = document.activeElement;
+  const wasInMap = active === document.body || active === null || canvas.contains(active);
+  if (!wasInMap) return;
+  const selected = state.selected
+    ? svg.querySelector<SVGGElement>(`.node[data-key="${cssEscape(state.selected)}"]`)
+    : null;
+  (selected ?? (canvas as HTMLElement)).focus({ preventScroll: true });
+}
+
+/** 属性の値を選択子に埋めるための逃げ。id に記号が入っていても壊れないようにする。 */
+function cssEscape(value: string): string {
+  const escaper = (CSS as { escape?: (v: string) => string }).escape;
+  return typeof escaper === "function" ? escaper(value) : value.replace(/["\\]/g, "\\$&");
 }
 
 function drawNode(
@@ -467,6 +579,8 @@ function drawNode(
 ): SVGGElement {
   const group = svgEl("g", { class: `node${node.isFocus ? " focus" : ""}`, tabindex: 0 });
   group.dataset["key"] = node.key;
+  // 同じ節点を二箇所に置く配置があるので、要素の識別は置き場所で持つ。
+  group.dataset["slot"] = placed.slot;
 
   // L3 の節点は上流の項を持たないので色の基準が効かない。
   // 指紋が食い違う範囲だけを別の色で示す（SPEC-003 色の節）。
@@ -526,7 +640,10 @@ function drawNode(
     "text-anchor": "middle",
     fill: "var(--vscode-foreground)",
   });
-  label.textContent = truncate(node.label, node.kind === "domain" ? 22 : 18);
+  // 上流が `domain` を空で返した文書は、L0 で題の無い箱になる。空のままだと
+  // 「押せるのに何も書いていない箱」になり、直しに来た人が何を見ているか分からない。
+  const shown = node.kind === "domain" && node.label === "" ? state.strings.noValue : node.label;
+  label.textContent = truncate(shown, node.kind === "domain" ? 22 : 18);
   group.append(label);
 
   const sub = svgEl("text", {
@@ -783,6 +900,9 @@ function drawSceneNotice(scene: Scene): void {
   if (state.ranges === null && state.graph.nodes.length > 0) {
     parts.push(state.strings.rangesUnavailableNote);
   }
+  for (const value of droppedFilters) {
+    parts.push(state.strings.filterValueGone.replace("{0}", value));
+  }
   if (parts.length === 0) {
     sceneNotice.hidden = true;
     sceneNotice.replaceChildren();
@@ -899,18 +1019,30 @@ el("saveLens").addEventListener("click", () => {
   send({ kind: "requestSaveLens", lens: state.lens, focus: state.position.focus });
 });
 el("deleteLens").addEventListener("click", () => {
-  const name = savedLensSelect.value;
+  // 選択欄の値ではなく、覚えている名を消す。選択欄は「いまもその組のままか」を
+  // 映すので、段が戻ったりダイヤルを回したりすると空になる。空を読むと、
+  // その組は選択欄に残り続けたまま二度と消せなくなる（実際に起きた）。
+  const name = state.activeLensName;
   if (!name) return;
   state.activeLensName = "";
   send({ kind: "deleteLens", name });
 });
 el("refresh").addEventListener("click", () => send({ kind: "refresh" }));
 
-canvas.addEventListener("keydown", (event) => {
-  if (event.key === "Backspace") {
-    event.preventDefault();
-    goUp();
-  }
+// 上がる操作は画面全体で受ける。
+//
+// 受け口を canvas に限ると、降りた瞬間に SVG の中身が総取り替えになり、
+// 焦点を持っていた節点が DOM から消えて焦点が body へ落ちる。以後 Backspace は
+// canvas に届かず、画面が出している案内「Backspace to go up」が働かない。
+// 最初の一往復で破れていた。
+//
+// 入力欄・選択欄に居るあいだは横取りしない（そこでの Backspace は文字を消す操作である）。
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Backspace") return;
+  const target = event.target as Element | null;
+  if (target?.closest("input, select, textarea, button, [contenteditable]")) return;
+  event.preventDefault();
+  goUp();
 });
 
 // 平行移動と拡大。地図そのものの座標は動かさない。

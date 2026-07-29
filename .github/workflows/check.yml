@@ -23,12 +23,34 @@ jobs:
           python-version: "3.11"
 
       # 統治層の正本は上流にある。同梱せず、ここで取る。
+      #
+      # 置き場所は、拡張機能自身が探す場所（<CLAUDE_CONFIG_DIR>/plugins/cache/
+      # <marketplace>/<plugin>/<version>/）に合わせる。合わせないと、統治木の監査だけは
+      # 通り、拡張機能ホストの試験だけが「プラグインが見つからない」で必ず落ちる
+      # （実際にそうなっていて、公開した main が最初から赤かった）。
+      # tools/doctrine-path.mjs も同じ規則で引くので、道具と実装が一本化される。
       - name: doctrine プラグインを取る
         run: |
+          set -euo pipefail
           git clone --depth 1 https://github.com/Forest-Project-Lab/doctrine.git "$RUNNER_TEMP/doctrine"
-          echo "DOCTRINE_PLUGIN=$RUNNER_TEMP/doctrine/plugin" >> "$GITHUB_ENV"
+          version=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['version'])" \
+            "$RUNNER_TEMP/doctrine/plugin/.claude-plugin/plugin.json")
+          dest="$RUNNER_TEMP/claude/plugins/cache/forest-project-lab/doctrine/$version"
+          mkdir -p "$(dirname "$dest")"
+          mv "$RUNNER_TEMP/doctrine/plugin" "$dest"
+          test -f "$dest/scripts/docs-audit.py"
+          echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/claude" >> "$GITHUB_ENV"
 
       - run: npm ci
+
+      # 置き場所が合っているかを、走らせる前に一度で確かめる。合っていないと、
+      # 以降の失敗が「拡張機能ホストの試験が 90 秒沈黙して落ちる」としてしか現れない。
+      - name: プラグインの解決を確かめる
+        run: |
+          set -euo pipefail
+          resolved=$(node tools/doctrine-path.mjs)
+          echo "解決した実体: $resolved"
+          test -f "$resolved/scripts/docs-audit.py"
 
       - name: 型検査
         run: npm run typecheck
@@ -40,7 +62,7 @@ jobs:
         run: npm run compile
 
       - name: 統治木の全件監査
-        run: python3 "$DOCTRINE_PLUGIN/scripts/docs-audit.py" --root-from . --fail-on error
+        run: npm run docs:check   # 手元と同じ命令。プラグインの引き方も一つにする
 
       # 拡張機能ホストは Electron なので、X サーバが要る。
       - name: 拡張機能ホストの試験

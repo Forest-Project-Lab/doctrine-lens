@@ -25,6 +25,17 @@ export interface SavedLens {
   readonly focus?: Focus | undefined;
 }
 
+/**
+ * 保存する記録を組む。
+ *
+ * 焦点を対にするのはここ一箇所である。落とすと、選び直したときに深度だけが
+ * 黙って落ちる（SPEC-003 受入基準 5 の破れ）。呼び手が組み立てを写すと、
+ * 写した側だけが焦点を落としても誰も気づかない。
+ */
+export function toSavedLens(name: string, lens: Lens, focus: Focus): SavedLens {
+  return { name, lens, focus };
+}
+
 /** 本体から webview へ。 */
 export type ToWebview =
   | {

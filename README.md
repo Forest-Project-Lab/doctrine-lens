@@ -78,10 +78,14 @@ claude plugin marketplace add https://github.com/Forest-Project-Lab/doctrine.git
 claude plugin install doctrine@forest-project-lab --scope project
 ```
 
-Without Claude Code, clone it anywhere and point `doctrineLens.pluginPath` at it:
+Without Claude Code, clone it anywhere and point `doctrineLens.pluginPath` at
+the **`plugin/` directory inside the clone** — not at the clone itself. The
+repository root has its own `scripts/`, which is not the plugin.
 
 ```bash
 git clone https://github.com/Forest-Project-Lab/doctrine.git ~/doctrine
+# then set, in Settings:
+#   doctrineLens.pluginPath = ~/doctrine/plugin
 ```
 
 ### Lay down a governance tree
@@ -90,7 +94,7 @@ If you don't have one yet, call `/doctrine:docs-system-init` in a Claude Code
 session, or run the plugin's `scaffold.py` directly:
 
 ```bash
-python3 <plugin path>/scripts/scaffold.py --root . --level 3
+python3 ~/doctrine/plugin/scripts/scaffold.py --root . --level 3
 ```
 
 Keep the tree directly under your workspace folder (`<workspace>/doctrine_docs/`).
@@ -227,6 +231,7 @@ the repository; it builds first via the default build task).
 
 ```bash
 npm run check            # typecheck → tests → bundle → full governance audit
+npm run mutate           # breaks each fix in turn, proves a test catches it (slow)
 xvfb-run npm run test:integration  # drives a real VS Code: headlines, commands, loading
 npm run package          # builds the .vsix
 npm run docs:trace       # lists marked ranges and their fingerprints
@@ -254,9 +259,13 @@ The webview is plain DOM and SVG, so it can be opened in an ordinary browser.
 npm run preview   # rebuilds .preview/ from src, then drives it and captures shots
 ```
 
-`shoot-preview.mjs` refuses to run against a `.preview/` older than `src/`, so a
-failed rebuild can never be mistaken for a passing visual check — that mistake
-was made here once, and the screenshots in this README were stale because of it.
+`preview-webview.mjs` bundles the webview from `src/` itself — it does not copy
+`dist/` — so what you look at is always the current source. `shoot-preview.mjs`
+then refuses to run against a `.preview/` older than `src/`, and asserts that
+each navigation step actually changed the view, so neither a failed rebuild nor
+a dead gesture can pass as a green visual check. Both guards exist because both
+mistakes were made here: the screenshots in this README were once taken against
+a build that did not contain the fix they were meant to show.
 
 It uses the real shell (`src/panel/html.ts`) and the real strings
 (`src/l10n.ts`) rather than copies, so what you check matches what ships. Note

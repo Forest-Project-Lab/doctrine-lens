@@ -13,7 +13,7 @@ export const messages = {
   noTree: (): string => t("No doctrine tree here."),
   noTreeDetail: (): string =>
     t(
-      "Lay down doctrine_docs/ and the map appears. Run /doctrine:docs-system-init in a Claude Code session, or run the doctrine plugin's scaffold.py.",
+      "Lay down doctrine_docs/ — run /doctrine:docs-system-init in a Claude Code session, or the doctrine plugin's scaffold.py. The map picks it up within a few seconds; if it does not, run \"Doctrine Lens: Refresh the map\".",
     ),
 
   docsRootRejected: (value: string): string =>
@@ -66,6 +66,9 @@ export const messages = {
 
   pickRangeTitle: (docId: string): string => t("Code ranges bound to {0}", docId),
   pickRangePlaceholder: (): string => t("Choose where to jump"),
+  onlyTree: (path: string): string =>
+    t("There is only one doctrine tree, so there is nothing to choose: {0}", path),
+
   pickFolderTitle: (): string => t("Which doctrine tree should the map show?"),
   lineRange: (begin: number, end: number): string =>
     t("lines {0}–{1}", String(begin), String(end)),
@@ -141,6 +144,7 @@ export function webviewStrings(): WebviewStrings {
     recoveredDomainGone: t("The focused domain is gone from the graph."),
     recoveredDocGone: t("The focused document is gone from the graph."),
     danglingEdges: t("Some edges were not drawn because one end is missing from the graph."),
+    filterValueGone: t("The filter on \"{0}\" was lifted because that value is no longer in the graph.", "{0}"),
     registryUnavailable: t("The registry could not be read, so the current-only filter and lane order are off."),
     rangesUnavailableNote: t("Code ranges could not be fetched, so L3 is unavailable."),
     auditAsOf: t("Fingerprint verdict as of {0}", "{0}"),
@@ -196,6 +200,7 @@ export interface WebviewStrings {
   recoveredDomainGone: string;
   recoveredDocGone: string;
   danglingEdges: string;
+  filterValueGone: string;
   registryUnavailable: string;
   rangesUnavailableNote: string;
   auditAsOf: string;

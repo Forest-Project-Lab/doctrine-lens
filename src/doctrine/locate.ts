@@ -163,7 +163,13 @@ export function locatePluginRoot(
     // 「プラグインが見つからない」ではなく「CLI が失敗した」として現れ、
     // 読み手が設定を疑えない。実体であることまでここで見る。
     if (!isDirectory(candidate)) return null;
-    return existsSync(join(candidate, "scripts", "docs-audit.py")) ? candidate : null;
+    if (existsSync(join(candidate, "scripts", "docs-audit.py"))) return candidate;
+    // 取り違えとして最も多いのは、複製の根を指すことである。上流の複製は
+    // 根にも `scripts/` を持つが、プラグインの実体は `plugin/` の側に在る。
+    // 一段だけ見て、そこに実体が在れば黙って直す（案内するだけだと、
+    // 画面には「プラグインが見つからない」としか出ず手がかりが無い）。
+    const inside = join(candidate, "plugin");
+    return existsSync(join(inside, "scripts", "docs-audit.py")) ? inside : null;
   }
   const pluginsDir = join(configDir, "plugins");
   return fromLedger(pluginsDir, projectDir) ?? fromCache(pluginsDir);

@@ -17,7 +17,7 @@ import {
 } from "../doctrine/trace.js";
 import { buildScene, descend, ascend, NO_FOCUS, type Position } from "../model/depth.js";
 import { DEFAULT_LENS, withDepth } from "../model/lens.js";
-import {
+import { bandsForPath,
   groupByDocument,
   headlinesForPath,
   rangeAtLine,
@@ -338,3 +338,42 @@ function sourceFiles(dir: string): string[] {
   }
   return out;
 }
+
+// --- 帯（SPEC-005 受入基準 3・4） -----------------------------------------
+//
+// 帯の行と種類は編集器の型を使わずに決める。分けてあるので、
+// 「食い違いが帯に出る」ことを編集器を起こさずに確かめられる。
+
+test("005-3. 指紋が食い違う範囲の帯は種類が変わる", () => {
+  const ranges = [
+    { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 10, fingerprint: "sha256:a" },
+    { id: "SPEC-002", path: "src/a.ts", begin_line: 20, end_line: 30, fingerprint: "sha256:b" },
+  ];
+  const bands = bandsForPath(ranges, "src/a.ts", new Set(["SPEC-002"]), 999);
+  assert.deepEqual(
+    bands.map((b) => [b.id, b.stale]),
+    [
+      ["SPEC-001", false],
+      ["SPEC-002", true],
+    ],
+    "食い違っている範囲だけが別の種類になる",
+  );
+  // 行は編集器と同じ 0 始まりへ直っている。
+  assert.deepEqual(bands[0], { id: "SPEC-001", begin: 0, end: 9, stale: false });
+});
+
+test("005-4. 範囲を持たないファイルには帯が出ない", () => {
+  const ranges = [{ id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 10, fingerprint: "sha256:a" }];
+  assert.deepEqual(bandsForPath(ranges, "src/b.ts", new Set(), 999), []);
+  assert.deepEqual(bandsForPath([], "src/a.ts", new Set(), 999), []);
+});
+
+test("ファイルの行数を超えた範囲は末尾へ寄せる", () => {
+  // 上流の索引が古いと、既に短くなったファイルへ長い範囲が来る。
+  // 例外にせず、末尾へ寄せる（SPEC-005 エラー時挙動）。
+  const ranges = [{ id: "SPEC-001", path: "src/a.ts", begin_line: 40, end_line: 90, fingerprint: "sha256:a" }];
+  assert.deepEqual(
+    bandsForPath(ranges, "src/a.ts", new Set(), 9),
+    [{ id: "SPEC-001", begin: 9, end: 9, stale: false }],
+  );
+});

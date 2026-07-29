@@ -37,7 +37,9 @@ export function activate(context: vscode.ExtensionContext): void {
       const candidates = session.candidates();
       if (candidates.length < 2) {
         void vscode.window.showInformationMessage(
-          candidates.length === 1 ? candidates[0]!.docsRoot : messages.noTree(),
+          candidates.length === 1
+            ? messages.onlyTree(candidates[0]!.docsRoot)
+            : messages.noTree(),
         );
         return;
       }

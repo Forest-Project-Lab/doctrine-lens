@@ -4,6 +4,8 @@
 // つまり「編集器が拡張機能を読み込めたか」「見出しが実際に出るか」
 // 「命令が登録されているか」「帯が例外なく当たるか」である。
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 import * as vscode from "vscode";
@@ -40,6 +42,27 @@ async function lensesFor(relPath: string): Promise<vscode.CodeLens[]> {
 describe("Doctrine Lens — 拡張機能ホスト", () => {
   before(async function () {
     this.timeout(120000);
+
+    // 先にプラグインの解決を確かめる。確かめずに待つと、プラグインが無い環境で
+    // 「見出しが 90 秒出なかった」としか出ず、原因が読めない（CI が実際にそうだった）。
+    // 拡張機能と同じ規則で引く道具を使うので、ここが通れば拡張機能も引ける。
+    try {
+      const resolved = execFileSync("node", ["tools/doctrine-path.mjs"], {
+        cwd: PROJECT,
+        encoding: "utf8",
+      }).trim();
+      assert.ok(
+        existsSync(resolve(resolved, "scripts", "docs-audit.py")),
+        `解決した実体に CLI が無い: ${resolved}`,
+      );
+    } catch (error) {
+      assert.fail(
+        "doctrine プラグインを解決できない。拡張機能も同じ場所を見るので、" +
+          "この試験は必ず落ちる。CLAUDE_CONFIG_DIR か導入を確かめること。\n" +
+          String(error),
+      );
+    }
+
     const extension = vscode.extensions.getExtension(EXTENSION_ID);
     assert.ok(extension, `${EXTENSION_ID} が見つからない`);
     await extension.activate();

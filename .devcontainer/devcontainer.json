@@ -47,32 +47,26 @@
         "anthropic.claude-code",
         "ms-playwright.playwright",
         "mathematic.vscode-pdf",
-        "analytic-signal.preview-pdf",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "bradlc.vscode-tailwindcss"
+        "analytic-signal.preview-pdf"
       ],
+      // No formatOnSave and no default formatter here on purpose. This repository
+      // carries no Prettier config and is not Prettier-formatted, so forcing
+      // format-on-save would rewrite every file a contributor touches on the very
+      // first save, burying their change in an unrelated diff.
       "settings": {
-        // OPTIONAL (app-dev formatting). Harmless to keep even without Prettier/Tailwind.
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "esbenp.prettier-vscode",
-        "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
-        "[typescriptreact]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
-        },
         "typescript.tsdk": "node_modules/typescript/lib",
-        "playwright.reuseBrowser": true,
-        // Surface the "Bypass permissions" mode in the Claude Code UI.
-        // (The engine default is also set by setup-claude-bypass.sh.)
-        "claudeCode.allowDangerouslySkipPermissions": true,
-        "claudeCode.initialPermissionMode": "bypassPermissions"
+        "playwright.reuseBrowser": true
       }
     }
   },
   "remoteUser": "node",
   "containerEnv": {
-    // Set to "0" to skip Claude Code bypassPermissions auto-setup.
-    "CLAUDE_BYPASS": "1",
+    // Claude Code's bypassPermissions mode auto-approves EVERY tool call —
+    // arbitrary shell, file deletion — with no prompt. That is a reasonable
+    // trade inside your own disposable container, but this repository is public,
+    // so it must not be the default for whoever clones it. Opt in by setting
+    // this to "1" (and see .devcontainer/setup-claude-bypass.sh).
+    "CLAUDE_BYPASS": "0",
     // Set to "0" to skip the doctrine plugin install (marketplace + install).
     "CLAUDE_DOCTRINE": "1"
   }

@@ -5,9 +5,8 @@
 // 指紋が食い違っている範囲は色を変える。色は編集器の主題の変数から取る。
 import * as vscode from "vscode";
 
-import { rangesForPath } from "../model/trace.js";
+import { bandsForPath } from "../model/trace.js";
 import type { LensSession } from "../session.js";
-import { toEditorLine } from "./traceLens.js";
 
 export class RangeDecorations {
   readonly #session: LensSession;
@@ -64,15 +63,13 @@ export class RangeDecorations {
       return;
     }
 
+    // 行と種類を決めるのは model の純粋な関数である。ここは写すだけ。
     const lastLine = Math.max(0, editor.document.lineCount - 1);
     const normal: vscode.Range[] = [];
     const stale: vscode.Range[] = [];
-    for (const range of rangesForPath(snapshot.ranges, relPath)) {
-      // 範囲の行がファイルの行数を超えたら末尾へ寄せる（SPEC-005 エラー時挙動）。
-      const begin = Math.min(toEditorLine(range.begin_line), lastLine);
-      const end = Math.min(toEditorLine(range.end_line), lastLine);
-      const decoration = new vscode.Range(begin, 0, Math.max(begin, end), 0);
-      (this.#session.staleIds.has(range.id) ? stale : normal).push(decoration);
+    for (const band of bandsForPath(snapshot.ranges, relPath, this.#session.staleIds, lastLine)) {
+      const decoration = new vscode.Range(band.begin, 0, band.end, 0);
+      (band.stale ? stale : normal).push(decoration);
     }
     editor.setDecorations(this.#normal, normal);
     editor.setDecorations(this.#stale, stale);

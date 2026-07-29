@@ -3,10 +3,10 @@
 // 取得そのものは LensSession が持つ。ここはその読み手の一つである。
 import * as vscode from "vscode";
 
-import { toEditorLine } from "../codelens/traceLens.js";
+import { toEditorLine } from "../model/trace.js";
 import { messages, webviewStrings } from "../l10n.js";
 import type { LensSession, SessionState } from "../session.js";
-import type { SavedLens, ToHost, ToWebview } from "../shared/protocol.js";
+import { toSavedLens, type SavedLens, type ToHost, type ToWebview } from "../shared/protocol.js";
 import { renderHtml } from "./html.js";
 
 const VIEW_TYPE = "doctrineLens.map";
@@ -25,6 +25,20 @@ function partialName(what: string): string {
   if (what === "registry") return messages.partialRegistry();
   if (what === "ranges") return messages.partialRanges();
   return messages.partialFindings();
+}
+
+/**
+ * 部分的に取れなかったものの診断。
+ *
+ * `absent` は「この構成である限り永久に取れない」を意味する。一時的な失敗と
+ * 同じ見え方にすると、読み手は待てば直ると思い、直し方に辿り着けない。
+ * 理由の詳細をそのまま添える。
+ */
+function partialDetail(partial: readonly { reason: string; detail: string }[]): string {
+  return partial
+    .filter((p) => p.detail)
+    .map((p) => (p.reason === "absent" ? p.detail : `${p.reason}: ${p.detail}`))
+    .join("\n");
 }
 
 export class LensPanel {
@@ -165,8 +179,8 @@ export class LensPanel {
       this.#post({
         kind: "notice",
         tone: "info",
-        text: messages.partial(state.partial.map(partialName).join(" / ")),
-        detail: "",
+        text: messages.partial(state.partial.map((p) => partialName(p.what)).join(" / ")),
+        detail: partialDetail(state.partial),
       });
     } else if (!state.busy) {
       this.#post({ kind: "notice", tone: "info", text: "", detail: "" });
@@ -222,7 +236,7 @@ export class LensPanel {
         // 取り消したときは何もしない。
         if (!name) return;
         const lenses = this.#savedLenses().filter((s) => s.name !== name);
-        lenses.push({ name, lens: message.lens, focus: message.focus });
+        lenses.push(toSavedLens(name, message.lens, message.focus));
         lenses.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
         await this.#storeLenses(lenses, name);
         return;

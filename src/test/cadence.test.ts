@@ -142,6 +142,19 @@ test("001-10e. 取得が失敗した回は時刻を進めない", () => {
   assert.deepEqual([...next.staleIds], ["SPEC-001"], "前回の判定を保つ");
 });
 
+test("001-10g. 監査を求めていない回は、判定が返っていても引き継がない", () => {
+  // withAudit を見ずに「判定が返ったか」だけで決めると、速い拍の結果を
+  // 遅い拍の判定として採ってしまう。速い拍は監査を走らせていないので、
+  // そこに載っている判定は前回の使い回しである。
+  const next = carryAudit(
+    HELD,
+    { withAudit: false, failed: false, staleIds: new Set(["SPEC-777"]) },
+    () => LATER,
+  );
+  assert.equal(next.auditAt, AT, "時刻を進めてはならない");
+  assert.deepEqual([...next.staleIds], ["SPEC-001"], "前回の判定を保つ");
+});
+
 test("001-10f. session が引き継ぎを自前で書き直していない", () => {
   // 規則を二箇所に持つと必ず食い違う。session は carryAudit を呼ぶだけにする。
   const source = readFileSync(join(PROJECT, "src", "session.ts"), "utf8");
