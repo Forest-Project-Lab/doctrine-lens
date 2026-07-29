@@ -46,6 +46,8 @@ function stubFetch(): { fetch: FetchSnapshot; pending: Pending[]; calls: number 
               registry: null,
               ranges: null,
               findings: null,
+              reverseOrphans: [],
+              docMeta: new Map(),
               docsRoot,
               projectDir,
             },
@@ -223,6 +225,8 @@ test("失敗しても、直前に成功した結果を入れ物が保つ", async
         registry: null,
         ranges: null,
         findings: null,
+        reverseOrphans: [],
+        docMeta: new Map(),
         docsRoot,
         projectDir,
       },
@@ -272,8 +276,8 @@ test("部分的な失敗の理由と詳細が、呼び手まで届く", async ()
     const partial = outcome.value.partial;
     assert.deepEqual(
       [...partial.map((p) => p.what)].sort(),
-      ["findings", "ranges", "registry"],
-      "三つとも部分的な失敗として挙がる",
+      ["findings", "orphans", "ranges", "registry", "titles"],
+      "五つとも部分的な失敗として挙がる",
     );
     for (const item of partial) {
       assert.ok(item.reason, `${item.what}: 理由が空`);

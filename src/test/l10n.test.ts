@@ -33,7 +33,7 @@ test("l10n の原文が英語で、日本語の訳が揃っている", () => {
   const keptAsIs = new Set(["Status", "Owner"]);
   const untranslatedValues = Object.entries(bundle)
     .filter(([k]) => !keptAsIs.has(k))
-    .filter(([, v]) => !HAS_JAPANESE.test(v) && !/^[\s\d{}.·–-]*$/.test(v))
+    .filter(([, v]) => !HAS_JAPANESE.test(v) && !/^[\s\d{}.·:–-]*$/.test(v))
     .map(([k]) => k);
   assert.deepEqual(untranslatedValues, [], "訳が日本語になっていない項がある");
 });
@@ -76,16 +76,35 @@ test("l10n.ts の原文が、日本語の訳の鍵とすべて対応している
   assert.deepEqual(orphan, [], `使われていない訳がある:\n${orphan.join("\n")}`);
 });
 
-test("l10n が渡す文字列と webview が受ける型が食い違わない", () => {
+test("l10n が渡す文字列と、明細を組む側が受ける型が食い違わない", () => {
+  // 渡す側は src/l10n.ts、受ける側は src/model/view.ts にある。
+  // 二つのファイルに分かれているので、片方だけ直しても型では止まらない場合がある
+  // （項を足して差し込みを忘れた、など）。字面で突き合わせる。
   const source = readFileSync(join(PROJECT, "src", "l10n.ts"), "utf8");
-  const built = source.slice(source.indexOf("export function webviewStrings"));
+  // 次の宣言の手前で切る。切らないと後ろの関数の項まで拾い、
+  // 食い違いを見つけるはずの試験が食い違いを作る。
+  const built = source.slice(
+    source.indexOf("export function viewStrings"),
+    source.indexOf("export function shellStrings"),
+  );
   const returned = [...built.matchAll(/^\s{4}([a-zA-Z]+):/gm)].map((m) => m[1]);
 
-  const declared = source.slice(source.indexOf("export interface WebviewStrings"));
-  const fields = [...declared.matchAll(/^\s{2}([a-zA-Z]+):\s*string;/gm)].map((m) => m[1]);
+  const view = readFileSync(join(PROJECT, "src", "model", "view.ts"), "utf8");
+  const declared = view.slice(view.indexOf("export interface ViewStrings"));
+  const fields = [...declared.matchAll(/^\s{2}readonly ([a-zA-Z]+):\s*string;/gm)].map((m) => m[1]);
 
   assert.ok(returned.length > 20, "渡す文字列が少なすぎる（読み取りに失敗している）");
   assert.deepEqual(returned.sort(), fields.sort(), "渡す側と受ける側の項が食い違う");
+
+  // 器の札も同じ規律で見る。
+  const shell = source.slice(
+    source.indexOf("export function shellStrings"),
+    source.indexOf("export interface ShellStrings"),
+  );
+  const shellReturned = [...shell.matchAll(/^\s{4}([a-zA-Z]+):/gm)].map((m) => m[1]);
+  const shellDeclared = source.slice(source.indexOf("export interface ShellStrings"));
+  const shellFields = [...shellDeclared.matchAll(/^\s{2}([a-zA-Z]+):\s*string;/gm)].map((m) => m[1]);
+  assert.deepEqual(shellReturned.sort(), shellFields.sort(), "器の札が食い違う");
 });
 
 test("実装に日本語の表示文字列が残っていない", () => {

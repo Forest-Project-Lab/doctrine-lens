@@ -7,7 +7,7 @@ status: superseded
 superseded_by: ADR-005
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
 sources: []
 llm_context: task
 ---

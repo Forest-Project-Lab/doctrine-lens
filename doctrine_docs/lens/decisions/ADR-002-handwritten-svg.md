@@ -3,10 +3,11 @@ id: ADR-002
 title: 描画は SVG を手で書き、作図ライブラリを持たない
 type: ADR
 domain: lens
-status: accepted
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: ADR-012
 sources: []
 llm_context: task
 ---

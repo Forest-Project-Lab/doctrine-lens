@@ -96,24 +96,6 @@ const MUTATIONS = [
     to: "const audited = round.withAudit && round.staleIds !== null;",
   },
   {
-    label: "L2 の辺を鍵で引き直す（左列の箱が辺を失う）",
-    file: "src/model/layout.ts",
-    from: "const leftBy = new Map(left.map((p) => [p.key, p]));",
-    to: "const leftBy = new Map<string, Placed>();",
-  },
-  {
-    label: "配置が返す辺を捨てる（L0 とレーンの線が消える）",
-    file: "src/model/layout.ts",
-    from: "edges: edgesByKey(edges, placed),",
-    to: "edges: [],",
-  },
-  {
-    label: "保存レンズの焦点を捨てる（選び直すと深度だけ落ちる）",
-    file: "src/shared/protocol.ts",
-    from: "  return { name, lens, focus };",
-    to: "  return { name, lens };",
-  },
-  {
     label: "知らないファイルを「無関係」と決めつける（新しい印が永久に拾われない）",
     file: "src/model/trace.ts",
     from: '  // まだ知らないファイル。印が新しく足されたかもしれないので、範囲だけ訊く。\n  return "probe";',
@@ -136,24 +118,6 @@ const MUTATIONS = [
     file: "src/model/status.ts",
     from: '      input.candidateCount > 1 ? "doctrineLens.selectWorkspaceFolder" : "doctrineLens.open",',
     to: '      "doctrineLens.open",',
-  },
-  {
-    label: "空のドメインを弾く・L1（domain 無し文書の箱へ入れない）",
-    file: "src/model/depth.ts",
-    from: "if (lens.depth >= 1 && focus.domain !== null) {",
-    to: "if (lens.depth >= 1 && focus.domain) {",
-  },
-  {
-    label: "段の判定を絞り後の集合で行う（絞ると段が落ち、偽の理由が出る）",
-    file: "src/model/depth.ts",
-    from: "    if (hasDomain(all, focus.domain)) return buildLevel1(visible, graph.edges, focus.domain);",
-    to: "    if ([...visible.values()].some((n) => n.domain === focus.domain)) return buildLevel1(visible, graph.edges, focus.domain);",
-  },
-  {
-    label: "空のドメインを弾く・L2（消えた文書からの復帰が L0 まで落ちる）",
-    file: "src/model/depth.ts",
-    from: "if (focus.domain !== null && hasDomain(all, focus.domain)) {",
-    to: "if (focus.domain && hasDomain(all, focus.domain)) {",
   },
   {
     label: "部分失敗の詳細を捨てる・登録簿（設定の誤りが一時的失敗に見える）",
@@ -192,18 +156,6 @@ const MUTATIONS = [
     to: "return { id: range.id, begin, end, stale: staleIds.has(range.id) };",
   },
   {
-    label: "配置の自己ループ落としを外す（自分への線が引かれる）",
-    file: "src/model/layout.ts",
-    from: "    if (edge.src === edge.dst) continue;\n    const from = byKey.get(edge.src);",
-    to: "    const from = byKey.get(edge.src);",
-  },
-  {
-    label: "L2 の自己ループ落としを外す（同じ箱が三つ並ぶ）",
-    file: "src/model/layout.ts",
-    from: "    if (edge.src === edge.dst) continue;\n    if (edge.dst === focusKey && !incoming.includes(edge.src)) incoming.push(edge.src);",
-    to: "    if (edge.dst === focusKey && !incoming.includes(edge.src)) incoming.push(edge.src);",
-  },
-  {
     label: "保存の合図の絞りを外す（無関係な保存で CLI が七本走る）",
     file: "src/model/trace.ts",
     from: '  if (!relPath) return "ignore";',
@@ -232,6 +184,84 @@ const MUTATIONS = [
     file: "src/doctrine/cli.ts",
     from: '    privateCwd = mkdtempSync(join(tmpdir(), "doctrine-lens-run-"));',
     to: "    privateCwd = tmpdir();",
+  },
+  {
+    label: "波の距離を最長から最短へ戻す（直せない順を正しい順として出す）",
+    file: "src/model/consequence.ts",
+    from: "if (known === undefined || candidate > known) {",
+    to: "if (known === undefined) {",
+  },
+  {
+    label: "相互のペアで影響を上書きする（同じ事実の行が ~ に化ける）",
+    file: "src/model/consequence.ts",
+    from: 'if (!(bucket.get(to) === "depends-directly")) bucket.set(to, kind);',
+    to: "bucket.set(to, kind);",
+  },
+  {
+    label: "影響の理由に起点を名指す（三段先で嘘になる）",
+    file: "src/model/consequence.ts",
+    from: '? { kind: "impacted", by: hit.from }',
+    to: '? { kind: "impacted", by: origin.id }',
+  },
+  {
+    label: "記号の排他を崩す（+ より ? を先に当てる）",
+    file: "src/model/consequence.ts",
+    from: '  if (input.isReverseOrphan) return "missing";\n  if (input.rangeCount === 0) return "nowhere";',
+    to: '  if (input.rangeCount === 0) return "nowhere";\n  if (input.isReverseOrphan) return "missing";',
+  },
+  {
+    label: "重さの語彙を上流から奪う（info まで壊れていることにする）",
+    file: "src/model/consequence.ts",
+    from: 'return findings.some((f) => f.severity === "error" || f.severity === "warn");',
+    to: "return findings.length > 0;",
+  },
+  {
+    label: "循環の塊を波に混ぜる（順の決まらないものに順を付ける）",
+    file: "src/model/consequence.ts",
+    from: "    if (inCycle.has(id)) continue;",
+    to: "    if (false) continue;",
+  },
+  {
+    label: "畳んだ件数を数え損なう（隠したことを黙る）",
+    file: "src/model/consequence.ts",
+    from: "unreached: all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1),",
+    to: "unreached: 0,",
+  },
+  {
+    label: "題名の三つ組を二つで受ける（全件が黙って題名を失う）",
+    file: "src/doctrine/titles.ts",
+    from: '"            meta, _body, _errors = fm.parse_file(path)",',
+    to: '"            meta, _body = fm.parse_file(path)",',
+  },
+  {
+    label: "題名の根の検めを外す（相対パスで空の表が成功として返る）",
+    file: "src/doctrine/titles.ts",
+    from: '"if not os.path.isdir(root):",',
+    to: '"if False:",',
+  },
+  {
+    label: "解析が全件落ちても成功として返す（0/N を題名の無い木と呼ぶ）",
+    file: "src/doctrine/titles.ts",
+    from: '"if seen > 0 and len(broken) == seen:",',
+    to: '"if False:",',
+  },
+  {
+    label: "所見を追跡の検査だけに絞る（34 検査のうち 23 を捨てる）",
+    file: "src/doctrine/audit.ts",
+    from: "  return ok(outcome.value.findings);",
+    to: '  return ok(outcome.value.findings.filter((f) => f.check.startsWith("trace")));',
+  },
+  {
+    label: "所見を doc_id だけで引く（refs で結ばれた文書が × を失う）",
+    file: "src/model/consequence.ts",
+    from: "return findings.filter((f) => f.doc_id === id || (f.refs ?? []).includes(id));",
+    to: "return findings.filter((f) => f.doc_id === id);",
+  },
+  {
+    label: "題名を主文から落とす（画面が id だけになる — 利用者が最初に言った不満）",
+    file: "src/model/view.ts",
+    from: "return meta.get(id)?.title || id;",
+    to: "return id;",
   },
 ];
 
@@ -295,6 +325,16 @@ const capture = (command) => {
 // 実測で、Ctrl-C の直後には潰れたソースと古い束の両方が残った。
 // だから、潰す前に「戻し方」をディスクへ書く。次に走らせたとき最初にそれを見て、
 // 残っていれば戻す。殺され方に依らない（SIGKILL でも効く）。
+//
+// **親の殻を止めても、この道具は止まらない。** 実測: 走らせた殻を止めたあと、
+// この node の処理は生き続け、次の行を潰し、記録を書き直していた。止めた側は
+// 「止めた」と思って記録から戻し、その裏で新しい潰しが当たっていた。
+// 木が二箇所潰れたまま「全件が緑」に見える状態が残る。
+// 止めるときは、この処理の pid を確かめて落とすこと。落としたあと、
+// **記録が残っていれば必ず戻すこと**（残っていれば潰れたままである）。
+//
+// 走らせている間、木を触らないこと。同時に `npm run build:test` を叩くと、
+// 互いの束を作り直して両方の判定が汚れる。これも実測している。
 const JOURNAL = join(projectRoot, ".mutate-restore.json");
 
 const recoverFromJournal = () => {

@@ -2,7 +2,7 @@
 // webview の中身を、編集器の外（ふつうのブラウザ）で開けるようにする道具。
 //
 // なぜ要るか: webview の描画は編集器を起こさないと確かめられない、と思われがちだが、
-// 中身は素の DOM と SVG である。器（html.ts）が出す HTML をそのまま使い、
+// 中身は素の DOM である。器（html.ts）が出す HTML をそのまま使い、
 // acquireVsCodeApi の代わりだけを差し込めば、ブラウザで開いて目で確かめられる。
 // 器を写さずに本物を使うので、確かめたものと配るものが食い違わない。
 //
@@ -111,29 +111,87 @@ execFileSync(
    `--outfile=${l10nBundle}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
-const { webviewStrings } = await import(pathToFileURL(l10nBundle).href);
-const STRINGS = webviewStrings();
+const { viewStrings, shellStrings } = await import(pathToFileURL(l10nBundle).href);
 
-const snapshot = {
-  kind: "snapshot",
-  graph: { nodes: graph.nodes, edges: graph.edges },
-  registry,
-  docsRoot: join(projectRoot, "doctrine_docs"),
-  savedLenses: [],
+// 「足りないもの」と題名も、本体と同じ上流の呼び方で取る。
+const orphanReport = run([
+  join(pluginRoot, "scripts/dep-graph.py"),
+  "--root", join(projectRoot, "doctrine_docs"), "--reverse-orphans", "--json",
+]);
+const reverseOrphans = new Set(
+  Object.values(orphanReport.result ?? {}).flatMap((b) => (Array.isArray(b) ? b : [])),
+);
+
+const titleReport = run([
+  "-c",
+  [
+    "import sys",
+    'sys.path[:] = [p for p in sys.path if p not in ("", ".")]',
+    "sys.path.insert(0, sys.argv[1])",
+    "import json, os",
+    "import _frontmatter as fm",
+    "out = {}",
+    "for base, dirs, files in os.walk(sys.argv[2]):",
+    "    dirs[:] = [d for d in dirs if not d.startswith('.')]",
+    "    for name in files:",
+    "        if not name.endswith('.md'):",
+    "            continue",
+    "        meta, _b, _e = fm.parse_file(os.path.join(base, name))",
+    "        if isinstance(meta, dict) and meta.get('id'):",
+    "            out[meta['id']] = {'title': meta.get('title') or '',",
+    "                               'updated': str(meta.get('updated') or ''),",
+    "                               'supersededBy': meta.get('superseded_by') or ''}",
+    "json.dump(out, sys.stdout, ensure_ascii=False)",
+  ].join("\n"),
+  join(pluginRoot, "scripts"), join(projectRoot, "doctrine_docs"),
+]);
+if (Object.keys(titleReport).length === 0) {
+  throw new Error("題名が一件も取れない。空の表で写しを撮ると、id だけの画面を確かめたことになる。");
+}
+
+// 明細は本体側で組む（ADR-012）。写しでも同じ関数を通す。写さない。
+const modelBundle = join(outDir, "model.mjs");
+writeFileSync(
+  join(outDir, "model-entry.ts"),
+  'export { buildConsequence } from "../src/model/consequence.js";\n' +
+    'export { buildView, formatTime } from "../src/model/view.js";\n',
+  "utf8",
+);
+execFileSync(
+  "npx",
+  ["esbuild", join(outDir, "model-entry.ts"), "--bundle", "--format=esm",
+   "--platform=node", `--outfile=${modelBundle}`, "--log-level=warning"],
+  { cwd: projectRoot, stdio: "inherit" },
+);
+const { buildConsequence, buildView, formatTime } = await import(pathToFileURL(modelBundle).href);
+
+// 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。実際に範囲を持つ文書を選ぶ。
+const ORIGIN = process.env["PREVIEW_ORIGIN"] || ranges[0]?.id || graph.nodes[0]?.id || null;
+const consequence = buildConsequence(graph, ORIGIN, {
+  findings: audit.findings ?? [],
   ranges,
-  staleIds,
-  // 本体が訳して渡す一式（ADR-007）。ここでは原文（英語）をそのまま使う。
-  strings: STRINGS,
-  // 監査は実際に走らせている。時刻を null のままにすると、凡例が
-  // 「判定はまだ取れていない」と言いながら食い違いを断定する画面になる。
-  // 上流が返す generated_at を使う（日ごとに決まるので写しが揺れない）。
-  auditAt: audit.generated_at ?? null,
-};
+  reverseOrphans,
+});
+const view = buildView(
+  consequence,
+  new Map(Object.entries(titleReport)),
+  viewStrings(),
+  {
+    openFile: ranges[0]?.path ?? "src/extension.ts",
+    auditAt: audit.generated_at ? formatTime(new Date(audit.generated_at)) : "",
+    titlesMissing: Object.keys(titleReport).length === 0,
+  },
+);
+
+// 本体が最初に送るものと同じ形。判断は既に済んでいて、描き手は組むだけである。
+const snapshot = { kind: "view", view };
 
 // 器が出す HTML をそのまま使い、script の在処と vscode の代わりだけを差し込む。
 const html = renderHtml(
   { cspSource: "", asWebviewUri: (u) => u },
   { toString: () => "./webview.js" },
+  "en",
+  shellStrings(),
 );
 // 器が実際に打った属性から取る。CSP の 'nonce-…' 側を字面で拾うと、
 // 値の字種が変わったとき（Math.random の英数字 → randomBytes の base64url）に
@@ -202,7 +260,7 @@ writeFileSync(join(outDir, "index.html"), html.replace("</head>", `${stub}\n</he
 await build(webviewOptions(join(outDir, "webview.js")));
 
 console.log(
-  `${join(outDir, "index.html")} を書いた（節点 ${snapshot.graph.nodes.length}・` +
-    `辺 ${snapshot.graph.edges.length}・コード範囲 ${ranges.length}・` +
-    `指紋が食い違う文書 ${staleIds.length}）。`,
+  `${join(outDir, "index.html")} を書いた（起点 ${ORIGIN}・` +
+    `波 ${view.waves.length}・行 ${view.waves.reduce((n, w) => n + w.rows.length, 0)}・` +
+    `循環 ${view.cycles.length}・題名 ${Object.keys(titleReport).length}）。`,
 );

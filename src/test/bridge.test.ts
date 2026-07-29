@@ -14,8 +14,7 @@ import { GraphStore, fetchSnapshot } from "../doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "../doctrine/locate.js";
 import { fetchRegistry } from "../doctrine/registry.js";
 import type { Graph } from "../doctrine/model.js";
-import { buildScene, NO_FOCUS } from "../model/depth.js";
-import { DEFAULT_LENS } from "../model/lens.js";
+import { buildConsequence } from "../model/consequence.js";
 
 const PROJECT = resolve(__dirname, "..", "..");
 
@@ -66,14 +65,9 @@ test("2. 統治木があれば nodes と edges を持つ値が返る", async (t)
   assert.ok(Array.isArray(outcome.value.snapshot.graph.edges));
   assert.ok(outcome.value.snapshot.graph.nodes.length > 0, "この統治木は空ではない");
 
-  // 取ったものが実際に描けることまで見る。
-  const scene = buildScene(
-    outcome.value.snapshot.graph,
-    DEFAULT_LENS,
-    NO_FOCUS,
-    outcome.value.snapshot.registry,
-  );
-  assert.ok(scene.nodes.length > 0);
+  // 取ったものが実際に明細へ組めることまで見る。
+  const consequence = buildConsequence(outcome.value.snapshot.graph, "SPEC-001");
+  assert.ok(consequence.origin, "起点が引ける");
 });
 
 test("3. 上流が項を増やしても既知の項の値が変わらない", () => {
@@ -95,12 +89,9 @@ test("3. 上流が項を増やしても既知の項の値が変わらない", ()
     ],
     edges: [{ src: "SPEC-001", dst: "SPEC-001", field: "depends_on", kind: "intra_domain", extra: "x" }],
   };
-  const scene = buildScene(withExtra, DEFAULT_LENS, NO_FOCUS, null);
-  assert.equal(scene.nodes.length, 1);
-  const first = scene.nodes[0];
-  assert.ok(first);
-  assert.equal(first.key, "lens");
-  assert.equal(first.count, 1);
+  const consequence = buildConsequence(withExtra, "SPEC-001");
+  assert.equal(consequence.origin?.id, "SPEC-001");
+  assert.equal(consequence.origin?.domain, "lens", "既知の項の値が変わらない");
 });
 
 test("4. 終了コードが 0 でなくても直前に成功した結果が保たれる", async (t) => {

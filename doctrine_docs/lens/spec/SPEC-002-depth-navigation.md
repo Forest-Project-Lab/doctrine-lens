@@ -3,10 +3,11 @@ id: SPEC-002
 title: 深度の段と行き来
 type: SPEC
 domain: lens
-status: current
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: SPEC-006
 sources: []
 depends_on: [REQ-001, SPEC-001]
 impacts: [IMPL-001]

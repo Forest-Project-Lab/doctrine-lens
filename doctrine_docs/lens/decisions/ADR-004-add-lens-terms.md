@@ -3,10 +3,11 @@ id: ADR-004
 title: レンズ・深度・地図・節点・辺 を承認語に加える
 type: ADR
 domain: lens
-status: accepted
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: ADR-012
 sources: []
 llm_context: task
 ---

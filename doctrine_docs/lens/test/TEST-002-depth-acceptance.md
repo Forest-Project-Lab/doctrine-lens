@@ -3,10 +3,11 @@ id: TEST-002
 title: 深度の行き来の受入
 type: TEST
 domain: lens
-status: current
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: TEST-006
 sources: []
 depends_on: [SPEC-002]
 llm_context: task

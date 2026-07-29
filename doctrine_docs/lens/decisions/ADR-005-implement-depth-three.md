@@ -3,10 +3,11 @@ id: ADR-005
 title: 深度 L3 を実装し、対象を L0 から L2 に限る決定を解く
 type: ADR
 domain: lens
-status: accepted
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: ADR-012
 sources: []
 llm_context: task
 ---

@@ -1,60 +1,111 @@
-<!-- doctrine:view src=doctrine_docs as-of=2026-07-28 date=2026-07-28 refs=ICD-001,REQ-001,REQ-002,REQ-003,REQ-004,SPEC-001,SPEC-002,SPEC-003,SPEC-004,SPEC-005,ADR-001,ADR-002,ADR-005,ADR-006,ADR-007,ADR-008,ADR-009,ADR-010,ADR-011 -->
+<!-- doctrine:view src=doctrine_docs as-of=2026-07-29 date=2026-07-29 refs=ICD-001,REQ-001,REQ-002,REQ-003,REQ-004,SPEC-001,SPEC-004,SPEC-005,SPEC-006,ADR-001,ADR-006,ADR-007,ADR-008,ADR-009,ADR-010,ADR-011,ADR-012,ADR-013 -->
 
 # Doctrine Lens
 
-See a [doctrine](https://github.com/Forest-Project-Lab/doctrine)-governed document tree as **one map** — from the whole system down to the exact lines of code a spec governs.
+One question, answered from where your cursor already is:
 
-**A context map is not drawn. It is derived.** doctrine already forces `domain`,
-`depends_on`, and "cross-domain dependencies may only target an ICD" into every
-document's frontmatter. The information needed to draw the map is already there,
-in machine-readable form, the moment you lay down a governance tree. This
-extension adds no rules of its own — it just draws what is already there.
+> **If I change this, what will I have to fix, and in what order?**
+
+Not a map. A list — ordered, with a reason on every line.
 
 *日本語の説明は下の [日本語](#日本語) にあります。*
 
-![Domain interior, laid out in lanes by document type](media/lanes.png)
+![The consequence list](media/consequence.png)
 
 ---
 
 ## What it does
 
-### Depth — the same gesture at every level
+Put your cursor inside a `doctrine:begin` range, or open a governed `.md`.
+That is the **origin**. You select nothing; the screen follows the cursor.
 
-| Depth | What you see | Nodes | Edges |
-|---|---|---|---|
-| **L0** Context map | The whole system | Domains | Cross-domain dependencies (same pair collapsed, count shown) |
-| **L1** Domain interior | One domain | Its documents | Dependencies inside the domain |
-| **L2** Document | One document | The focus and what touches it | Edges touching the focus |
-| **L3** Code | One document's implementation | Ranges enclosed by `doctrine:begin/end` | None |
+```
+Follows the cursor                                                   [Refresh]
 
-Double-click to go deeper, `Backspace` to come back up — the same at every level.
-Pick a range at L3 and the editor opens that line.
+  コード側の面
+  SPEC-005 · lens/spec/SPEC-005-code-side-surface.md · current · 2026-07-29
 
-### Lens — turn the view, don't add screens
+  4 documents to fix · 4 code ranges · 3 with nowhere to fix
+  broken 1 · missing 0 · cycles 0
 
-A lens is four independent dials. Changing one leaves the other three alone.
+  Wave 1   directly on the origin                                2 documents
+  ×  帰結の明細                       SPEC-006                              2
+     Has SPEC-005 in depends_on. Its premise changes.
+     記録した実装の指紋と、いまのコードの指紋が食い違う (src/doctrine/titles.ts,
+     src/model/consequence.ts, src/model/view.ts, src/webview/main.ts)。
+     src/doctrine/titles.ts:1-137
+     src/model/consequence.ts:1-493
+     src/model/view.ts:1-218
+     src/webview/main.ts:1-174
+  ?  コード側の面の受入               TEST-005
+     Has SPEC-005 in depends_on. Its premise changes.
 
-| Dial | Choices |
-|---|---|
-| **Color** | type / status / domain / owner |
-| **Filter** | current only / domain / type (all applied together) |
-| **Layout** | map / lanes / detail / list |
-| **Depth** | L0 – L3 |
+  Wave 2   not settled until wave 1 is done                      2 documents
+  ?  拡張機能の部品の配置             IMPL-001
+     Depends on SPEC-005 through SPEC-006.
+  ?  帰結の明細の受入                 TEST-006
+     Depends on SPEC-005 through SPEC-006.
 
-Name a lens and it is saved per workspace folder.
+  40 documents are not reachable from the origin and are not listed
+  2 findings sit outside the origin
+  The number on the right of a row is how many others it settles once fixed
+  Upstream docs-audit ran all checks at 2026-07-29 09:14
+  × broken   + missing   ? nowhere to fix   ! fix   ~ review
+```
+
+That is this repository's own tree, captured mid-rewrite. `SPEC-006` is `×`
+because its recorded fingerprints did not yet match the code, and the `2` on its
+right says two more documents settle once it is fixed — which is why it sorts
+first. `TEST-005` is `?`: it depends on the origin, but has no code bound to it,
+so there is nowhere to make the change. Rows with nothing behind them show no
+number at all, because a number that is always zero is noise.
+
+### Five symbols, strictly exclusive
+
+Each comes from **exactly one** upstream fact. Heaviest wins.
+
+| Symbol | Means | Comes from |
+|---|---|---|
+| `×` | already broken | a `docs-audit` finding with severity error or warn |
+| `+` | missing | `dep-graph --reverse-orphans` |
+| `?` | nowhere to fix | reached, but zero code ranges bound to it |
+| `!` | fix | it has the origin in `depends_on` — its premise changes |
+| `~` | review | something declared that it *impacts* this |
+
+`!` and `~` stay separate symbols with separate sentences. Upstream keeps
+`depends_on` and `impacts` as different ends of a relation and says not to mix
+them. Direction is carried by the symbol and the sentence — never by a 6px
+arrowhead you have to squint at.
+
+### The order is the point
+
+Waves come from the **longest** distance to the origin, not the shortest. If
+`origin → C → B` and `origin → B` both exist, `B` is in wave 2, because fixing
+`B` before `C` means its premise changes twice. A screen that answers "in what
+order" must not answer it wrongly.
+
+Cycles have no order, so they are not given one. They drop out of the waves and
+are written down as a line of text — `A → B → A` — with upstream's `dep_cycle`
+message attached.
+
+### It is designed for 280px
+
+![The same list in a 280px side panel](media/narrow.png)
+
+VS Code's minimum sidebar width is the baseline, not an afterthought. One column,
+no second column at any width, and the line length stops at 640px. Nothing scrolls
+sideways at any size — checked automatically at 720, 480 and 280px on every build.
 
 ### Document ↔ code, both ways
-
-![Code ranges bound to a spec, with fingerprint state](media/code-ranges.png)
 
 **Code → document.** A headline appears at the start of every marked range.
 Click it and the governing document opens. If the recorded fingerprint and the
 current code disagree, that shows in the headline and the gutter changes color.
-This works whether or not the map is open.
+This works whether or not the list is open.
 
-**Document → code.** At L2, select the focus again to descend to L3 and see the
-bound ranges. Pick one and the editor opens that line. A command does the same,
-and offers a choice when a document has several ranges.
+**Document → code.** Every row ends in `file:line`. Click it and the editor
+opens there. A command does the same, and offers a choice when a document has
+several ranges.
 
 ---
 
@@ -101,23 +152,25 @@ Keep the tree directly under your workspace folder (`<workspace>/doctrine_docs/`
 
 ### Open it
 
-Command palette → **`Doctrine Lens: Open the map`**.
+Put the cursor somewhere governed, then command palette →
+**`Doctrine Lens: Show what this changes`**.
 
 If nothing appears, look at the status bar (bottom right). It tells you which of
 the three it is: no governance tree, python won't start, or the plugin isn't found.
 
-![Context map — domains sized by document count](media/context-map.png)
+If the screen says it has no origin, that is not an error — it names the file you
+have open and says why it isn't one.
 
 ### Commands
 
 | Command | What it does |
 |---|---|
-| `Doctrine Lens: Open the map` | Open the map |
-| `Doctrine Lens: Refresh the map` | Re-run the upstream CLI |
-| `Doctrine Lens: Show the open document on the map` | Jump to the open document's L2 |
+| `Doctrine Lens: Show what this changes` | Open the consequence list |
+| `Doctrine Lens: Refresh` | Re-run the upstream CLI |
+| `Doctrine Lens: Show what the open document changes` | Same, from the open document |
 | `Doctrine Lens: Open the document for this range` | Open the document governing the range at the cursor |
 | `Doctrine Lens: Jump to this document's implementation` | Jump to the code bound to the open document |
-| `Doctrine Lens: Choose which doctrine tree to show` | Switch trees when several workspace folders have one |
+| `Doctrine Lens: Choose which doctrine tree to read` | Switch trees when several workspace folders have one |
 
 **There are no default keybindings** (ADR-009) — installing this extension must
 not take a chord away from you. Add your own in `keybindings.json`:
@@ -151,22 +204,62 @@ The extension also declares that it does **not** run in untrusted workspaces.
 
 ## Design
 
+### Why this isn't a map anymore (ADR-012)
+
+It was. The map was measurably unreadable, and the measurements said something
+more uncomfortable than "the layout needs work":
+
+- The tree is 45 nodes, 45 edges, density 0.02. Research on node-link diagrams
+  says a graph *that* small should win. It didn't.
+- **Both axes were meaningless.** Columns were registry order, rows were id
+  alphabetical. 52% of edges spanned two or more columns. Optimizing row order
+  6000 times only took crossings from 31 to 24.
+- **16 of 45 edges were the same fact written twice** — `A impacts B` and
+  `B depends_on A`. The screen drew them as two opposed arrows, which reads as a
+  cycle. The real cycle count was **zero**. A user asking "are mutually dependent
+  things abnormal?" was reading a lie the screen had manufactured.
+- **34 upstream checks existed. 11 were used.** The judgement layer was thrown
+  away at the bridge, so the screen could only state facts, and every judgement
+  was pushed onto the reader.
+
+So the fix was not a better layout. A map answers "how is it all arranged",
+which nobody was asking. This answers the question people actually have.
+
+### One screen, one question (REQ-002)
+
+There are no dials. No depth, no layout picker, no color-by, no saved views.
+The previous version had "four independent dials" — and one of them existed
+*only so the count would be four*. That is design as decoration.
+
+Origin comes from the cursor. Everything else is derived. Nothing to configure
+means nothing to configure wrongly.
+
 ### It holds no governance rules (REQ-003)
 
 No type list, no status vocabulary, no location table, no fingerprint comparison.
-It runs the upstream CLI and draws the JSON (ADR-001).
+It runs the upstream CLI and renders the JSON (ADR-001).
 
 ```
 dep-graph.py --classify-edges --json  → all nodes and edges
+dep-graph.py --reverse-orphans        → what is missing
 read _registry in place               → type order, which statuses mean "current"
+read _frontmatter in place            → titles and updated dates*
 trace-index.py --format json          → document ↔ code ranges
-docs-audit.py --json                  → verdicts (fingerprint mismatches)
+docs-audit.py --json                  → all 34 checks, unfiltered
 ```
 
+\* A stopgap. `dep-graph --json` doesn't return `title` yet
+([doctrine#149](https://github.com/Forest-Project-Lab/doctrine/issues/149));
+when it does, that layer goes away. Two other findings from this rewrite are
+filed upstream too:
+[#150](https://github.com/Forest-Project-Lab/doctrine/issues/150) (trace-index
+ignores `.gitignore`) and
+[#151](https://github.com/Forest-Project-Lab/doctrine/issues/151) (one relation
+returned as two edges).
+
 Even the vocabulary is read from upstream at runtime, so a new document type
-appears on the map without changing this extension. `npm test` enforces this
-literally: if an upstream vocabulary word turns up in the implementation, the
-test fails.
+appears without changing this extension. `npm test` enforces this literally: if
+an upstream vocabulary word turns up in the implementation, the test fails.
 
 ### Facts and verdicts are separate (ADR-005)
 
@@ -175,29 +268,40 @@ comes from `docs-audit`. This extension never compares fingerprints itself — a
 second judge would drift from the gate, which is exactly the failure doctrine
 exists to catch.
 
+### Design values live in DESIGN.md (ADR-013)
+
+Spacing, radii, type scale, weights and colors have exactly one source, and it
+is not the CSS. `src/test/design.test.ts` **parses `DESIGN.md` itself** and
+fails the build if the stylesheet uses a value the document doesn't list. Adding
+a seventh spacing value means editing the design document, on purpose, in a diff
+someone reviews.
+
+That gate was built after measuring the old stylesheet: six spacing values (four
+off the 4px grid), three radii, eight type steps whose adjacent ratios had a
+median of 1.02, and two text colors 2.23 ΔE apart — below the threshold at which
+a human eye can tell two grays apart at all.
+
+The gate also catches itself: an early version read the allowed font weights out
+of DESIGN.md's prose and picked up `500` from the sentence *"do not use 500"*.
+Allowed values now live only in tables.
+
 ### Two fetch cadences (ADR-008)
 
 | Cadence | What runs | When |
 |---|---|---|
-| Fast | registry, `dep-graph`, `trace-index` | on save (coalesced, 400 ms) |
+| Fast | registry, `dep-graph`, `trace-index`, titles | on save (coalesced, 400 ms) |
 | Slow | the above plus `docs-audit` | on startup, on explicit refresh, after quiet (2500 ms) |
 
-Measured on this repository (39 documents, 197 files reached): `dep-graph` 127 ms,
-`trace-index` 645 ms, `docs-audit` 543 ms, registry probe 21 ms. `dep-graph` runs
-first on its own — everything else needs its result to be worth fetching — and the
-remaining three then run in parallel. So the fast cadence costs about
-`127 + max(21, 645)` ≈ 770 ms and the slow one about `127 + max(21, 645, 543)`
-≈ 770 ms; on this tree the audit hides entirely behind `trace-index`. On a large
-repository, where the audit dominates, set `auditDebounceMs: 0` and run it only on
-demand. The screen always shows *when* the fingerprint verdict was taken, so a
-stale verdict never reads as a fresh fact.
+Measured on this repository (45 documents): `dep-graph` 127 ms, `trace-index`
+645 ms, `docs-audit` 543 ms, titles 324 ms, registry probe 21 ms. `dep-graph`
+runs first on its own — everything else needs its result to be worth fetching —
+and the rest then run in parallel, so a full round is about 1.9 s. On a large
+repository, where the audit dominates, set `auditDebounceMs: 0` and run it only
+on demand. The screen always shows *when* the verdict was taken, so a stale
+verdict never reads as a fresh fact.
 
-### Deterministic drawing (ADR-002)
-
-No charting library — the SVG is assembled by hand, and layout uses neither
-randomness nor the clock. The same tree always produces the same coordinates.
-Force-directed layout would jitter, and the map would stop being readable as a
-version-control diff.
+Moving the cursor re-derives the list without touching Python at all — it is
+pure computation over the snapshot already in memory.
 
 ### It governs itself
 
@@ -211,9 +315,9 @@ re-recording, and the audit raises `trace_stale`.
 ## What it does not do
 
 See `doctrine_docs/_system/non-goals.md` for the full list with reasons. In short:
-no governance rules of its own, no charting library, no complaint about unmarked
-code, no writes to the governance tree, no default keybindings, and no mixing of
-several trees at once.
+no governance rules of its own, **no diagram**, no answer to "show me everything",
+no view-switching controls, no complaint about unmarked code, no writes to the
+governance tree, no default keybindings, and no mixing of several trees at once.
 
 ---
 
@@ -239,9 +343,11 @@ npm run docs:render      # redraws the projections
 ```
 
 \* `docs:trace` scans the whole tree, so it also lists the copies of the markers
-that land in `out/` (the bundles in `dist/` carry no markers). The audit applies `trace_exempt` from
-`doctrine_docs/_system/.context-config.json` and ignores them; this listing does
-not. Read it as "every marker on disk", not "every governed range".
+that land in `out/` (the bundles in `dist/` carry no markers). The audit applies
+`trace_exempt` from `doctrine_docs/_system/.context-config.json` and ignores
+them; this listing does not. Read it as "every marker on disk", not "every
+governed range". Filed upstream as
+[doctrine#150](https://github.com/Forest-Project-Lab/doctrine/issues/150).
 
 `test:integration` needs GTK3 and an X server (the devcontainer's Dockerfile
 installs both, including `xvfb`). Without a display it fails, so run it under
@@ -260,11 +366,17 @@ freezes that list so it cannot drift.
 
 ### Checking the webview outside the editor
 
-The webview is plain DOM and SVG, so it can be opened in an ordinary browser.
+The webview is plain DOM — no SVG, no canvas — so it opens in an ordinary browser.
 
 ```bash
 npm run preview   # rebuilds .preview/ from src, then drives it and captures shots
 ```
+
+It renders the **real tree**, through the **real model** (`buildConsequence` and
+`buildView` are imported, not reimplemented), in the **real shell**
+(`src/panel/html.ts`) with the **real strings** (`src/l10n.ts`). Then it clicks a
+row, clicks a range, presses Enter, and squeezes the window to 280px checking
+that nothing overflows.
 
 `npm run mutate` breaks, one at a time, each fix listed in `tools/mutate-check.mjs`
 and checks that a unit test turns red. Adding a row when you add a fix is the
@@ -276,8 +388,9 @@ author's job; the unit suite fails if a row stops matching the source.
 and `src/panel/html.ts`. `npm run test:integration` loads the real extension, so
 it reaches activation, command registration, the CodeLens headlines and the
 document↔code commands. What is left with **no automated gate at all** is
-`src/statusbar.ts`'s wiring, `src/codelens/decorations.ts`'s wiring, and the
-message handlers in `src/panel/lensPanel.ts` that the preview does not send.
+`src/statusbar.ts`'s wiring, `src/codelens/decorations.ts`'s wiring, and
+`src/panel/lensPanel.ts` — both the message handlers the preview does not send
+and the code that decides the origin from the cursor and caches the last result.
 Defects were injected into exactly those places and every gate stayed green.
 The decisions behind them (`src/model/status.ts`, `src/model/trace.ts`) are
 unit-tested; the few lines that copy those decisions into editor objects are not.
@@ -285,14 +398,11 @@ unit-tested; the few lines that copy those decisions into editor objects are not
 `preview-webview.mjs` bundles the webview from `src/` itself — it does not copy
 `dist/` — so what you look at is always the current source. `shoot-preview.mjs`
 then refuses to run against a `.preview/` older than `src/`, and asserts that
-each navigation step actually changed the view, so neither a failed rebuild nor
-a dead gesture can pass as a green visual check. Both guards exist because both
-mistakes were made here: the screenshots in this README were once taken against
-a build that did not contain the fix they were meant to show.
+each step actually changed something, so neither a failed rebuild nor a dead
+gesture can pass as a green visual check. Both guards exist because both
+mistakes were made here.
 
-It uses the real shell (`src/panel/html.ts`) and the real strings
-(`src/l10n.ts`) rather than copies, so what you check matches what ships. Note
-that a browser is *not* a VS Code webview sandbox — modal dialogs behave
+Note that a browser is *not* a VS Code webview sandbox — modal dialogs behave
 differently there, so anything involving them must be checked in the extension
 host instead.
 
@@ -310,40 +420,71 @@ Playwright, Claude Code).
 
 ## 日本語
 
-統治木を、俯瞰から実装のコード範囲まで**一枚の地図**として見る VS Code 拡張機能です。
+一つの問いにだけ答える VS Code 拡張機能です。
 
-**文脈の地図は描くものではなく、導出されるもの**です。
-[doctrine](https://github.com/Forest-Project-Lab/doctrine) は `domain`・`depends_on`・
-「ドメイン越えの依存は相手の ICD 宛だけ」という規則を全文書の frontmatter に強制しています。
-地図を描くための情報は、統治木を敷いた時点ですでに機械可読な形で揃っています。
-この拡張機能は新しい規則を持たず、その揃っている情報を描くだけです。
+> **これを変えたら、何を、どの順で直すことになるか。**
 
-### 前提は二つ
+地図ではありません。順のついた明細で、どの行にも「なぜ居るか」の一文が付きます。
 
-**Python 3** と **doctrine プラグイン**だけです。実行時に Node は要りません。
-統治木は作業フォルダの直下（`<作業フォルダ>/doctrine_docs/`）に置いてください。
+### 起点は選ばない
 
-導入したら、コマンドパレットで **`Doctrine Lens: Open the map`**。
-何も出ないときは右下の状態の帯を見てください。統治木が無い・python が起動しない・
-プラグインが見つからない、のどれかが理由と一緒に出ます。
+`doctrine:begin` が囲む範囲の中にカーソルを置くか、統治木の `.md` を開く。
+それが**起点**です。利用者は何も選びません。画面がカーソルに従います。
 
-### 深度とレンズ
+### 記号は五つ、重い順に排他
 
-降りるのはダブルクリック、上がるのは `Backspace`。段ごとに操作は変わりません。
-L0 文脈の地図 → L1 ドメイン内部 → L2 文書 → L3 コード範囲。
+| 記号 | 意味 | 出所 |
+|---|---|---|
+| `×` | 既に壊れている | `docs-audit` の severity が error か warn の所見 |
+| `+` | 足りない | `dep-graph --reverse-orphans` |
+| `?` | 直す場所が無い | 波及先だが、結ばれたコード範囲が零件 |
+| `!` | 直す | 起点を `depends_on` に持つ。前提が変わる |
+| `~` | 見直す | 何かが「影響する」と宣言している |
 
-レンズは色・絞り・配置・深度の四つのダイヤルで、互いに独立です。
-名前を付けて保存でき、作業フォルダごとに保ちます。
+`!` と `~` は別の記号・別の一文にします。上流が依存と影響を別の端として持ち、
+混ぜてはならないと定めているためです。方向は 6px の矢頭ではなく、記号と文が運びます。
+
+### 順序が本体
+
+波は起点からの**最長**距離で決めます。最短ではありません。
+`起点 → C → B` と `起点 → B` の両方があるとき、`B` は第 2 波です。
+`C` より先に `B` を直すと前提が二度変わるからです。
+「どの順で直すか」に答える画面が、間違った順を答えてはいけません。
+
+循環には順が無いので、順を付けません。波から外し、`A → B → A` という
+一行の文字列として書き下し、上流の `dep_cycle` の文を添えます。
+
+### なぜ地図をやめたか（ADR-012）
+
+地図でした。読めませんでした。測ってみると、原因は配置ではありませんでした。
+
+- 45 節点・45 辺・密度 0.02。この規模なら節点・辺の図が有利だという研究があります。
+  それでも読めませんでした。
+- **縦軸も横軸も意味を持っていませんでした。** 列は登録簿の順、行は id の辞書順。
+  辺の 52% が 2 列以上をまたいでいました。行の順を 6000 回入れ替えても、
+  交差は 31 から 24 にしか減りませんでした。
+- **45 本のうち 16 本が「同じ事実の二重書き」でした。** `A impacts B` と
+  `B depends_on A` を、向きの違う二本の矢印として描いていました。
+  それは循環に見えます。**本当の循環は 0 件**でした。
+  「依存しあっているものは異常？」という問いは、画面が作った嘘を正しく読んだ結果でした。
+- **上流の検査は 34 件あり、使っていたのは 11 件でした。**
+  判断の層を橋の上で捨てていたので、画面は事実しか言えず、判断は読み手に残りました。
+
+配置を直す話ではありませんでした。地図は「全体はどう並んでいるか」に答えますが、
+それを訊いている人が居なかった。だから、実際に訊かれている問いに答える形へ作り直しました。
 
 ### 設計の要点
 
+- **一つの画面は一つの問いだけに答えます**（REQ-002）。ダイヤルはありません。
+  深度も、配置の切り替えも、色分けも、保存したレンズもありません
 - **統治の規則を持ちません**（REQ-003）。型・status・置き場所・指紋の突き合わせのいずれも、
   上流の判定の結果を読むだけです
 - **事実と判定を分けます**（ADR-005）。範囲の在処は `trace-index`、
   指紋の食い違いの判定は `docs-audit` から取ります
-- **既定のキー割り当てを持ちません**（ADR-009）。導入しただけで編集器の既定を奪わないためです
-- **実行体を選ぶ設定は machine scope です**（ADR-010）。開いたリポジトリが
-  python を差し替えられないようにするためです
+- **意匠の値の正本は `DESIGN.md` です**（ADR-013）。試験が `DESIGN.md` を読み、
+  そこに無い寸法や色が CSS に現れると落ちます
+- **既定のキー割り当てを持ちません**（ADR-009）
+- **実行体を選ぶ設定は machine scope です**（ADR-010）
 
 やらないことの一覧は `doctrine_docs/_system/non-goals.md` に理由つきで書いてあります。
 

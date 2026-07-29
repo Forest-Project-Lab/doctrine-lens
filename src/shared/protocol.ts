@@ -1,108 +1,113 @@
-// 本体と webview のあいだで取り決めた形（IMPL-001)。
+// 本体と webview のあいだで取り決めた形（IMPL-001）。
 //
 // webview は子プロセスを起こさない。上流の CLI を呼ぶのは本体だけである。
-// webview が受け取るのは取得済みのグラフと登録簿であり、そこから先の
-// 場面の組み立てと配置は webview の側で行う。こうするとレンズを回しても
-// 往復が起きない。
-import type { Graph, Registry } from "../doctrine/model.js";
-import type { TraceRange } from "../doctrine/trace.js";
-import type { WebviewStrings } from "../l10n.js";
-import type { Focus } from "../model/depth.js";
-import type { Lens } from "../model/lens.js";
+//
+// **webview は模型を持たない。** 明細の組み立て（波・記号・順序）は本体側の
+// 純粋な関数が行い、題名の解決も文言の訳も本体で済ませる。webview が受け取るのは
+// そのまま描ける形であり、判断を一つも持たない。
+// 旧設計では場面の組み立てを webview 側に置いていたが、それはダイヤルを回すたびに
+// 往復が起きるのを避けるためだった。ダイヤルが無くなったので、その理由も消えた。
 
-/** 名前を付けて保存したレンズ。作業フォルダごとに保つ。 */
-export interface SavedLens {
-  readonly name: string;
-  readonly lens: Lens;
-  /**
-   * 保存したときの焦点。
-   *
-   * 深度は lens が持つが、深度 1 以上は焦点が無いと立たない。焦点を捨てると
-   * 選び直したときに段だけが黙って落ちる（SPEC-003 受入基準 5 の破れ）。
-   * 焦点の指す文書やドメインが消えていれば、場面の側が段を戻して理由を告げる。
-   * 焦点を持たない古い記録は `undefined`。そのときは焦点無しとして扱う。
-   */
-  readonly focus?: Focus | undefined;
+/** 各行の左端に置く記号。重い順に排他（SPEC-006）。 */
+export type RowSymbol = "broken" | "missing" | "nowhere" | "fix" | "review";
+
+/** コード範囲への案内。押すとその行へ跳ぶ。 */
+export interface RangeLink {
+  readonly path: string;
+  readonly beginLine: number;
+  readonly endLine: number;
+  readonly label: string;
 }
 
-/**
- * 保存する記録を組む。
- *
- * 焦点を対にするのはここ一箇所である。落とすと、選び直したときに深度だけが
- * 黙って落ちる（SPEC-003 受入基準 5 の破れ）。呼び手が組み立てを写すと、
- * 写した側だけが焦点を落としても誰も気づかない。
- */
-export function toSavedLens(name: string, lens: Lens, focus: Focus): SavedLens {
-  return { name, lens, focus };
+/** 明細の一行。すべて訳し終えた文字列である。 */
+export interface RowView {
+  readonly id: string;
+  readonly symbol: RowSymbol;
+  /** 主文。題名が取れていれば題名、取れていなければ id。 */
+  readonly title: string;
+  /** なぜこの行が居るかの一文。 */
+  readonly reason: string;
+  /** 「後ろに N」。0 なら画面に出さない。 */
+  readonly behind: number;
+  readonly ranges: readonly RangeLink[];
+  /** 上流の所見の文。一字も変えずに運ぶ。 */
+  readonly findings: readonly string[];
+}
+
+/** 一つの波。 */
+export interface WaveView {
+  /** 「第 1 波」などの見出し。 */
+  readonly heading: string;
+  /** 見出しに添える一文（「起点に直接ぶら下がる」）。 */
+  readonly note: string;
+  /**
+   * 見出しの右端に置く件数（「2 文書」）。
+   *
+   * 単位の語を付けるのは、行の右端の数（「後ろに N」）と同じ位置に出るためである。
+   * 裸の数を二種類、同じ場所に置くと、どちらがどちらか読めない。
+   */
+  readonly count: string;
+  readonly rows: readonly RowView[];
+}
+
+/** 波が決まらない組。 */
+export interface CycleView {
+  /** `A → B → A` の形にした一行。題名ではなく id で書く（短く読ませるため）。 */
+  readonly path: string;
+  readonly findings: readonly string[];
+}
+
+/** 起点の欄。 */
+export interface OriginView {
+  readonly title: string;
+  /** `SPEC-001 · src/doctrine/cli.ts:1-231 · 現行 · 更新 2026-07-28` の形。 */
+  readonly detail: string;
+}
+
+/** 画面ひと揃い。これがそのまま描ける。 */
+export interface ConsequenceView {
+  /** 起点が無ければ `null`。そのときは `emptyReason` を出す。 */
+  readonly origin: OriginView | null;
+  /** 起点が無いときに出す文。何を開けばよいかまで書く。 */
+  readonly emptyReason: string;
+  /** 要約の一行。すでに組み立てた文字列。 */
+  readonly summary: string;
+  readonly waves: readonly WaveView[];
+  readonly cycles: readonly CycleView[];
+  /** 脚注の各行。畳んだ件数・上流の名前と時刻。 */
+  readonly footnotes: readonly string[];
+  /** 記号の語彙（`×壊れている` など）。 */
+  readonly legend: readonly string[];
 }
 
 /** 本体から webview へ。 */
 export type ToWebview =
+  | { readonly kind: "view"; readonly view: ConsequenceView }
+  | { readonly kind: "busy"; readonly busy: boolean }
   | {
-      readonly kind: "snapshot";
-      readonly graph: Graph;
-      readonly registry: Registry | null;
-      readonly docsRoot: string;
-      readonly savedLenses: readonly SavedLens[];
-      /** 上流が返したコード範囲。取れていなければ `null`。 */
-      readonly ranges: readonly TraceRange[] | null;
-      /** 上流が指紋の食い違いを挙げた文書の id。集合は渡せないので配列で運ぶ。 */
-      readonly staleIds: readonly string[];
-      /** 訳し終えた表示の文字列。webview は翻訳の仕組みを持たない（ADR-007）。 */
-      readonly strings: WebviewStrings;
-      /** 指紋の判定を取った時刻。未取得なら `null`（ADR-008）。 */
-      readonly auditAt: string | null;
-    }
-  | {
+      /**
+       * 本体からの通知。取得の失敗・部分的な欠け。
+       *
+       * 明細そのものが告げること（畳んだ件数など）とは出所が違うので、
+       * 画面では別の帯に出す。一つの帯を共有すると、本体が取得のたびに送る
+       * 「消せ」で明細側の通知が必ず消える。
+       */
       readonly kind: "notice";
       readonly tone: "info" | "error";
       readonly text: string;
       readonly detail: string;
-    }
-  | { readonly kind: "busy"; readonly busy: boolean }
-  | {
-      /**
-       * 表示の文字列だけを先に渡す。
-       *
-       * 統治木・plugin・作業フォルダのいずれかが無いと snapshot は一度も来ない。
-       * 文字列を snapshot に相乗りさせていると、その場合に札も釦も凡例も
-       * 空文字のまま出る。器ができた時点で必ず一度渡す。
-       */
-      readonly kind: "strings";
-      readonly strings: WebviewStrings;
-      /** 編集器の表示言語（`vscode.env.language`）。日付の書式に使う。 */
-      readonly language: string;
-    }
-  | {
-      readonly kind: "savedLenses";
-      readonly savedLenses: readonly SavedLens[];
-      /** 直前に名前を付けて保存した組。保存した直後にその名を選ばせるため。 */
-      readonly justSaved?: string | undefined;
-    }
-  | { readonly kind: "reveal"; readonly docId: string };
+    };
 
 /** webview から本体へ。 */
 export type ToHost =
   | { readonly kind: "ready" }
   | { readonly kind: "refresh" }
-  | { readonly kind: "openDocument"; readonly path: string }
+  /** 文書を開く。`id` で指す。 */
+  | { readonly kind: "openDocument"; readonly id: string }
+  /** コード範囲を開く。 */
   | {
-      /** コード範囲を編集器で開く。行は上流が返した 1 始まりの値のまま運ぶ。 */
       readonly kind: "openRange";
       readonly path: string;
       readonly beginLine: number;
       readonly endLine: number;
-    }
-  | {
-      /**
-       * レンズに名前を付けて保存したい、という要求。
-       *
-       * 名前を訊くのは本体の役目である。webview は `allow-modals` の無い sandbox に
-       * 居るので `window.prompt` が必ず `null` を返す（実機で保存が無反応だった）。
-       */
-      readonly kind: "requestSaveLens";
-      readonly lens: Lens;
-      /** 保存の時点の焦点。選び直したとき深度ごと戻すために要る。 */
-      readonly focus: Focus;
-    }
-  | { readonly kind: "deleteLens"; readonly name: string };
+    };

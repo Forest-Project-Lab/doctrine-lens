@@ -6,10 +6,11 @@
 // 範囲と所見の取得もこの束ねの中で行う（SPEC-004 制約）。
 import { join } from "node:path";
 
-import { fetchTraceFindings, type AuditFinding } from "./audit.js";
+import { fetchFindings, type AuditFinding } from "./audit.js";
 import { runJson, type RunOptions } from "./cli.js";
 import { fetchTraceRanges, type TraceRange } from "./trace.js";
 import { fetchRegistry } from "./registry.js";
+import { fetchDocMeta, type DocMetaIndex } from "./titles.js";
 import { fail, ok, type Graph, type Outcome, type Registry } from "./model.js";
 
 /** 取得したひと揃い。地図を描くのに要るものを束ねる。 */
@@ -19,8 +20,12 @@ export interface Snapshot {
   registry: Registry | null;
   /** 範囲が取れなかったときは `null`。L3 とコード側の面だけを止める。 */
   ranges: TraceRange[] | null;
-  /** 所見が取れなかったときは `null`。食い違いの表示だけを止める。 */
+  /** 所見が取れなかったときは `null`。判定の表示だけを止める。 */
   findings: AuditFinding[] | null;
+  /** 上流が挙げた逆孤児（対応する仕様や試験が無いもの）の id。 */
+  reverseOrphans: string[];
+  /** 文書の題名など。取れなければ空の表。主文が id へ落ちる。 */
+  docMeta: DocMetaIndex;
   docsRoot: string;
   projectDir: string;
 }
@@ -28,7 +33,7 @@ export interface Snapshot {
 /** 部分的に取れなかったものの名前。表示は呼び手が訳す（ADR-007）。 */
 /** 部分的に取れなかったもの。 */
 export interface PartialFetch {
-  readonly what: "registry" | "ranges" | "findings";
+  readonly what: "registry" | "ranges" | "findings" | "orphans" | "titles";
   /** 取れなかった理由の符号。表示の文言は呼び手が訳す（ADR-007）。 */
   readonly reason: string;
   /**
@@ -77,11 +82,14 @@ export async function fetchSnapshot(
 
   // 残る三つは互いに独立なので並べて走らせる。どれが落ちても他を巻き込まない。
   // 監査は最も重いので、速い拍では走らせない（ADR-008）。
-  const [registryOutcome, rangesOutcome, findingsOutcome] = await Promise.all([
-    fetchRegistry(pluginRoot, options),
-    fetchTraceRanges(projectDir, docsRoot, pluginRoot, options),
-    withAudit ? fetchTraceFindings(projectDir, docsRoot, pluginRoot, options) : Promise.resolve(null),
-  ]);
+  const [registryOutcome, rangesOutcome, findingsOutcome, orphanOutcome, metaOutcome] =
+    await Promise.all([
+      fetchRegistry(pluginRoot, options),
+      fetchTraceRanges(projectDir, docsRoot, pluginRoot, options),
+      withAudit ? fetchFindings(projectDir, docsRoot, pluginRoot, options) : Promise.resolve(null),
+      fetchReverseOrphans(docsRoot, pluginRoot, options),
+      fetchDocMeta(docsRoot, pluginRoot, options),
+    ]);
 
   const partial: PartialFetch[] = [];
   if (!registryOutcome.ok) {
@@ -93,6 +101,12 @@ export async function fetchSnapshot(
   if (findingsOutcome && !findingsOutcome.ok) {
     partial.push({ what: "findings", reason: findingsOutcome.reason, detail: findingsOutcome.detail });
   }
+  if (!orphanOutcome.ok) {
+    partial.push({ what: "orphans", reason: orphanOutcome.reason, detail: orphanOutcome.detail });
+  }
+  if (!metaOutcome.ok) {
+    partial.push({ what: "titles", reason: metaOutcome.reason, detail: metaOutcome.detail });
+  }
 
   return ok({
     snapshot: {
@@ -101,11 +115,47 @@ export async function fetchSnapshot(
       ranges: rangesOutcome.ok ? rangesOutcome.value : null,
       // 監査を飛ばした回は null を返す。呼び手が前回の判定を保つ（ADR-008）。
       findings: findingsOutcome?.ok ? findingsOutcome.value : null,
+      reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],
+      docMeta: metaOutcome.ok ? metaOutcome.value : new Map(),
       docsRoot,
       projectDir,
     },
     partial,
   });
+}
+
+/**
+ * 対応する仕様や試験が無い文書の id を取る。
+ *
+ * 上流が「足りない」と判じたものである。こちらは「何が足りないか」の規則を持たない
+ * （REQ-003）。返る形は `{req_without_spec: [...], spec_without_test: [...]}` で、
+ * 分類はこちらで畳む——画面が出すのは「足りない」という一つの記号だけである。
+ */
+export async function fetchReverseOrphans(
+  docsRoot: string,
+  pluginRoot: string,
+  options: RunOptions,
+): Promise<Outcome<string[]>> {
+  const outcome = await runJson<{ result?: Record<string, unknown> }>(
+    [
+      join(pluginRoot, "scripts", "dep-graph.py"),
+      "--root", docsRoot,
+      "--reverse-orphans",
+      "--json",
+    ],
+    options,
+  );
+  if (!outcome.ok) return outcome;
+  const result = outcome.value?.result;
+  if (!result || typeof result !== "object") {
+    return fail<string[]>("bad-json", 'the value has no "result"');
+  }
+  const ids = new Set<string>();
+  for (const bucket of Object.values(result)) {
+    if (!Array.isArray(bucket)) continue;
+    for (const id of bucket) if (typeof id === "string" && id) ids.add(id);
+  }
+  return ok([...ids].sort());
 }
 
 /**

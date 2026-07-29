@@ -67,7 +67,7 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     assert.ok(extension, `${EXTENSION_ID} が見つからない`);
     await extension.activate();
     // 取得は起動直後に走る。見出しが出るまで待つ。
-    await waitFor(async () => (await lensesFor("src/model/depth.ts")).length > 0, "見出しが出ること");
+    await waitFor(async () => (await lensesFor("src/model/consequence.ts")).length > 0, "見出しが出ること");
   });
 
   it("読み込めて起動する（main の指す束が実在する）", () => {
@@ -92,21 +92,21 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
   });
 
   it("005-1. 印が囲む範囲の始まりに見出しが出る", async () => {
-    const lenses = await lensesFor("src/model/depth.ts");
+    const lenses = await lensesFor("src/model/consequence.ts");
     assert.ok(lenses.length >= 2, `見出しが少ない: ${lenses.length}`);
     // 範囲は 1 行目から始まる。編集器の行は 0 始まり。
     assert.equal(lenses[0]?.range.start.line, 0, "1 行目に出る");
     // 見出しの文言は表示言語で変わる（ADR-007）。字面ではなく、
     // 結ばれた文書の id と、押したときに走る命令で確かめる。
     const titles = lenses.map((l) => l.command?.title ?? "");
-    assert.ok(titles.some((t) => t.includes("SPEC-002")), `結ばれた文書が出ていない: ${titles}`);
+    assert.ok(titles.some((t) => t.includes("SPEC-006")), `結ばれた文書が出ていない: ${titles}`);
     const commands = lenses.map((l) => l.command?.command);
     assert.ok(commands.includes("doctrineLens.openDocumentById"), "文書を開く見出しが無い");
-    assert.ok(commands.includes("doctrineLens.revealDocumentById"), "地図で見る見出しが無い");
+    assert.ok(commands.includes("doctrineLens.revealDocumentById"), "帰結を見る見出しが無い");
   });
 
   it("005-2. 見出しから文書を開ける", async () => {
-    const lenses = await lensesFor("src/model/depth.ts");
+    const lenses = await lensesFor("src/model/consequence.ts");
     const first = lenses[0];
     assert.ok(first?.command, "見出しに命令が無い");
     assert.equal(first.command.command, "doctrineLens.openDocumentById");
@@ -115,7 +115,7 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
       ...(first.command.arguments ?? []),
     );
     const opened = vscode.window.activeTextEditor?.document.fileName ?? "";
-    assert.ok(opened.includes("SPEC-002"), `開いた先が違う: ${opened}`);
+    assert.ok(opened.includes("SPEC-006"), `開いた先が違う: ${opened}`);
   });
 
   it("005-4. 印を含まないファイルには見出しが出ない", async () => {
@@ -133,14 +133,14 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
   });
 
   it("コード → 文書。範囲の中から呼ぶと、その根拠の文書が開く", async () => {
-    const uri = vscode.Uri.file(resolve(PROJECT, "src/model/lens.ts"));
+    const uri = vscode.Uri.file(resolve(PROJECT, "src/doctrine/audit.ts"));
     const document = await vscode.workspace.openTextDocument(uri);
     const editor = await vscode.window.showTextDocument(document);
     // 範囲の内側の行を選ぶ。
     editor.selection = new vscode.Selection(20, 0, 20, 0);
     await vscode.commands.executeCommand("doctrineLens.openDocumentForRange");
     const opened = vscode.window.activeTextEditor?.document.fileName ?? "";
-    assert.ok(opened.includes("SPEC-003"), `開いた先が違う: ${opened}`);
+    assert.ok(opened.includes("SPEC-004"), `開いた先が違う: ${opened}`);
   });
 
   it("005-6. 文書 → コード。跳ぶ先が複数あるとき選ばせる", async function () {
@@ -172,9 +172,41 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     ).then(undefined, () => undefined);
   });
 
-  it("地図の画面が開く", async () => {
+  it("id を指した文書の帰結は、その文書を開いてから出る（起点を渡さない）", async () => {
+    // 画面へ「この id を起点にせよ」と渡すと、カーソルに従う状態と渡された
+    // 起点を保つ状態の二つを持つことになり、二つ目がいつ解けるかを説明できない。
+    // 文書を開けば、それが編集中のものになり、既にある規則がそのまま働く。
+    const away = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(resolve(PROJECT, "esbuild.mjs")),
+    );
+    await vscode.window.showTextDocument(away);
+
+    await vscode.commands.executeCommand("doctrineLens.revealDocumentById", "SPEC-006");
+    const opened = vscode.window.visibleTextEditors.map((e) => e.document.fileName);
+    assert.ok(
+      opened.some((f) => f.includes("SPEC-006")),
+      `指した文書が開いていない: ${opened.join(", ")}`,
+    );
+  });
+
+  it("明細の画面が開き、いま開いている位置が起点になる", async () => {
+    // 起点は利用者が選ばない。印が囲む範囲の中にカーソルを置いた状態で開くと、
+    // その範囲が指す文書が起点になる（SPEC-006 受入基準 1）。
+    const marked = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(resolve(PROJECT, "src/model/consequence.ts")),
+    );
+    const editor = await vscode.window.showTextDocument(marked);
+    editor.selection = new vscode.Selection(20, 0, 20, 0);
+
     await vscode.commands.executeCommand("doctrineLens.open");
     // webview が開いたことは、命令が例外なく終わったことで足りる。
     // 中身の描画はブラウザ側の確認（tools/shoot-preview.mjs）が受け持つ。
+
+    // 印の無いファイルへ移っても落ちない（起点が無いだけである）。
+    const plain = await vscode.workspace.openTextDocument(
+      vscode.Uri.file(resolve(PROJECT, "esbuild.mjs")),
+    );
+    await vscode.window.showTextDocument(plain);
+    await vscode.commands.executeCommand("doctrineLens.refresh");
   });
 });

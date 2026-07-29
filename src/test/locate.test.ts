@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { canAudit, fetchTraceFindings } from "../doctrine/audit.js";
+import { canAudit, fetchFindings } from "../doctrine/audit.js";
 import { clampTimeout, resolvePython, runJson, type RunOptions } from "../doctrine/cli.js";
 import { locatePluginRoot } from "../doctrine/locate.js";
 
@@ -149,12 +149,12 @@ test("上流が別の木を監査したら、その判定を使わない", async
     const pluginRoot = join(dir, "plugin");
 
     fakeAudit(pluginRoot, docsRoot);
-    const same = await fetchTraceFindings(dir, docsRoot, pluginRoot, options(dir));
+    const same = await fetchFindings(dir, docsRoot, pluginRoot, options(dir));
     assert.ok(same.ok, "同じ木なら判定を使う");
     assert.equal(same.value.length, 1);
 
     fakeAudit(pluginRoot, other);
-    const different = await fetchTraceFindings(dir, docsRoot, pluginRoot, options(dir));
+    const different = await fetchFindings(dir, docsRoot, pluginRoot, options(dir));
     assert.equal(
       different.ok,
       false,

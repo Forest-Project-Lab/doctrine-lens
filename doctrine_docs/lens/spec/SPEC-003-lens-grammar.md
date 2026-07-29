@@ -3,10 +3,11 @@ id: SPEC-003
 title: レンズ文法
 type: SPEC
 domain: lens
-status: current
+status: deprecated
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-07-29
+superseded_by: SPEC-006
 sources: []
 depends_on: [REQ-002, SPEC-002]
 impacts: [IMPL-001]

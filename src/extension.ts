@@ -51,18 +51,21 @@ export function activate(context: vscode.ExtensionContext): void {
       if (picked) await session.choose(picked.folder);
     }),
 
-    vscode.commands.registerCommand("doctrineLens.revealActiveDocument", async () => {
-      const docId = activeDocumentId(session);
-      if (!docId) {
-        void vscode.window.showInformationMessage(messages.notInTree());
-        return;
-      }
-      LensPanel.show(context, session).reveal(docId);
+    vscode.commands.registerCommand("doctrineLens.revealActiveDocument", () => {
+      // 起点はカーソルから決まるので、画面を開けばそれが起点になる（ADR-012）。
+      LensPanel.show(context, session);
     }),
 
-    vscode.commands.registerCommand("doctrineLens.revealDocumentById", (docId?: string) => {
+    vscode.commands.registerCommand("doctrineLens.revealDocumentById", async (docId?: string) => {
       if (!docId) return;
-      LensPanel.show(context, session).reveal(docId);
+      // 指した文書を**開いてから**画面を出す。
+      //
+      // 画面へ「この id を起点にせよ」と渡さない。渡すと、画面はカーソルに従う
+      // 状態と、渡された起点を保つ状態の二つを持つことになる。二つ目の状態は
+      // 「いつ解けるか」を利用者に説明できない（ADR-012 が退けた形である）。
+      // 文書を開けば、それが編集中のものになり、既にある規則がそのまま働く。
+      await openDocumentById(session, docId);
+      LensPanel.show(context, session);
     }),
 
     vscode.commands.registerCommand("doctrineLens.openDocumentById", async (docId?: string) => {
