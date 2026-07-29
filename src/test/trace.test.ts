@@ -15,8 +15,6 @@ import {
   readExemptPaths,
   type TraceRange,
 } from "../doctrine/trace.js";
-import { buildScene, descend, ascend, NO_FOCUS, type Position } from "../model/depth.js";
-import { DEFAULT_LENS, withDepth } from "../model/lens.js";
 import { bandsForPath,
   groupByDocument,
   headlinesForPath,
@@ -123,15 +121,6 @@ test("004-3c. 設定が無い・壊れているときは宣言が無いものと
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test("004-4. 範囲が取れなくても場面は組める", () => {
-  const graph = twoDomainGraph();
-  const scene = buildScene(graph, DEFAULT_LENS, NO_FOCUS, REGISTRY, {
-    ranges: null,
-    staleIds: new Set(),
-  });
-  assert.ok(scene.nodes.length > 0, "L0 は範囲に依らない");
 });
 
 test("004-5. 指紋の突き合わせが実装のどこにも書かれていない", () => {
@@ -261,91 +250,6 @@ test("005-7. 文書ごとの束ねと覆いの数え", () => {
 
 // --- TEST-002 の追補（L3 の行き来） ---------------------------------------
 
-test("002-8. L2 の焦点から L3 へ降り、範囲が節点として並ぶ", () => {
-  const graph = twoDomainGraph();
-  const ranges = [range("SPEC-001", "src/a.ts", 1, 20), range("SPEC-001", "src/b.ts", 5, 9)];
-  const context = { ranges, staleIds: new Set<string>() };
-  const position: Position = { depth: 2, focus: { domain: "lens", docId: "SPEC-001" } };
-  const l2 = buildScene(graph, withDepth(DEFAULT_LENS, 2), position.focus, REGISTRY, context);
-
-  const down = descend(position, "SPEC-001", l2, context);
-  assert.ok(down, "焦点そのものを選ぶと降りる");
-  assert.equal(down.depth, 3);
-  assert.equal(down.focus.docId, "SPEC-001");
-
-  const l3 = buildScene(graph, withDepth(DEFAULT_LENS, 3), down.focus, REGISTRY, context);
-  assert.equal(l3.depth, 3);
-  assert.equal(l3.nodes.length, 2);
-  assert.ok(l3.nodes.every((n) => n.kind === "range"));
-  assert.equal(l3.edges.length, 0, "範囲どうしの関係を上流は返さない");
-  assert.equal(l3.nodes[0]?.count, 20, "背の高さに使う行数");
-});
-
-test("002-9. L3 から上がると同じ文書の L2 へ戻る", () => {
-  const position: Position = { depth: 3, focus: { domain: "lens", docId: "SPEC-001" } };
-  const up = ascend(position);
-  assert.equal(up.depth, 2);
-  assert.equal(up.focus.docId, "SPEC-001", "焦点の文書を保つ");
-  assert.equal(ascend(up).depth, 1);
-  assert.equal(ascend(ascend(up)).depth, 0);
-});
-
-test("002-10. 範囲を持たない文書からは L3 へ降りられない", () => {
-  const graph = twoDomainGraph();
-  const context = { ranges: [] as TraceRange[], staleIds: new Set<string>() };
-  const position: Position = { depth: 2, focus: { domain: "lens", docId: "SPEC-001" } };
-  const l2 = buildScene(graph, withDepth(DEFAULT_LENS, 2), position.focus, REGISTRY, context);
-  assert.equal(descend(position, "SPEC-001", l2, context), null);
-});
-
-test("002-10b. 範囲が消えた状態で L3 を求めると L2 へ戻される", () => {
-  const graph = twoDomainGraph();
-  const scene = buildScene(
-    graph,
-    withDepth(DEFAULT_LENS, 3),
-    { domain: "lens", docId: "SPEC-001" },
-    REGISTRY,
-    { ranges: [], staleIds: new Set() },
-  );
-  assert.equal(scene.depth, 2);
-  assert.ok(scene.recovered, "戻した事実を載せる");
-});
-
-test("002-10c. 指紋が食い違う文書の L3 は、その印を節点に運ぶ", () => {
-  const graph = twoDomainGraph();
-  const ranges = [range("SPEC-001", "src/a.ts", 1, 20)];
-  const scene = buildScene(
-    graph,
-    withDepth(DEFAULT_LENS, 3),
-    { domain: "lens", docId: "SPEC-001" },
-    REGISTRY,
-    { ranges, staleIds: new Set(["SPEC-001"]) },
-  );
-  assert.equal(scene.depth, 3);
-  assert.equal(scene.nodes[0]?.isFocus, true, "食い違いを isFocus で運ぶ");
-});
-
-// --- 道具 ------------------------------------------------------------------
-
-function finding(check: string, docId: string): AuditFinding {
-  return { check, severity: "warn", doc_id: docId, path: "", message: "", refs: [] };
-}
-
-function sourceFiles(dir: string): string[] {
-  const out: string[] = [];
-  for (const name of readdirSync(dir).sort()) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...sourceFiles(full));
-    else if (name.endsWith(".ts")) out.push(full);
-  }
-  return out;
-}
-
-// --- 帯（SPEC-005 受入基準 3・4） -----------------------------------------
-//
-// 帯の行と種類は編集器の型を使わずに決める。分けてあるので、
-// 「食い違いが帯に出る」ことを編集器を起こさずに確かめられる。
-
 test("005-3. 指紋が食い違う範囲の帯は種類が変わる", () => {
   const ranges = [
     { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 10, fingerprint: "sha256:a" },
@@ -444,3 +348,20 @@ test("上流が終わりを始まりより手前に返しても、帯の行が�
   assert.ok(band);
   assert.ok(band.begin <= band.end, `逆さの帯が出ている: ${band.begin}-${band.end}`);
 });
+
+// --- 道具 ------------------------------------------------------------------
+
+function sourceFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const name of readdirSync(dir).sort()) {
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) out.push(...sourceFiles(full));
+    else if (name.endsWith(".ts")) out.push(full);
+  }
+  return out;
+}
+
+/** 見本の所見。上流が返す形に揃える。 */
+function finding(check: string, docId: string): AuditFinding {
+  return { check, severity: "warn", doc_id: docId, path: "", message: "", refs: [] };
+}

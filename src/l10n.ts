@@ -4,6 +4,8 @@
 // webview は翻訳の仕組みを持たないので、ここで訳した一式を渡す（ADR-007）。
 import * as vscode from "vscode";
 
+import type { ViewStrings } from "./model/view.js";
+
 const t = vscode.l10n.t;
 
 /** 取得ができない理由ごとの案内。読み手が次に何をすればよいかまで書く。 */
@@ -13,7 +15,7 @@ export const messages = {
   noTree: (): string => t("No doctrine tree here."),
   noTreeDetail: (): string =>
     t(
-      "Lay down doctrine_docs/ — run /doctrine:docs-system-init in a Claude Code session, or the doctrine plugin's scaffold.py. The map picks it up within a few seconds; if it does not, run \"Doctrine Lens: Refresh the map\".",
+      "Lay down doctrine_docs/ — run /doctrine:docs-system-init in a Claude Code session, or the doctrine plugin's scaffold.py. The list picks it up within a few seconds; if it does not, run \"Doctrine Lens: Refresh\".",
     ),
 
   docsRootRejected: (value: string): string =>
@@ -43,10 +45,10 @@ export const messages = {
   badJson: (): string => t("The doctrine CLI returned output that is not JSON."),
   timedOut: (): string =>
     t("The doctrine CLI did not finish in time. Raise the doctrineLens.timeoutMs setting."),
-  keptPrevious: (): string => t("Showing the map from the last successful fetch."),
+  keptPrevious: (): string => t("Showing the list from the last successful fetch."),
 
   partial: (what: string): string =>
-    t("Could not fetch {0}. The map is still available.", what),
+    t("Could not fetch {0}. The list is still available.", what),
   partialRegistry: (): string => t("the registry"),
   partialRanges: (): string => t("code ranges"),
   partialFindings: (): string => t("audit findings"),
@@ -60,7 +62,7 @@ export const messages = {
   notInGraph: (docId: string): string => t("{0} is not in the doctrine tree.", docId),
   cannotOpen: (path: string): string => t("Cannot open {0}.", path),
   missingFile: (path: string): string =>
-    t("{0} was not found. It may disappear when the map is refreshed.", path),
+    t("{0} was not found. It may disappear when the list is refreshed.", path),
 
   staleWarning: (docId: string): string =>
     t(
@@ -78,7 +80,7 @@ export const messages = {
   onlyTree: (path: string): string =>
     t("There is only one doctrine tree, so there is nothing to choose: {0}", path),
 
-  pickFolderTitle: (): string => t("Which doctrine tree should the map show?"),
+  pickFolderTitle: (): string => t("Which doctrine tree should this read?"),
   lineRange: (begin: number, end: number): string =>
     t("lines {0}–{1}", String(begin), String(end)),
 
@@ -90,130 +92,64 @@ export const messages = {
   auditAsOf: (time: string): string => t("Fingerprint verdict as of {0}", time),
   auditNever: (): string => t("Fingerprint verdict not fetched yet"),
 
-  lensPromptName: (): string => t("Name for this lens"),
-
   notInGraphShort: (): string => t("not in the tree"),
   staleShort: (): string => t("fingerprint mismatch"),
-  showOnMap: (): string => t("Show on map"),
+  partialOrphans: (): string => t("what is missing"),
+  partialTitles: (): string => t("document titles"),
+  showOnMap: (): string => t("Show what this changes"),
 } as const;
 
 /**
- * webview へ渡す文字列の一式（ADR-007）。
+ * 明細を組み立てるための文言（ADR-007）。
  *
- * webview は翻訳の仕組みを持たない。ここで訳し終えたものだけを渡す。
- * 鍵を足したら webview 側の型も足す。片方だけでは型検査が落ちる。
+ * `src/model/view.ts` が受け取り、差し込みを済ませてから webview へ渡す。
+ * webview は翻訳の仕組みを持たず、判断も持たない。
  */
-export function webviewStrings(): WebviewStrings {
+export function viewStrings(): ViewStrings {
   return {
-    breadcrumbRoot: t("Context map"),
-    breadcrumbCode: t("Code ranges"),
-    hint: t("Double-click to go deeper · Backspace to go up"),
-    refresh: t("Refresh"),
-    busy: t("Fetching…"),
-    dialColor: t("Color"),
-    dialLayout: t("Layout"),
-    dialFilterType: t("Filter by type"),
-    dialFilterDomain: t("Filter by domain"),
-    dialCurrentOnly: t("Current only"),
-    dialLens: t("Lens"),
-    save: t("Save"),
-    remove: t("Remove"),
-    all: t("All"),
-    savedLensPlaceholder: t("(saved lenses)"),
-    colorType: t("Type"),
-    colorStatus: t("Status"),
-    colorDomain: t("Domain"),
-    colorOwner: t("Owner"),
-    layoutMap: t("Map"),
-    layoutLane: t("Lanes"),
-    layoutDetail: t("Detail"),
-    layoutList: t("List"),
-    emptyGraph: t("The doctrine tree has no documents."),
-    emptyFiltered: t("No node passes the filter.\nThe filter is left as you set it."),
-    noValue: t("(no value)"),
-    docsCount: t("docs"),
-    dependedOnBy: t("Depended on by"),
-    dependsOn: t("Depends on"),
-    focus: t("Focus"),
-    boundRanges: t("Bound code ranges"),
-    boundRangesCount: t("Bound code ranges ({0})", "{0}"),
-    noBoundRanges: t("No code range is bound to this document."),
-    rangesUnavailable: t("Code ranges have not been fetched."),
-    staleHere: t("The recorded fingerprint and the current code disagree."),
-    openDocument: t("Open document"),
-    legendL0: t("Nodes are domains. Lines are cross-domain dependencies; the number is how many were collapsed."),
-    legendL3Clean: t("Double-click to open the line in the editor. Fingerprints match the record."),
-    // 「指紋を記録し直す」のは統治仕様の `## 実装の指紋` の節を直すことである。
-    // ここで npm の命令を案内すると、この拡張機能を入れただけの利用者の手元に
-    // 存在しない命令を指す（利用者の側に Node は要らない）。
-    legendL3Stale: t("Fingerprints disagree. Review the change, then update the fingerprint section of the governing specification."),
-    legendL3Unknown: t("Double-click to open the line in the editor. The fingerprint verdict has not been fetched yet."),
-    lines: t("lines"),
-    edgeCount: t("edges"),
-    recoveredDomainGone: t("The focused domain is gone from the graph."),
-    recoveredDocGone: t("The focused document is gone from the graph."),
-    danglingEdges: t("Some edges were not drawn because one end is missing from the graph."),
-    filterValueGone: t("The filter on \"{0}\" was lifted because that value is no longer in the graph.", "{0}"),
-    filterNotAtThisDepth: t("Filters apply to the context map and the domain interior. This depth shows the document and what it is bound to."),
-    registryUnavailable: t("The registry could not be read, so the current-only filter and lane order are off."),
-    rangesUnavailableNote: t("Code ranges could not be fetched, so L3 is unavailable."),
-    auditAsOf: t("Fingerprint verdict as of {0}", "{0}"),
-    auditNever: t("Fingerprint verdict not fetched yet"),
+    summaryCounts: t("{0} documents to fix · {1} code ranges · {2} with nowhere to fix", "{0}", "{1}", "{2}"),
+    summaryJudgements: t("broken {0} · missing {1} · cycles {2}", "{0}", "{1}", "{2}"),
+    waveHeading: t("Wave {0}", "{0}"),
+    waveFirstNote: t("directly on the origin"),
+    waveLaterNote: t("not settled until wave {0} is done", "{0}"),
+    reasonDirect: t("Has {0} in depends_on. Its premise changes.", "{0}"),
+    reasonThrough: t("Depends on {1} through {0}.", "{0}", "{1}"),
+    reasonImpacted: t("{0} declares that it impacts this.", "{0}"),
+    rangeLabel: t("{0}:{1}-{2}", "{0}", "{1}", "{2}"),
+    noOrigin: t(
+      "No origin. This screen only answers \"what happens if I change what I have open\". Open a file that carries a doctrine marker, or a .md inside the tree. What is open now is {0}.",
+      "{0}",
+    ),
+    noOriginNoFile: t(
+      "No origin. This screen only answers \"what happens if I change what I have open\". Open a file that carries a doctrine marker, or a .md inside the tree.",
+    ),
+    footHidden: t("{0} documents are not reachable from the origin and are not listed", "{0}"),
+    footElsewhere: t("{0} findings sit outside the origin", "{0}"),
+    footAudit: t("Upstream docs-audit ran all checks at {0}", "{0}"),
+    footAuditNever: t("Upstream docs-audit has not run yet"),
+    footNoTitles: t("Some titles could not be read; those rows show the id instead"),
+    cycleNote: t("{0} cycles: those documents have no wave until the cycle is broken", "{0}"),
+    legendBroken: t("× broken"),
+    legendMissing: t("+ missing"),
+    legendNowhere: t("? nowhere to fix"),
+    legendFix: t("! fix"),
+    legendReview: t("~ review"),
   };
 }
 
-/** webview が受け取る文字列の型。`webviewStrings` と対で保つ。 */
-export interface WebviewStrings {
-  breadcrumbRoot: string;
-  breadcrumbCode: string;
-  hint: string;
+/** webview の器に静的に置く札。数が少ないので型を分けない。 */
+export function shellStrings(): ShellStrings {
+  return {
+    title: t("Consequence"),
+    refresh: t("Refresh"),
+    busy: t("Fetching…"),
+    follow: t("Follows the cursor"),
+  };
+}
+
+export interface ShellStrings {
+  title: string;
   refresh: string;
   busy: string;
-  dialColor: string;
-  dialLayout: string;
-  dialFilterType: string;
-  dialFilterDomain: string;
-  dialCurrentOnly: string;
-  dialLens: string;
-  save: string;
-  remove: string;
-  all: string;
-  savedLensPlaceholder: string;
-  colorType: string;
-  colorStatus: string;
-  colorDomain: string;
-  colorOwner: string;
-  layoutMap: string;
-  layoutLane: string;
-  layoutDetail: string;
-  layoutList: string;
-  emptyGraph: string;
-  emptyFiltered: string;
-  noValue: string;
-  docsCount: string;
-  dependedOnBy: string;
-  dependsOn: string;
-  focus: string;
-  boundRanges: string;
-  /** `{0}` を数で置き換えて使う。約物を実装に持たないための書式（ADR-007）。 */
-  boundRangesCount: string;
-  noBoundRanges: string;
-  rangesUnavailable: string;
-  staleHere: string;
-  openDocument: string;
-  legendL0: string;
-  legendL3Clean: string;
-  legendL3Stale: string;
-  legendL3Unknown: string;
-  lines: string;
-  edgeCount: string;
-  recoveredDomainGone: string;
-  recoveredDocGone: string;
-  danglingEdges: string;
-  filterValueGone: string;
-  filterNotAtThisDepth: string;
-  registryUnavailable: string;
-  rangesUnavailableNote: string;
-  auditAsOf: string;
-  auditNever: string;
+  follow: string;
 }

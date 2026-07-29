@@ -2,7 +2,8 @@
 // preview-webview.mjs が書いた画面を実際に開き、操作して、写しを撮る。
 //
 // 「組み上がった」と「動いた」は別である。ここは後者を確かめる。
-// 深度を降りる・上がる、ダイヤルを回す、の一通りを実際に踏む。
+// 明細を読み、行を押し、狭い幅まで詰めて、面から出るものが無いかを見る
+// （SPEC-006 受入基準 10・11）。
 import { mkdirSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -33,9 +34,7 @@ const newest = (dir) => {
   let newestPath = "";
   for (const entry of readdirSync(join(projectRoot, dir), { withFileTypes: true })) {
     const rel = `${dir}/${entry.name}`;
-    const [childAt, childPath] = entry.isDirectory()
-      ? newest(rel)
-      : [freshness(rel) ?? 0, rel];
+    const [childAt, childPath] = entry.isDirectory() ? newest(rel) : [freshness(rel) ?? 0, rel];
     if (childAt > at) [at, newestPath] = [childAt, childPath];
   }
   return [at, newestPath];
@@ -51,7 +50,7 @@ if (srcAt > preview) {
 mkdirSync(shotDir, { recursive: true });
 
 const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+const page = await browser.newPage({ viewport: { width: 720, height: 900 } });
 
 const errors = [];
 page.on("console", (m) => {
@@ -60,34 +59,44 @@ page.on("console", (m) => {
 page.on("pageerror", (e) => errors.push(String(e)));
 
 await page.goto(pathToFileURL(join(previewDir, "index.html")).href);
-await page.waitForSelector(".node", { timeout: 10000 });
+await page.waitForSelector(".row", { timeout: 10000 });
 
 const shot = async (name) => {
   await page.waitForTimeout(150);
-  await page.screenshot({ path: join(shotDir, `${name}.png`) });
+  await page.screenshot({ path: join(shotDir, `${name}.png`), fullPage: true });
 };
 
+const text = async (selector) =>
+  (await page.locator(selector).count()) > 0
+    ? (await page.locator(selector).first().innerText()).replace(/\s+/g, " ").trim()
+    : null;
+
 const state = async () => ({
-  crumbs: (await page.locator("#crumbs").innerText()).replace(/\s+/g, " ").trim(),
-  nodes: await page.locator(".node").count(),
-  edges: await page.locator(".edge").count(),
-  layout: await page.locator("#layout").inputValue(),
-  colorBy: await page.locator("#colorBy").inputValue(),
-  legend: await page.locator("#legend span").count(),
-  inspector: await page.locator("#inspector").isVisible(),
-  notice: (await page.locator("#notice").isVisible())
-    ? (await page.locator("#notice").innerText()).replace(/\s+/g, " ").trim()
-    : null,
-  // 場面そのものが告げることは別の帯に出る。片方だけ見ると、段を戻したことや
-  // 辺の省略を「何も出ていない」と読み違える。
-  sceneNotice: (await page.locator("#sceneNotice").isVisible())
-    ? (await page.locator("#sceneNotice").innerText()).replace(/\s+/g, " ").trim()
-    : null,
-  legendText: (await page.locator("#legend").innerText()).replace(/\s+/g, " ").trim(),
-  inspectorTitle: await page.evaluate(() => {
-    const box = document.getElementById("inspector");
-    if (!box || box.hidden) return null;
-    return (box.querySelector("h2")?.textContent ?? "").trim();
+  originTitle: await text(".origin h1"),
+  originDetail: await text(".origin .detail"),
+  summary: await text(".origin .summary"),
+  waves: await page.locator(".wave").count(),
+  waveHeading: await text(".wave h2"),
+  rows: await page.locator(".row").count(),
+  ranges: await page.locator(".row .range").count(),
+  footnotes: await page.locator(".foot p").count(),
+  legend: await page.locator(".foot .legend span").count(),
+  svg: await page.locator("svg").count(),
+  // 記号は左端の固定幅の溝に出る。字を集めれば、五つの語彙の外が入っていないか見える。
+  marks: await page.evaluate(() =>
+    [...new Set([...document.querySelectorAll(".row .mark")].map((n) => n.textContent))].sort(),
+  ),
+  // 本体へ送った合図。押しても何も起きない状態を残さないことを見る。
+  sent: await page.evaluate(() => (window.__sent ?? []).map((m) => m.kind)),
+  // 横に溢れていないか。面そのものと、中の子を両方見る。
+  overflow: await page.evaluate(() => {
+    const out = [];
+    for (const node of document.querySelectorAll("body, .sheet, .row, .origin, .foot, .bar")) {
+      if (node.scrollWidth > node.clientWidth + 1) {
+        out.push(`${node.className || node.tagName}: ${node.scrollWidth}>${node.clientWidth}`);
+      }
+    }
+    return out;
   }),
 });
 
@@ -107,133 +116,118 @@ const record = async (label, name, expected = {}) => {
   steps.push({ label, ...now });
   for (const [key, want] of Object.entries(expected)) {
     const got = now[key];
-    const ok = typeof want === "function" ? want(got) : got === want;
+    const ok = typeof want === "function" ? want(got) : JSON.stringify(got) === JSON.stringify(want);
     if (!ok) {
       failures.push(`${label}: ${key} が ${JSON.stringify(got)}（期待: ${String(want)}）`);
     }
   }
+  return now;
 };
 
-const crumbEndsWith = (tail) => (value) => value.startsWith(tail);
-const some = (n) => (value) => value > 0;
+const some = () => (value) => value > 0;
+const MARKS = new Set(["×", "+", "?", "!", "~"]);
 
-await record("L0 文脈の地図", "01-L0", {
-  crumbs: crumbEndsWith("Context map "),
-  layout: "map",
-  nodes: some(),
-  legendText: (v) => v.includes("Fingerprint"),
-  sceneNotice: null,
+// --- 一枚目。ふつうの幅で明細を読む。 ---------------------------------------
+
+const first = await record("明細（720px）", "01-list", {
+  waves: some(),
+  rows: some(),
+  footnotes: some(),
+  legend: 5,
+  svg: 0,
+  overflow: [],
+  marks: (v) => v.length > 0 && v.every((m) => MARKS.has(m)),
+  sent: (v) => v.includes("ready"),
 });
 
-// 降りる（ダブルクリック）。
-await page.locator('.node[data-key="lens"]').first().dblclick();
-await record("L1 lens ドメイン内部", "02-L1", {
-  crumbs: crumbEndsWith("Context map › lens "),
-  layout: "lane",
-  nodes: some(),
-});
-
-// 色のダイヤルを回す。深度と配置が保たれることを見る（REQ-002）。
-await page.selectOption("#colorBy", "status");
-await record("L1 色を status に", "03-L1-status", {
-  colorBy: "status",
-  layout: "lane",
-  crumbs: crumbEndsWith("Context map › lens "),
-});
-
-// 絞りを効かせる。効いたことは、節点が減ることで見る。
-const beforeFilter = await state();
-await page.selectOption("#filterType", "SPEC");
-await record("L1 型を SPEC に絞る", "04-L1-filter", {
-  nodes: (value) => value > 0 && value < beforeFilter.nodes,
-  layout: "lane",
-});
-await page.selectOption("#filterType", "");
-
-// さらに降りる。印を持つ仕様を選び、L3 まで行けるようにする。
-await page.locator('.node[data-key="SPEC-002"]').first().dblclick();
-await record("L2 文書の細部", "05-L2", {
-  crumbs: crumbEndsWith("Context map › lens › SPEC-002 "),
-  layout: "detail",
-  inspector: true,
-  // 検分欄は焦点の文書を出す（別の節点を出していたら気づけるように）。
-  inspectorTitle: "SPEC-002",
-  legendText: (v) => v.length > 0,
-});
-
-// L2 の焦点そのものを選ぶと L3 へ降りる（SPEC-002）。
-await page.locator('.node[data-key="SPEC-002"]').first().dblclick();
-await record("L3 コード範囲", "06-L3", {
-  crumbs: crumbEndsWith("Context map › lens › SPEC-002 › "),
-  layout: "list",
-  nodes: some(),
-  // 凡例は指紋の判定を必ず言う（何も言わない回があってはならない）。
-  legendText: (v) => v.includes("Fingerprint"),
-  sceneNotice: null,
-});
-
-// L3 の範囲を押すと、本体へ「開け」が飛ぶ。編集器が無いので送った内容を検める。
-//
-// 「飛んだこと」だけを見ていた頃は、begin と end を入れ替えても緑だった。
-// 送った値そのものを、画面に出ている範囲の札と突き合わせる。
-// SVG の g 要素は innerText を持たない。中の text から組み立てる。
-const firstLabel = await page.evaluate(() => {
-  const g = document.querySelector(".node");
-  return [...(g?.querySelectorAll("text") ?? [])].map((t) => t.textContent ?? "").join(" ").trim();
-});
-await page.locator(".node").first().dblclick();
-const sent = await page.evaluate(() => window.__sent ?? []);
-const openRange = sent.filter((m) => m.kind === "openRange");
-if (openRange.length === 0) {
-  failures.push("L3 の範囲を押しても本体へ openRange が飛ばない");
-} else {
-  const [m] = openRange;
-  // 札は「パス」「始まり–終わり · N lines」の二行である。
-  const [shownPath, shownLines] = firstLabel.split(" ");
-  if (m.path !== shownPath) {
-    failures.push(`openRange の path が画面と違う: ${m.path} ≠ ${shownPath}`);
-  }
-  const [begin, end] = (shownLines ?? "").split("–").map((n) => Number.parseInt(n, 10));
-  if (Number.isFinite(begin) && m.beginLine !== begin) {
-    failures.push(`openRange の beginLine が画面と違う: ${m.beginLine} ≠ ${begin}`);
-  }
-  if (Number.isFinite(end) && m.endLine !== end) {
-    failures.push(`openRange の endLine が画面と違う: ${m.endLine} ≠ ${end}`);
-  }
-  if (m.beginLine > m.endLine) {
-    failures.push(`openRange の始まりが終わりより後ろ: ${m.beginLine} > ${m.endLine}`);
-  }
+// 主文が題名であって id ではないこと（利用者が最初に言った不満そのもの）。
+if (!first.originTitle || /^[A-Z]+-\d+$/.test(first.originTitle)) {
+  failures.push(`起点の主文が題名になっていない: ${JSON.stringify(first.originTitle)}`);
+}
+if (!first.originDetail || !/^[A-Z]+-\d+ · /.test(first.originDetail)) {
+  failures.push(`副文に id・パスが出ていない: ${JSON.stringify(first.originDetail)}`);
+}
+// 波の見出しは名前ではなく文である。
+if (!first.waveHeading || first.waveHeading.length < 4) {
+  failures.push(`波の見出しが文になっていない: ${JSON.stringify(first.waveHeading)}`);
+}
+// 要約は「良い状態」も数で言う。
+if (!first.summary || !/\d/.test(first.summary)) {
+  failures.push(`要約に数が出ていない: ${JSON.stringify(first.summary)}`);
 }
 
-// 上がる（Backspace）。L3 → L2 → L1 → L0。
-// 焦点をわざと canvas の外へ置いてから打つ。降りた直後に焦点が地図から
-// 外れていても上がれることまで見る（外れると案内どおりに動かない欠陥があった）。
-await page.locator("#colorBy").focus();
-await page.locator("body").click({ position: { x: 5, y: 400 } });
-await page.keyboard.press("Backspace");
-await record("L3 から L2 へ戻る", "07-up-L2", {
-  crumbs: crumbEndsWith("Context map › lens › SPEC-002 "),
-  layout: "detail",
+// --- 行を押す。文書が開く合図が本体へ届くこと。 -----------------------------
+
+await page.locator(".row").first().click();
+await record("行を押した", "02-open-document", {
+  sent: (v) => v.includes("openDocument"),
 });
-await page.keyboard.press("Backspace");
-await record("L1 へ戻る", "08-up-L1", {
-  crumbs: crumbEndsWith("Context map › lens "),
-  layout: "lane",
+
+// コード範囲がある行なら、その札も押す。明細は file:line で着地する。
+if (first.ranges > 0) {
+  await page.locator(".row .range").first().click();
+  await record("範囲の札を押した", "03-open-range", {
+    sent: (v) => v.includes("openRange"),
+  });
+} else {
+  failures.push("コード範囲の札が一つも無い（明細が file:line で着地していない）");
+}
+
+// 鍵盤だけでも行を開けること。
+await page.locator(".row").first().focus();
+await page.keyboard.press("Enter");
+await record("鍵盤で開いた", "04-keyboard", {
+  sent: (v) => v.filter((k) => k === "openDocument").length >= 2,
 });
-await page.keyboard.press("Backspace");
-await record("L0 へ戻る", "09-up-L0", {
-  crumbs: crumbEndsWith("Context map "),
-  layout: "map",
+
+// 取り直しの釦。
+await page.locator("#refresh").click();
+await record("取り直しを押した", "05-refresh", {
+  sent: (v) => v.includes("refresh"),
 });
+
+// --- 幅を詰める。280px でも面から出ない（受入基準 11）。---------------------
+
+for (const width of [480, 280]) {
+  await page.setViewportSize({ width, height: 900 });
+  await record(`幅 ${width}px`, `06-width-${width}`, {
+    rows: some(),
+    overflow: [],
+    svg: 0,
+  });
+}
+
+// --- 通知。上流の長い traceback が器を壊さないこと。 ------------------------
+
+await page.setViewportSize({ width: 280, height: 900 });
+await page.evaluate(() => {
+  window.postMessage(
+    {
+      kind: "notice",
+      tone: "error",
+      text: "The doctrine CLI failed.",
+      detail: `Traceback (most recent call last):\n${"  File \"/very/long/path/that/does/not/wrap/scripts/dep-graph.py\", line 412, in main\n".repeat(20)}`,
+    },
+    "*",
+  );
+});
+await record("長い通知（280px）", "07-notice", { overflow: [] });
 
 await browser.close();
 
-console.log(JSON.stringify({ steps, openRange, errors, failures }, null, 2));
+for (const step of steps) {
+  console.log(
+    `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
+      `記号 ${step.marks.join("")}・svg ${step.svg}`,
+  );
+}
 if (errors.length > 0) {
-  console.error(`\n画面で ${errors.length} 件の誤りが出た。`);
+  console.error(`\n画面の誤り ${errors.length} 件:`);
+  for (const line of errors.slice(0, 10)) console.error(`  - ${line}`);
 }
 if (failures.length > 0) {
-  console.error(`\n期待どおりに動かなかった操作が ${failures.length} 件:`);
+  console.error(`\n期待と違う状態 ${failures.length} 件:`);
   for (const line of failures) console.error(`  - ${line}`);
 }
 if (errors.length > 0 || failures.length > 0) process.exit(1);
+console.log(`\n写しを ${shotDir} に書いた。誤り 0・食い違い 0。`);

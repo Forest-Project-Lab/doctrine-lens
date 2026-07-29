@@ -51,18 +51,14 @@ export function activate(context: vscode.ExtensionContext): void {
       if (picked) await session.choose(picked.folder);
     }),
 
-    vscode.commands.registerCommand("doctrineLens.revealActiveDocument", async () => {
-      const docId = activeDocumentId(session);
-      if (!docId) {
-        void vscode.window.showInformationMessage(messages.notInTree());
-        return;
-      }
-      LensPanel.show(context, session).reveal(docId);
+    vscode.commands.registerCommand("doctrineLens.revealActiveDocument", () => {
+      // 起点はカーソルから決まるので、画面を開けばそれが起点になる（ADR-012）。
+      LensPanel.show(context, session);
     }),
 
     vscode.commands.registerCommand("doctrineLens.revealDocumentById", (docId?: string) => {
       if (!docId) return;
-      LensPanel.show(context, session).reveal(docId);
+      LensPanel.show(context, session);
     }),
 
     vscode.commands.registerCommand("doctrineLens.openDocumentById", async (docId?: string) => {

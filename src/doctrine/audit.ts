@@ -1,8 +1,8 @@
 // doctrine:begin SPEC-004
 // 監査の橋渡し — 判定を上流から受け取る。
 //
-// このスライスで読むのは、検査名が `trace` で始まる所見だけである。
-// 指紋が食い違っているかどうかは上流が判じる。こちらは指紋を突き合わせない（ADR-005）。
+// 上流が走らせる 34 種の検査の所見を**すべて**受け取る。何が異常かはこちらで判じない。
+// 指紋の突き合わせも、循環の可否も、期限の切れも、上流が済ませてある（ADR-005・ADR-012）。
 import { dirname, join, resolve } from "node:path";
 
 import { forCompare } from "../model/paths.js";
@@ -85,12 +85,18 @@ export function canAudit(projectDir: string, docsRoot: string): boolean {
 }
 
 /**
- * 監査を走らせ、追跡に関わる所見だけを返す。
+ * 監査を走らせ、**すべての所見**を返す。
  *
  * `--fail-on never` で呼ぶ。所見が在ることは失敗ではない。
  * 判定を出せない構成では走らせず、その旨を返す（`canAudit` を見よ）。
+ *
+ * 以前はここで `trace` で始まる検査だけに絞っていた。上流は 34 種を毎回走らせ、
+ * 「これは異常だ・なぜか・どれくらい重いか」という**判定**を返しているのに、
+ * その 11 種以外を橋の上で捨てていた。捨てれば、画面は事実しか言えなくなり、
+ * 判断が読み手に押し付けられる（ADR-012）。絞りはここでは掛けない。
+ * 追跡に関わるものだけが要る呼び手は `traceFindings` を通す。
  */
-export async function fetchTraceFindings(
+export async function fetchFindings(
   projectDir: string,
   docsRoot: string,
   pluginRoot: string,
@@ -127,6 +133,6 @@ export async function fetchTraceFindings(
       `the audit resolved a different tree (${audited})`,
     );
   }
-  return ok(traceFindings(outcome.value.findings));
+  return ok(outcome.value.findings);
 }
 // doctrine:end SPEC-004

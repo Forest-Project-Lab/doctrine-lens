@@ -1,9 +1,9 @@
 {
   "name": "doctrine-lens",
   "displayName": "Doctrine Lens",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "Forest-Project-Lab",
-  "description": "%ext.description%",
+  "description": "Answer one question: if I change what I have open, what will I have to fix, and in what order? An ordered list, derived from a doctrine-governed document tree.",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {
@@ -164,7 +164,7 @@
     }
   },
   "scripts": {
-    "build:test": "tsc -p tsconfig.test.json",
+    "build:test": "rm -rf out && tsc -p tsconfig.test.json",
     "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check",
     "compile": "node esbuild.mjs",
     "docs:aggregate": "node tools/doc-manager/aggregate-targets.mjs",

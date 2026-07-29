@@ -1,31 +1,20 @@
 // 画面の器 — webview の生成と受け渡し（IMPL-001）。
 //
 // 取得そのものは LensSession が持つ。ここはその読み手の一つである。
+// 明細の組み立ては `src/model/consequence.ts` と `src/model/view.ts` が持つ。
+// ここがするのは、起点をカーソルから決めることと、組んだ結果を webview へ流すこと、
+// そして webview から来た「開け」を編集器へつなぐことだけである。
 import * as vscode from "vscode";
 
-import { toEditorLine } from "../model/trace.js";
-import { messages, webviewStrings } from "../l10n.js";
+import { messages, shellStrings, viewStrings } from "../l10n.js";
+import { buildConsequence } from "../model/consequence.js";
+import { rangeAtLine, toEditorLine } from "../model/trace.js";
+import { buildView, formatTime } from "../model/view.js";
 import type { LensSession, SessionState } from "../session.js";
-import { toSavedLens, type SavedLens, type ToHost, type ToWebview } from "../shared/protocol.js";
+import type { ToHost, ToWebview } from "../shared/protocol.js";
 import { renderHtml } from "./html.js";
 
-const VIEW_TYPE = "doctrineLens.map";
-const SAVED_LENSES_KEY = "doctrineLens.savedLenses";
-
-/**
- * 保存レンズの入れ物の鍵。統治木ごとに分ける。
- *
- * ExtensionContext は作業空間に一つしか無いので、鍵を固定すると作業フォルダを
- * 二つ持つ作業空間で一つの一覧を共有する。ADR-006 が想定しているまさにその構成で、
- * 木を切り替えても一覧が変わらず、他方の木で保存した組を選ぶと焦点の文書が
- * 無いので段が戻る。README・CHANGELOG・SPEC-003 はいずれも「作業フォルダごと」と
- * 書いてあるので、そのとおりにする。
- *
- * 木を持たないときは固定の鍵へ落とす（保存の入口がそもそも出ない）。
- */
-function lensesKey(docsRoot: string | undefined): string {
-  return docsRoot ? `${SAVED_LENSES_KEY}:${docsRoot}` : SAVED_LENSES_KEY;
-}
+const VIEW_TYPE = "doctrineLens.consequence";
 
 /** 失敗の種類ごとの案内。読み手が次に何をすればよいかまで書く（ADR-007）。 */
 function adviceFor(reason: string): string {
@@ -40,6 +29,8 @@ function adviceFor(reason: string): string {
 function partialName(what: string): string {
   if (what === "registry") return messages.partialRegistry();
   if (what === "ranges") return messages.partialRanges();
+  if (what === "orphans") return messages.partialOrphans();
+  if (what === "titles") return messages.partialTitles();
   return messages.partialFindings();
 }
 
@@ -48,7 +39,6 @@ function partialName(what: string): string {
  *
  * `absent` は「この構成である限り永久に取れない」を意味する。一時的な失敗と
  * 同じ見え方にすると、読み手は待てば直ると思い、直し方に辿り着けない。
- * 理由の詳細をそのまま添える。
  */
 function partialDetail(partial: readonly { reason: string; detail: string }[]): string {
   return partial
@@ -64,11 +54,9 @@ export class LensPanel {
   static #current: LensPanel | undefined;
 
   readonly #panel: vscode.WebviewPanel;
-  readonly #context: vscode.ExtensionContext;
   readonly #session: LensSession;
   readonly #disposables: vscode.Disposable[] = [];
   #ready = false;
-  #pendingReveal: string | undefined;
 
   static show(context: vscode.ExtensionContext, session: LensSession): LensPanel {
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
@@ -76,7 +64,7 @@ export class LensPanel {
       LensPanel.#current.#panel.reveal(column);
       return LensPanel.#current;
     }
-    const panel = vscode.window.createWebviewPanel(VIEW_TYPE, "Doctrine Lens", column, {
+    const panel = vscode.window.createWebviewPanel(VIEW_TYPE, shellStrings().title, column, {
       enableScripts: true,
       retainContextWhenHidden: true,
       localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "dist")],
@@ -88,16 +76,13 @@ export class LensPanel {
   /**
    * 編集器が復元した器を受け取る。
    *
-   * 復元器を登録しないと、窓を開き直したときに地図のタブが黙って消える。
-   * webview 側は `getState` で前回のレンズと位置を持っているので、
-   * 器さえ繋ぎ直せば同じ見え方に戻る。
+   * 復元器を登録しないと、窓を開き直したときにタブが黙って消える。
    */
   static revive(
     panel: vscode.WebviewPanel,
     context: vscode.ExtensionContext,
     session: LensSession,
   ): void {
-    // 既に開いているなら、復元されたほうは捨てる（器は一つだけ持つ）。
     if (LensPanel.#current) {
       panel.dispose();
       return;
@@ -119,13 +104,12 @@ export class LensPanel {
     session: LensSession,
   ) {
     this.#panel = panel;
-    this.#context = context;
     this.#session = session;
 
     const scriptUri = panel.webview.asWebviewUri(
       vscode.Uri.joinPath(context.extensionUri, "dist", "webview.js"),
     );
-    panel.webview.html = renderHtml(panel.webview, scriptUri, vscode.env.language);
+    panel.webview.html = renderHtml(panel.webview, scriptUri, vscode.env.language, shellStrings());
 
     this.#disposables.push(
       panel.webview.onDidReceiveMessage((message: ToHost) => {
@@ -133,6 +117,10 @@ export class LensPanel {
       }),
       panel.onDidDispose(() => this.dispose()),
       session.onDidChange((state) => this.#publish(state)),
+      // 起点はカーソルから決まる。動いたら組み直す。
+      // 組み直しは純粋な関数だけなので、上流を起こさない。
+      vscode.window.onDidChangeActiveTextEditor(() => this.#publish(session.state)),
+      vscode.window.onDidChangeTextEditorSelection(() => this.#publish(session.state)),
     );
   }
 
@@ -142,19 +130,42 @@ export class LensPanel {
     this.#panel.dispose();
   }
 
-  /** いま開いている文書を地図で示す。取得が済んでいなければ済んでから示す。 */
-  reveal(docId: string): void {
-    if (this.#ready) this.#post({ kind: "reveal", docId });
-    else this.#pendingReveal = docId;
-  }
-
   // --- 内側 --------------------------------------------------------------
 
   #post(message: ToWebview): void {
     void this.#panel.webview.postMessage(message);
   }
 
-  /** いまの取得の状態を webview へ流す。 */
+  /**
+   * いま開いている位置から起点の文書を決める。
+   *
+   * 印が囲む範囲の中に居ればその文書。統治木の `.md` を開いていればその文書。
+   * どちらでもなければ起点は無い（利用者に選ばせない。ADR-012）。
+   */
+  #originId(): { id: string | null; openFile: string } {
+    const editor = vscode.window.activeTextEditor;
+    const state = this.#session.state;
+    if (!editor) return { id: null, openFile: "" };
+    const relPath = this.#session.toRelativePath(editor.document.uri);
+    const openFile = relPath ?? editor.document.fileName;
+    if (!relPath) return { id: null, openFile };
+
+    const ranges = state.snapshot?.ranges;
+    if (ranges) {
+      const hit = rangeAtLine(ranges, relPath, editor.selection.active.line + 1);
+      if (hit) return { id: hit.id, openFile };
+    }
+    // 統治木の中の文書そのものを開いているとき。
+    const docsRoot = state.candidate?.docsRoot;
+    const node = state.snapshot?.graph.nodes.find((n) => {
+      if (!docsRoot) return false;
+      const full = vscode.Uri.joinPath(vscode.Uri.file(docsRoot), n.path).fsPath;
+      return full === editor.document.uri.fsPath;
+    });
+    return { id: node?.id ?? null, openFile };
+  }
+
+  /** いまの取得の状態から明細を組み、webview へ流す。 */
   #publish(state: SessionState): void {
     this.#post({ kind: "busy", busy: state.busy });
 
@@ -165,25 +176,26 @@ export class LensPanel {
         text: state.unavailable.text,
         detail: state.unavailable.detail,
       });
-      return;
     }
 
-    if (state.snapshot) {
-      this.#post({
-        kind: "snapshot",
-        graph: state.snapshot.graph,
-        registry: state.snapshot.registry,
-        docsRoot: state.snapshot.docsRoot,
-        savedLenses: this.#savedLenses(),
-        ranges: state.snapshot.ranges,
-        staleIds: [...this.#session.staleIds],
-        strings: webviewStrings(),
-        auditAt: state.auditAt ? state.auditAt.toISOString() : null,
+    const snapshot = state.snapshot;
+    if (snapshot) {
+      const { id, openFile } = this.#originId();
+      const consequence = buildConsequence(snapshot.graph, id, {
+        findings: snapshot.findings ?? [],
+        ranges: snapshot.ranges ?? [],
+        reverseOrphans: new Set(snapshot.reverseOrphans),
       });
+      const view = buildView(consequence, snapshot.docMeta, viewStrings(), {
+        openFile,
+        auditAt: state.auditAt ? formatTime(state.auditAt) : "",
+        titlesMissing: snapshot.docMeta.size === 0,
+      });
+      this.#post({ kind: "view", view });
     }
 
     if (state.failure) {
-      // 取得に失敗しても、直前に取れた地図は消さない（SPEC-001）。
+      // 取得に失敗しても、直前に取れた明細は消さない（SPEC-001）。
       const kept = state.snapshot ? messages.keptPrevious() : "";
       this.#post({
         kind: "notice",
@@ -198,42 +210,17 @@ export class LensPanel {
         text: messages.partial(state.partial.map((p) => partialName(p.what)).join(" / ")),
         detail: partialDetail(state.partial),
       });
-    } else if (!state.busy) {
+    } else if (!state.busy && !state.unavailable) {
       this.#post({ kind: "notice", tone: "info", text: "", detail: "" });
     }
-  }
-
-  #key(): string {
-    return lensesKey(this.#session.state.candidate?.docsRoot);
-  }
-
-  #savedLenses(): SavedLens[] {
-    return this.#context.workspaceState.get<SavedLens[]>(this.#key(), []);
-  }
-
-  async #storeLenses(lenses: SavedLens[], justSaved?: string): Promise<void> {
-    await this.#context.workspaceState.update(this.#key(), lenses);
-    this.#post({ kind: "savedLenses", savedLenses: lenses, justSaved });
   }
 
   async #onMessage(message: ToHost): Promise<void> {
     switch (message.kind) {
       case "ready": {
         this.#ready = true;
-        // 文字列は必ず先に渡す。統治木が無い場合 snapshot は来ないので、
-        // snapshot に相乗りさせると空文字の画面になる。
-        this.#post({
-          kind: "strings",
-          strings: webviewStrings(),
-          language: vscode.env.language,
-        });
-        // 既に取れているならそれを流し、無ければ取りに行く。
         if (this.#session.snapshot) this.#publish(this.#session.state);
         else await this.#session.refresh();
-        if (this.#pendingReveal) {
-          this.#post({ kind: "reveal", docId: this.#pendingReveal });
-          this.#pendingReveal = undefined;
-        }
         return;
       }
       case "refresh":
@@ -241,35 +228,18 @@ export class LensPanel {
         return;
       case "openDocument": {
         const snapshot = this.#session.snapshot;
-        if (!snapshot) return;
-        const target = vscode.Uri.joinPath(vscode.Uri.file(snapshot.docsRoot), message.path);
-        // 文書が消えていることがある（地図は前回取った姿を出しているため）。
-        // 包まないと、押しても何も起きず通知も出ない（受け止める者が居ない）。
-        await openOrExplain(target, message.path);
+        const node = snapshot?.graph.nodes.find((n) => n.id === message.id);
+        if (!snapshot || !node) {
+          void vscode.window.showInformationMessage(messages.notInGraph(message.id));
+          return;
+        }
+        const target = vscode.Uri.joinPath(vscode.Uri.file(snapshot.docsRoot), node.path);
+        await openOrExplain(target, node.path);
         return;
       }
       case "openRange":
         await openRange(this.#session, message.path, message.beginLine, message.endLine);
         return;
-      case "requestSaveLens": {
-        const name = (
-          await vscode.window.showInputBox({
-            prompt: messages.lensPromptName(),
-            validateInput: (v) => (v.trim() ? undefined : messages.lensPromptName()),
-          })
-        )?.trim();
-        // 取り消したときは何もしない。
-        if (!name) return;
-        const lenses = this.#savedLenses().filter((s) => s.name !== name);
-        lenses.push(toSavedLens(name, message.lens, message.focus));
-        lenses.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-        await this.#storeLenses(lenses, name);
-        return;
-      }
-      case "deleteLens": {
-        await this.#storeLenses(this.#savedLenses().filter((s) => s.name !== message.name));
-        return;
-      }
     }
   }
 }
@@ -277,9 +247,8 @@ export class LensPanel {
 /**
  * 文書を開く。消えていたら、その旨を出して終わる。
  *
- * 地図は前回取った姿を出しているので、節点が指す文書が既に無いことがある。
- * 包まないと、押しても何も起きず、通知も帯も変わらない（呼び手が void で
- * 呼んでいるので拒否を受け止める者が居ない）。
+ * 明細は前回取った姿を出しているので、行が指す文書が既に無いことがある。
+ * 包まないと、押しても何も起きず、通知も帯も変わらない。
  */
 export async function openOrExplain(uri: vscode.Uri, shown: string): Promise<void> {
   try {
@@ -317,9 +286,8 @@ export async function openRange(
   const lastLine = Math.max(0, document.lineCount - 1);
   const begin = Math.min(toEditorLine(beginLine), lastLine);
   const end = Math.min(toEditorLine(endLine), lastLine);
-  const selection = new vscode.Range(begin, 0, Math.max(begin, end), 0);
   await vscode.window.showTextDocument(document, {
-    selection,
+    selection: new vscode.Range(begin, 0, Math.max(begin, end), 0),
     preview: false,
   });
 }
