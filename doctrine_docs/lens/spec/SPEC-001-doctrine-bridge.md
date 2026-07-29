@@ -92,6 +92,10 @@ llm_context: task
 ## エラー時挙動
 
 設定そのものが受け付けられない場合は、取得の失敗と分けて伝える（取り直しても直らない）。
+実行体の在処を指す設定（`pythonPath`・`pluginPath`）は、絶対パス・`~/` から始まる値・
+区切りを含まない命令名の三つだけを受ける。二つの設定で規律を分けてはならない。
+片方だけ塞いでも、もう片方から同じことができる（ADR-010）。
+待ち時間の設定（`timeoutMs`・`auditDebounceMs`）も同じく丸める。
 待ち時間は使う直前に丸める。負だと子プロセスの起動が同期的に例外を投げ、
 32bit を超えると実行環境が 1 ミリ秒へ潰す（あらゆる取得が数ミリ秒で「時間切れ」になり、
 しかも案内は設定した値をそのまま刷るので嘘をつく）。
@@ -129,11 +133,12 @@ llm_context: task
 監査が `trace_stale` を警告として挙げる。実装を直したら
 doctrine プラグインの `trace-index.py` で取り直す。
 
-- sha256:3f2e6b8e916e4733fcd737769f5ef857272953e211d0c99d2056e1696f53e256
+- sha256:da0cf77ce8851d9363b1ee3db91c9bed4570ab41916d0527e86337833bd7da01
 - sha256:ee80996e97cc2319ae3978e7da0a5e0dded0bfc9699fc979c34e3327d9e5027e
-- sha256:ae48dc1f54fabaa4c1f30fecf63931b1f5fcfa4628cb33448854b9bfee3b4390
+- sha256:52d9f75adad2e216156c57b8794a538103e285ae7d1a58af885858bf5bf1b615
 - sha256:bd6d99ed7e11b1ff334ea708193fa11495654cf6694b7eb229a89b0382816543
 - sha256:6b86bd1ed3d55f2060237c6c9be1ca165855cb0cc34a9c05d042137532f2ed2d
 - sha256:2ab6ae8b224dd20a99f1764d5dd6960abdf586117871b5d6ddf34b3cd7c73d09
-- sha256:0d27886c0ddf9a5c04fbc9a30178d72312d32e85b08755db4b9ab60b41363b87
+- sha256:ebbd134facc7e7b0d8010cb0047808e48ce163b18832c9ffca80ec4d55317888
+- sha256:60a464c3112c894a454f7f9b81cfb0ced7bf4050ee917cff0d43416143b20d60
 - sha256:2a9f70c295f7e4434f9c1091db89c59bc70488b6864efd2134a8d8f5822a71fc

@@ -1078,6 +1078,9 @@ savedLensSelect.addEventListener("change", () => {
   if (!saved) return;
   fitted = false;
   movedByHand = false;
+  // 選択も焦点へ揃える。揃えないと、検分欄が当てた先の文書ではなく直前に
+  // 選んでいた節点を出す（隣でなければ検分欄ごと消える）。
+  state.selected = saved.focus?.docId ?? null;
   // 焦点も併せて戻す。焦点を今のままにすると、深度 1 以上を保存していても
   // 段だけが黙って落ちる（四つの値のうち深度だけが失われる）。
   // 焦点の指す文書やドメインが既に無ければ、場面の側が段を戻して理由を告げる。

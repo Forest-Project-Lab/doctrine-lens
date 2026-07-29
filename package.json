@@ -157,7 +157,8 @@
           "default": 2500,
           "minimum": 0,
           "description": "%cfg.auditDebounceMs%",
-          "scope": "window"
+          "scope": "window",
+          "maximum": 2147483647
         }
       }
     }

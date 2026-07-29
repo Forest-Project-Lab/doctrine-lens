@@ -69,6 +69,25 @@ test("キャッシュの版も、廃版の印が付いていれば飛ばす", ()
   }
 });
 
+test("相対値の pluginPath は受け付けない（ADR-010・pythonPath と同じ規律）", () => {
+  // 受けると、開いたリポジトリが同梱した python スクリプトが走る。
+  // pythonPath だけを塞いでも、こちらから同じことができる（実際に再現された）。
+  const dir = scratch();
+  try {
+    const inside = join(dir, "vendor", "dp");
+    mkdirSync(join(inside, "scripts"), { recursive: true });
+    writeFileSync(join(inside, "scripts", "docs-audit.py"), "", "utf8");
+
+    assert.equal(locatePluginRoot(dir, "vendor/dp", dir), null, "相対値を受けている");
+    assert.equal(locatePluginRoot(dir, "./vendor/dp", dir), null);
+    assert.equal(locatePluginRoot(dir, "../外", dir), null);
+    // 絶対値なら受ける。
+    assert.equal(locatePluginRoot(dir, inside, dir), inside);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("設定で指したプラグインは、実体であることまで検める", () => {
   const dir = scratch();
   try {

@@ -66,6 +66,7 @@ llm_context: task
 | 範囲の帯 | `src/codelens/decorations.ts` | 範囲の行に余白の帯を付ける |
 | 経路 | `src/model/paths.ts` | 区切りと大小文字を吸収して突き合わせる |
 | 拍の引き継ぎ | `src/model/cadence.ts` | 速い拍と遅い拍のあいだで判定と時刻をどう保つか |
+| 帯の中身 | `src/model/status.ts` | 状態の帯に何を出し、押すと何が走るか |
 | 作業フォルダ | `src/model/workspace.ts` | 統治木を持つフォルダから見るものを選ぶ |
 | 取得の共有 | `src/session.ts` | 取得を持ち、二つの拍で走らせる。画面はその読み手 |
 | 状態の帯 | `src/statusbar.ts` | 取得の様子を地図の外でも示す |

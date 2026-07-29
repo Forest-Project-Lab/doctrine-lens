@@ -84,6 +84,11 @@ const state = async () => ({
     ? (await page.locator("#sceneNotice").innerText()).replace(/\s+/g, " ").trim()
     : null,
   legendText: (await page.locator("#legend").innerText()).replace(/\s+/g, " ").trim(),
+  inspectorTitle: await page.evaluate(() => {
+    const box = document.getElementById("inspector");
+    if (!box || box.hidden) return null;
+    return (box.querySelector("h2")?.textContent ?? "").trim();
+  }),
 });
 
 const steps = [];
@@ -116,6 +121,8 @@ await record("L0 文脈の地図", "01-L0", {
   crumbs: crumbEndsWith("Context map "),
   layout: "map",
   nodes: some(),
+  legendText: (v) => v.includes("Fingerprint"),
+  sceneNotice: null,
 });
 
 // 降りる（ダブルクリック）。
@@ -149,6 +156,9 @@ await record("L2 文書の細部", "05-L2", {
   crumbs: crumbEndsWith("Context map › lens › SPEC-002 "),
   layout: "detail",
   inspector: true,
+  // 検分欄は焦点の文書を出す（別の節点を出していたら気づけるように）。
+  inspectorTitle: "SPEC-002",
+  legendText: (v) => v.length > 0,
 });
 
 // L2 の焦点そのものを選ぶと L3 へ降りる（SPEC-002）。
@@ -157,14 +167,42 @@ await record("L3 コード範囲", "06-L3", {
   crumbs: crumbEndsWith("Context map › lens › SPEC-002 › "),
   layout: "list",
   nodes: some(),
+  // 凡例は指紋の判定を必ず言う（何も言わない回があってはならない）。
+  legendText: (v) => v.includes("Fingerprint"),
+  sceneNotice: null,
 });
 
-// L3 の範囲を押すと、本体へ「開け」が飛ぶ。編集器が無いので送った内容だけを見る。
+// L3 の範囲を押すと、本体へ「開け」が飛ぶ。編集器が無いので送った内容を検める。
+//
+// 「飛んだこと」だけを見ていた頃は、begin と end を入れ替えても緑だった。
+// 送った値そのものを、画面に出ている範囲の札と突き合わせる。
+// SVG の g 要素は innerText を持たない。中の text から組み立てる。
+const firstLabel = await page.evaluate(() => {
+  const g = document.querySelector(".node");
+  return [...(g?.querySelectorAll("text") ?? [])].map((t) => t.textContent ?? "").join(" ").trim();
+});
 await page.locator(".node").first().dblclick();
 const sent = await page.evaluate(() => window.__sent ?? []);
 const openRange = sent.filter((m) => m.kind === "openRange");
 if (openRange.length === 0) {
   failures.push("L3 の範囲を押しても本体へ openRange が飛ばない");
+} else {
+  const [m] = openRange;
+  // 札は「パス」「始まり–終わり · N lines」の二行である。
+  const [shownPath, shownLines] = firstLabel.split(" ");
+  if (m.path !== shownPath) {
+    failures.push(`openRange の path が画面と違う: ${m.path} ≠ ${shownPath}`);
+  }
+  const [begin, end] = (shownLines ?? "").split("–").map((n) => Number.parseInt(n, 10));
+  if (Number.isFinite(begin) && m.beginLine !== begin) {
+    failures.push(`openRange の beginLine が画面と違う: ${m.beginLine} ≠ ${begin}`);
+  }
+  if (Number.isFinite(end) && m.endLine !== end) {
+    failures.push(`openRange の endLine が画面と違う: ${m.endLine} ≠ ${end}`);
+  }
+  if (m.beginLine > m.endLine) {
+    failures.push(`openRange の始まりが終わりより後ろ: ${m.beginLine} > ${m.endLine}`);
+  }
 }
 
 // 上がる（Backspace）。L3 → L2 → L1 → L0。

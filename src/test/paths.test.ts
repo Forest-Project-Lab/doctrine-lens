@@ -161,3 +161,17 @@ test("symlink で作業フォルダの外へ抜けられない", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("畳んだ長さで切らない（小文字化で長さが変わる経路）", () => {
+  // トルコ語の İ は小文字化すると 2 文字になる。畳んだ側の長さで切ると、
+  // 切る位置がずれて相対パスが壊れる。大小文字を区別しない環境でだけ起きる。
+  const root = "C:/İş";
+  const abs = "C:/İş/src/a.ts";
+  assert.equal(
+    toRelative(root, abs, true),
+    "src/a.ts",
+    "畳んだ長さで切っている（Windows・macOS でだけ壊れる）",
+  );
+  // 区別する環境でも同じ結果になること。
+  assert.equal(toRelative(root, abs, false), "src/a.ts");
+});

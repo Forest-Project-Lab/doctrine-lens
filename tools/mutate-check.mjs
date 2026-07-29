@@ -14,8 +14,14 @@
 // **覆える範囲は限られている。** 潰せるのは下の表に並べた行だけであり、
 // 「すべての直し」ではない。回すのは tsconfig.test.json が含む層
 // （src/doctrine・src/model・src/shared とその依存）に限られる。
-// src/webview・src/panel・src/session・src/extension は一行も見ない。
-// 画面の側は `npm run preview` が、編集器の側は `npm run test:integration` が見る。
+//
+// 残りを他の門が見ている、とは書かない。実際に見ていないためである。
+// 画面は `npm run preview` が、起動と命令は `npm run test:integration` が見るが、
+// src/statusbar.ts と src/codelens/decorations.ts の繋ぎ、および preview が
+// 送らない lensPanel の受け口には、**どの門も効かない**。そこへ欠陥を入れて
+// すべての門が緑のままだったことを実測してある。
+// 判断の側（src/model/status.ts・src/model/trace.ts）は単体試験が見る。
+// 見ていないのは、その判断を編集器の物へ写す数行だけである。
 // この頭注を、README と CHANGELOG の文言と食い違わせないこと。
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -75,7 +81,7 @@ const MUTATIONS = [
     label: "複製の根を指されたときの落としを外す（README 通りでも見つからない）",
     file: "src/doctrine/locate.ts",
     from: 'const inside = join(candidate, "plugin");',
-    to: 'const inside = join(candidate, "この名前のフォルダは無い");',
+    to: 'const inside = join(candidate, "no-such-directory");',
   },
   {
     label: "carryAudit の withAudit 条件を外す（速い拍を判定として採る）",
@@ -108,16 +114,46 @@ const MUTATIONS = [
     to: "  return { name, lens };",
   },
   {
+    label: "知らないファイルを「無関係」と決めつける（新しい印が永久に拾われない）",
+    file: "src/model/trace.ts",
+    from: '  // まだ知らないファイル。印が新しく足されたかもしれないので、範囲だけ訊く。\n  return "probe";',
+    to: '  return "ignore";',
+  },
+  {
+    label: "印の集合の異同を見ない（訊いても足された印に気づかない）",
+    file: "src/model/trace.ts",
+    from: "  if (a.length !== b.length) return false;",
+    to: "  return true;\n  if (a.length !== b.length) return false;",
+  },
+  {
+    label: "帯の食い違いの件数の条件を反転（永久に出ない）",
+    file: "src/model/status.ts",
+    from: "    stale: input.staleCount > 0 ? input.staleCount : 0,",
+    to: "    stale: input.staleCount < 0 ? input.staleCount : 0,",
+  },
+  {
+    label: "木が二つでも切り替えにしない（ADR-006 の到達手立てが消える）",
+    file: "src/model/status.ts",
+    from: '      input.candidateCount > 1 ? "doctrineLens.selectWorkspaceFolder" : "doctrineLens.open",',
+    to: '      "doctrineLens.open",',
+  },
+  {
     label: "空のドメインを弾く・L1（domain 無し文書の箱へ入れない）",
     file: "src/model/depth.ts",
     from: "if (lens.depth >= 1 && focus.domain !== null) {",
     to: "if (lens.depth >= 1 && focus.domain) {",
   },
   {
+    label: "段の判定を絞り後の集合で行う（絞ると段が落ち、偽の理由が出る）",
+    file: "src/model/depth.ts",
+    from: "    if (hasDomain(all, focus.domain)) return buildLevel1(visible, graph.edges, focus.domain);",
+    to: "    if ([...visible.values()].some((n) => n.domain === focus.domain)) return buildLevel1(visible, graph.edges, focus.domain);",
+  },
+  {
     label: "空のドメインを弾く・L2（消えた文書からの復帰が L0 まで落ちる）",
     file: "src/model/depth.ts",
-    from: "if (focus.domain !== null && [...visible.values()].some((n) => n.domain === focus.domain)) {",
-    to: "if (focus.domain && [...visible.values()].some((n) => n.domain === focus.domain)) {",
+    from: "if (focus.domain !== null && hasDomain(all, focus.domain)) {",
+    to: "if (focus.domain && hasDomain(all, focus.domain)) {",
   },
   {
     label: "部分失敗の詳細を捨てる・登録簿（設定の誤りが一時的失敗に見える）",
@@ -140,8 +176,8 @@ const MUTATIONS = [
   {
     label: "台帳のプロジェクト優先を外す（別のプロジェクト向けの版が走る）",
     file: "src/doctrine/locate.ts",
-    from: "entries.find((e) => e.projectPath && resolve(e.projectPath) === here) ?? entries[0];",
-    to: "entries[0];",
+    from: "entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here) ??",
+    to: "entries.find(() => false) ??",
   },
   {
     label: "経路の区切りの正規化を外す（Windows でだけ範囲が外れる）",
@@ -170,14 +206,20 @@ const MUTATIONS = [
   {
     label: "保存の合図の絞りを外す（無関係な保存で CLI が七本走る）",
     file: "src/model/trace.ts",
-    from: "  if (!relPath) return false;",
-    to: "  if (!relPath) return false;\n  if (1) return true;",
+    from: '  if (!relPath) return "ignore";',
+    to: '  if (!relPath) return "ignore";\n  if (1) return "refresh";',
   },
   {
-    label: "相対 pythonPath を受け入れる（ADR-010 の保証が破れる）",
+    label: "相対値の実行体を受け入れる（pythonPath・pluginPath の両方が破れる）",
     file: "src/doctrine/cli.ts",
     from: "  return isAbsolute(raw) ? raw : null;",
     to: "  return raw;",
+  },
+  {
+    label: "pluginPath だけ規律を分ける（片方を塞いでも同じことができる）",
+    file: "src/doctrine/locate.ts",
+    from: "    const candidate = resolveUserPath(override);",
+    to: '    const candidate = resolve(projectDir || ".", override.trim());',
   },
   {
     label: "待ち時間の丸めを外す（負で例外、32bit 超で全取得が数ミリ秒）",
@@ -209,9 +251,41 @@ const run = (command) => {
  * 読まれる。試験は一行も走っていないのにである。合否は試験の終了符号だけで決め、
  * 型検査が落ちる潰しは「潰し方が不正（表を直せ）」として別に扱う。
  */
+// 表の照合そのものは、この判定から外す。
+//
+// src/test/mutation-table.test.ts は「表の from が実在する」ことを検める。
+// 道具はまさにその from を消して潰すので、同じ束で回すと、どの行を潰しても
+// 必ずその一件が赤くなる。実測で 27 行のうち 25 行はそれだけが赤かった。
+// つまり判定が自分の仕込んだ赤を見ていただけで、直しが守られているかを
+// 一切見ていなかった。除いて回す（npm test と CI は全件を回す）。
+const TEST_GLOB =
+  "$(ls out/test/*.test.js | grep -v mutation-table)";
+
+/**
+ * 型検査と試験を**別々に**回し、赤くなった試験の名前も返す。
+ *
+ * 一つの `&&` でつなぐと、型検査だけが咎めた潰しも「落ちた」＝守られている、と
+ * 読まれる。試験は一行も走っていないのにである。合否は試験の終了符号だけで決め、
+ * 型検査が落ちる潰しは「潰し方が不正（表を直せ）」として別に扱う。
+ */
 const check = () => {
-  if (!run("npx tsc -p tsconfig.test.json")) return "型検査が落ちた";
-  return run("node --test 'out/test/*.test.js'") ? "試験は通った" : "試験が落ちた";
+  if (!run(`npx tsc -p tsconfig.test.json`)) return { verdict: "型検査が落ちた", failed: [] };
+  const out = capture(`node --test ${TEST_GLOB}`);
+  const failed = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1].trim());
+  return { verdict: failed.length > 0 ? "試験が落ちた" : "試験は通った", failed };
+};
+
+/** 走らせて、終了符号に関わらず出力を返す。 */
+const capture = (command) => {
+  try {
+    return execFileSync("sh", ["-c", command], {
+      cwd: projectRoot,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+  } catch (error) {
+    return `${error.stdout ?? ""}${error.stderr ?? ""}`;
+  }
 };
 
 // 潰している最中に殺されても元へ戻す。
@@ -253,7 +327,7 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
 
 recoverFromJournal();
 
-if (check() !== "試験は通った") {
+if (check().verdict !== "試験は通った") {
   console.error("先に全件を緑にすること（いまの木で型検査か試験が落ちている）。");
   process.exit(2);
 }
@@ -274,15 +348,18 @@ for (const { label, file, from, to } of MUTATIONS) {
   writeFileSync(JOURNAL, JSON.stringify({ file, original }), "utf8");
   restoring = { path, original };
   writeFileSync(path, original.replace(from, to), "utf8");
-  let verdict;
+  let result;
   try {
-    verdict = check();
+    result = check();
   } finally {
     restore();
   }
+  const { verdict, failed } = result;
   const mark =
     verdict === "試験が落ちた" ? "落ちた  " : verdict === "型検査が落ちた" ? "型のみ!!" : "通った!!";
-  console.log(`${mark} ${label}`);
+  // 赤くなった試験の名前も刷る。取り違え（別の理由で落ちているだけ）が目で分かる。
+  const why = failed.length > 0 ? `  ← ${failed.slice(0, 2).join(" / ")}` : "";
+  console.log(`${mark} ${label}${why}`);
   if (verdict === "型検査が落ちた") invalid.push(`${label}（型検査だけが咎めた）`);
   else if (verdict === "試験は通った") unguarded.push(label);
 }

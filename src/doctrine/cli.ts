@@ -4,7 +4,7 @@
 // 例外を外へ出さない。失敗はすべて Outcome の値として返す（SPEC-001 エラー時挙動）。
 // 呼ぶのは読み取り専用の命令だけである。統治木へ書き込む命令を呼んではならない。
 import { execFile } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { isAbsolute, join } from "node:path";
 
@@ -18,8 +18,9 @@ export interface RunOptions {
   /**
    * 呼び手が居る作業フォルダ。
    *
-   * 子プロセスには渡さない。渡すと Windows で cwd の実行体が先に走る
-   * （safeCwd を見よ）。相対値の `pythonPath` を解く基準としてだけ使う。
+   * 子プロセスには渡さない（渡すと Windows で cwd の実行体が先に走る。
+   * safeCwd を見よ）。実行体の在処を解く基準にも使わない（ADR-010）。
+   * 残してあるのは、束ねの鍵と診断のためである。
    */
   cwd: string;
 }
@@ -49,6 +50,22 @@ function safeCwd(): string {
 }
 
 /**
+ * 私有の作業フォルダを片づける。拡張機能を終えるときに呼ぶ。
+ *
+ * 呼ばないと、起動のたびに空のディレクトリが一つ残る。Linux の /tmp は
+ * 再起動で消えるが、Windows の %TEMP% と macOS の TMPDIR は自動で片づかない。
+ */
+export function disposeSafeCwd(): void {
+  if (!privateCwd || privateCwd === tmpdir()) return;
+  try {
+    rmSync(privateCwd, { recursive: true, force: true });
+  } catch {
+    // 消せなくても構わない。空のディレクトリが一つ残るだけである。
+  }
+  privateCwd = undefined;
+}
+
+/**
  * `pythonPath` を、起こしてよい形に直す。受け付けないなら `null`。
  *
  * 受けるのは三つだけである。
@@ -70,9 +87,28 @@ function safeCwd(): string {
 export function resolvePython(pythonPath: string): string | null {
   const raw = pythonPath.trim();
   if (!raw) return "python3";
-  if (raw.startsWith("~/")) return join(homedir(), raw.slice(2));
   // 区切りを含まないなら PATH から探す名前である。解いてはならない。
   if (!/[\\/]/.test(raw)) return raw;
+  return resolveUserPath(raw);
+}
+
+/**
+ * 実行体の在処を指す設定を解く。作業フォルダ基準の相対値は受けない（`null`）。
+ *
+ * `pythonPath` と `pluginPath` はどちらも「何が走るか」を決める設定であり、
+ * ADR-010 が machine scope にしたのは、開いたリポジトリがそれを差し替えられない
+ * ようにするためである。相対値を作業フォルダ基準で解くと、値そのものは
+ * リポジトリに書けなくても解決先はリポジトリが握る。一度でも相対値を設定した
+ * 利用者は、以後どのリポジトリを開いてもそのリポジトリ同梱の実体を走らせる
+ * （起動直後の取り直しで走るので、地図を開く操作すら要らない。実際に再現した）。
+ *
+ * 二つの設定で規律を分けてはならない。片方だけ塞いでも、もう片方から同じことが
+ * できる（五巡目に pythonPath だけを塞ぎ、六巡目に pluginPath で再現された）。
+ */
+export function resolveUserPath(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+  if (raw.startsWith("~/")) return join(homedir(), raw.slice(2));
   return isAbsolute(raw) ? raw : null;
 }
 

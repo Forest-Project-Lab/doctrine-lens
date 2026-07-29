@@ -108,11 +108,20 @@ export function renderHtml(webview: Webview, scriptUri: Uri, language = "en"): s
 // hidden を効かせるためである。これが無いと、隠したはずの覆いがキャンバス全面の
 // クリックを飲み込む（実際に起きた欠陥）。
 //
-// canvas の行を `minmax(0, 1fr)` にしてあるのは、素の `1fr` が中身の最小の高さを
-// 下回れないためである。通知が長い回に canvas の高さが 0 まで潰れ、地図が一つも
-// 見えなくなる。`.notice` の `max-height` と `overflow-y` も同じ理由で要る。
+// canvas の行を `minmax(120px, 1fr)` にしてあるのは、素の `1fr` が中身の最小の
+// 高さを下回れないためである。通知が長い回に canvas の高さが 0 まで潰れ、地図が
+// 一つも見えなくなる。`.notice` の `max-height` と `overflow-y` も同じ理由で要る。
 // 上流の traceback が三本ぶん来ると数千字になり、body は overflow:hidden なので
 // 巻く手立てが無い（実際に地図が消えた）。
+//
+// 下限を 0 でなく 120px にしてあるのは、幅が狭くて検分欄が下段へ回る配置でも
+// 地図の面を残すためである（700x500 で canvas の高さが 0 になり、検分欄だけの
+// 画面になった）。検分欄の側にも `max-height` と巻きを与えてある。
+//
+// `.dials` の `overflow-x` と `.legend span` の `min-width: 0`、そして
+// `@media (max-width: 480px)` の折り返しは、編集器の欄を三つ四つに割った幅
+// （380px 程度）で、取り直す釦や絞りの選択欄が画面の外へ出て触れなくなるのを
+// 防ぐ。body は横にも巻けないので、出てしまうと触れる方法が一切残らない。
 const STYLE = `
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -126,7 +135,7 @@ html, body {
 body {
   display: grid;
   grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto minmax(120px, 1fr) auto;
   grid-template-areas:
     "bar bar" "dials dials" "notice notice" "sceneNotice sceneNotice"
     "canvas inspector" "legend legend";
@@ -157,9 +166,11 @@ button.ghost:disabled { opacity: .5; cursor: default; }
 .dials {
   grid-area: dials; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
   padding: 8px 12px; border-bottom: 1px solid var(--vscode-panel-border);
+  min-width: 0; overflow-x: auto;
 }
 .dial { display: flex; align-items: center; gap: 6px; }
 .dial.grow { margin-left: auto; }
+.dial select { min-width: 0; }
 .dial label { opacity: .8; font-size: .9em; white-space: nowrap; }
 .dial select {
   background: var(--vscode-dropdown-background);
@@ -234,12 +245,20 @@ svg.dragging { cursor: grabbing; }
   padding: 6px 12px; border-top: 1px solid var(--vscode-panel-border);
   font-size: .85em; max-height: 5.5em; overflow-y: auto;
 }
-.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
 .legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .hint { opacity: .6; margin-left: auto; white-space: nowrap; }
+@media (max-width: 480px) {
+  .bar { flex-wrap: wrap; }
+  .dial.grow { margin-left: 0; }
+  .dials { gap: 6px 10px; }
+}
 @media (max-width: 720px) {
   body { grid-template-columns: 1fr; grid-template-areas:
     "bar" "dials" "notice" "sceneNotice" "canvas" "inspector" "legend"; }
-  .inspector { width: auto; border-left: none; border-top: 1px solid var(--vscode-panel-border); }
+  .inspector {
+    width: auto; border-left: none; border-top: 1px solid var(--vscode-panel-border);
+    max-height: 40vh; overflow-y: auto;
+  }
 }
 `;

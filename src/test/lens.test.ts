@@ -189,3 +189,29 @@ test("絞りは型とドメインを積で効かせる", () => {
     false,
   );
 });
+
+test("4b. L1 で絞りが空にしても段は落ちず、偽の説明も出ない", () => {
+  // 絞りのダイヤルが深度のダイヤルを動かしてはならない（受入基準 1）。
+  // 空になったことは、空の段を描いて示す（受入基準 4）。
+  const lens = withFilter(withDepth(DEFAULT_LENS, 1), {
+    currentOnly: false,
+    domains: [],
+    types: ["この型はこのドメインに無い"],
+  });
+  const scene = buildScene(graph, lens, { domain: "lens", docId: null }, REGISTRY);
+  assert.equal(scene.depth, 1, "絞りで段が落ちている");
+  assert.equal(scene.nodes.length, 0, "空の段として描く");
+  assert.equal(scene.recovered, null, "消えてもいないのに理由を出している");
+});
+
+test("4c. ドメインが本当にグラフから消えたときだけ段を戻す", () => {
+  const onlyStore = { nodes: graph.nodes.filter((n) => n.domain === "store"), edges: [] };
+  const scene = buildScene(
+    onlyStore,
+    withDepth(DEFAULT_LENS, 1),
+    { domain: "lens", docId: null },
+    REGISTRY,
+  );
+  assert.equal(scene.depth, 0);
+  assert.equal(scene.recovered, "domain-gone");
+});

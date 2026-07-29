@@ -7,7 +7,8 @@ import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "n
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { isInside } from "../model/paths.js";
+import { forCompare, isInside } from "../model/paths.js";
+import { resolveUserPath } from "./cli.js";
 
 /** 統治木として認めるディレクトリ名。優先順（ADR-022）。 */
 const DOCS_DIR_NAMES = ["doctrine_docs", "docs"] as const;
@@ -98,10 +99,13 @@ function fromLedger(pluginsDir: string, projectDir: string): string | null {
     return null;
   }
   if (!Array.isArray(entries) || entries.length === 0) return null;
-  const here = resolve(projectDir);
-  // このプロジェクト向けの登録を先に見て、無ければ最初の登録を使う。
+  // 突き合わせは forCompare を通す。素の `===` だと、経路の大小文字を区別しない
+  // 環境（Windows・macOS）で「このプロジェクト向けの登録を先に見る」が必ず外れ、
+  // 別のプロジェクト向けに入れた版が走る。
+  const here = forCompare(resolve(projectDir));
   const preferred =
-    entries.find((e) => e.projectPath && resolve(e.projectPath) === here) ?? entries[0];
+    entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here) ??
+    entries[0];
   const installPath = preferred?.installPath;
   if (!installPath || !existsSync(installPath)) return null;
   // 廃版には `.orphaned_at` が付く。台帳は版を上げても古い項が残ることがあるので、
@@ -154,11 +158,11 @@ export function locatePluginRoot(
   configDir = process.env["CLAUDE_CONFIG_DIR"] || join(homedir(), ".claude"),
 ): string | null {
   if (override.trim()) {
-    // 相対値は作業フォルダ基準で解く。process.cwd() 基準だと、同じ設定でも
-    // 起動のされ方で結果が変わる。`~` は編集器が展開しないので自分で展開する。
-    const raw = override.trim();
-    const expanded = raw.startsWith("~/") ? join(homedir(), raw.slice(2)) : raw;
-    const candidate = resolve(projectDir || ".", expanded);
+    // 受けるのは絶対パスと `~/` だけである。作業フォルダ基準の相対値を受けると、
+    // 開いたリポジトリが同梱した python スクリプトが走る（ADR-010 の帰結が破れる。
+    // `pythonPath` と同じ規律であり、resolveUserPath に一箇所だけ置いてある）。
+    const candidate = resolveUserPath(override);
+    if (candidate === null) return null;
     // 「在るディレクトリ」だけでは足りない。取り違えた先を返すと、失敗は
     // 「プラグインが見つからない」ではなく「CLI が失敗した」として現れ、
     // 読み手が設定を疑えない。実体であることまでここで見る。

@@ -239,7 +239,7 @@ npm run docs:render      # redraws the projections
 ```
 
 \* `docs:trace` scans the whole tree, so it also lists the copies of the markers
-that land in `out/` and `dist/`. The audit applies `trace_exempt` from
+that land in `out/` (the bundles in `dist/` carry no markers). The audit applies `trace_exempt` from
 `doctrine_docs/_system/.context-config.json` and ignores them; this listing does
 not. Read it as "every marker on disk", not "every governed range".
 
@@ -253,8 +253,10 @@ dropped first — `tools/run-vscode-test.mjs` does that. Without it the new
 Electron starts as plain Node and fails with a misleading
 `Cannot find module 'vscode'`.
 
-The `.vsix` includes everything by default, so adding a working directory means
-adding a line to `.vscodeignore`.
+`.vscodeignore` drops everything (`**`) and names the files that ship. Adding a
+working directory therefore changes nothing about the package; adding a file
+that *should* ship means adding a `!` line, and `src/test/manifest.test.ts`
+freezes that list so it cannot drift.
 
 ### Checking the webview outside the editor
 
@@ -265,12 +267,20 @@ npm run preview   # rebuilds .preview/ from src, then drives it and captures sho
 ```
 
 `npm run mutate` breaks, one at a time, each fix listed in `tools/mutate-check.mjs`
-and checks that a unit test turns red. It covers only what `tsconfig.test.json`
-compiles — `src/doctrine/`, `src/model/`, `src/shared/` — so `src/webview/`,
-`src/panel/`, `src/session.ts` and `src/extension.ts` are **not** covered by it;
-those are covered by `npm run preview` and `npm run test:integration`. Adding a
-row when you add a fix is the author's job; the unit suite fails if a row stops
-matching the source.
+and checks that a unit test turns red. Adding a row when you add a fix is the
+author's job; the unit suite fails if a row stops matching the source.
+
+**Know what the gates do not reach.** `mutate` only touches what
+`tsconfig.test.json` compiles — `src/doctrine/`, `src/model/`, `src/shared/`.
+`npm run preview` drives the real webview bundle, so it reaches `src/webview/`
+and `src/panel/html.ts`. `npm run test:integration` loads the real extension, so
+it reaches activation, command registration, the CodeLens headlines and the
+document↔code commands. What is left with **no automated gate at all** is
+`src/statusbar.ts`'s wiring, `src/codelens/decorations.ts`'s wiring, and the
+message handlers in `src/panel/lensPanel.ts` that the preview does not send.
+Defects were injected into exactly those places and every gate stayed green.
+The decisions behind them (`src/model/status.ts`, `src/model/trace.ts`) are
+unit-tested; the few lines that copy those decisions into editor objects are not.
 
 `preview-webview.mjs` bundles the webview from `src/` itself — it does not copy
 `dist/` — so what you look at is always the current source. `shoot-preview.mjs`

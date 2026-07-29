@@ -116,30 +116,64 @@ export function headlinesForPath(
  * 入れ子は上流が誤りとして挙げるので、ここで解こうとはしない。
  */
 /**
- * その保存で取り直すべきか。
+ * その保存に対して何をするか。
+ *
+ * - `refresh`: すべて取り直す。
+ * - `probe`: 範囲だけを上流へ一本訊く。増えていたら呼び手が取り直す。
+ * - `ignore`: 何もしない。
+ */
+export type SaveAction = "refresh" | "probe" | "ignore";
+
+/**
+ * その保存で何をするかを決める。
  *
  * `relPath` は作業フォルダからの相対（`/` 区切り）。作業フォルダの外なら
  * 呼び手が `null` を渡す。
  *
+ * 三つに分けるのは、二つの誤りを同時に避けるためである。
+ *
  * 何でも取り直すと、無関係な一回の保存で上流の CLI が七本走る（速い拍と
- * 遅い拍の両方が走るため）。この木での実測で一回あたり数秒かかる。
- * README も設定の説明も SPEC-005 も「統治の .md か印を持つ原本のとき」と
- * 書いてあるので、そのとおりにする。
+ * 遅い拍の両方）。この木での実測で一回あたり数秒かかる。
+ *
+ * 逆に「知っている範囲に載っていないものは無関係」と決めつけると、**印を
+ * 新しく書いて保存した原本**が永久に拾われない。上流が前回返した範囲には
+ * まだ載っていないからである。見出しも帯も出ず、画面には何の手がかりも出ない。
+ * 「コードに印を書いて保存する」は SPEC-005 の中心の流れであり、そこが黙って
+ * 死ぬ（実際に死んでいた）。
+ *
+ * だから、知らないファイルは「無関係」ではなく「まだ知らない」として扱い、
+ * 範囲だけを一本訊く。印の綴りはこちらが持たない（REQ-003）。
  */
-export function shouldRefreshOnSave(
+export function actionOnSave(
   relPath: string | null,
   docsRootRelative: string | null,
   ranges: readonly TraceRange[] | null,
-): boolean {
-  if (!relPath) return false;
+): SaveAction {
+  if (!relPath) return "ignore";
   // 統治木の中の `.md`。統治木の場所は作業フォルダからの相対で受ける。
   if (docsRootRelative && relPath.toLowerCase().endsWith(".md")) {
-    if (relPath === docsRootRelative || relPath.startsWith(`${docsRootRelative}/`)) return true;
+    if (relPath === docsRootRelative || relPath.startsWith(`${docsRootRelative}/`)) return "refresh";
   }
-  // 印を持つ原本。上流が返した範囲に載っているかで判じる（印の綴りを持たない）。
   // 範囲がまだ取れていないときは取り直す。取れるまで一度も動かないより良い。
-  if (ranges === null) return true;
-  return ranges.some((r) => r.path === relPath);
+  if (ranges === null) return "refresh";
+  // 既に印を持つと分かっているファイル。
+  if (ranges.some((r) => r.path === relPath)) return "refresh";
+  // まだ知らないファイル。印が新しく足されたかもしれないので、範囲だけ訊く。
+  return "probe";
+}
+
+/**
+ * 二つの範囲の集合が同じか。
+ *
+ * 印が足された・消えた・動いたことを、上流に一本訊いた結果から判じる。
+ * 指紋は見ない（中身が変わっただけなら、印の集合は同じである）。
+ */
+export function sameRanges(a: readonly TraceRange[], b: readonly TraceRange[]): boolean {
+  if (a.length !== b.length) return false;
+  const key = (r: TraceRange): string => `${r.path}\u0000${r.id}\u0000${r.begin_line}-${r.end_line}`;
+  const left = a.map(key).sort();
+  const right = b.map(key).sort();
+  return left.every((v, i) => v === right[i]);
 }
 
 /** 帯の一本。行は編集器と同じ 0 始まり。 */

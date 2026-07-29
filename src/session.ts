@@ -12,16 +12,25 @@ import { locateDocsRoot, locatePluginRoot } from "./doctrine/locate.js";
 import { messages } from "./l10n.js";
 import { carryAudit, NO_AUDIT } from "./model/cadence.js";
 import { toRelative } from "./model/paths.js";
-import { shouldRefreshOnSave } from "./model/trace.js";
+import { fetchTraceRanges } from "./doctrine/trace.js";
+import { actionOnSave, sameRanges } from "./model/trace.js";
 import { chooseCandidate, collectCandidates, type TreeCandidate } from "./model/workspace.js";
 
 /** 統治木が続けて変わったときに取得を畳む待ち時間（速い拍）。 */
 const FAST_COALESCE_MS = 400;
 
+/** setTimeout が受け取れる上限。超えると実行環境が 1 ミリ秒へ潰す。 */
+const MAX_DELAY_MS = 2147483647;
+
 /** 統治木がまだ無いあいだ、敷かれたかを見に行く間隔。 */
 const TREE_POLL_MS = 3000;
 
 const CHOSEN_FOLDER_KEY = "doctrineLens.chosenFolder";
+
+/** 候補の集合を一つの字面にする。数ではなく中身で見分けるため。 */
+function candidateKey(candidates: readonly TreeCandidate[]): string {
+  return candidates.map((c) => `${c.folder}\u0000${c.docsRoot}`).sort().join("\u0001");
+}
 
 /** 取得ができない理由。いずれも異常ではない（SPEC-001 エラー時挙動）。 */
 export interface Unavailable {
@@ -71,6 +80,7 @@ export class LensSession {
   readonly #watchers: vscode.FileSystemWatcher[] = [];
   #waitTimer: ReturnType<typeof setInterval> | undefined;
   #fastTimer: ReturnType<typeof setTimeout> | undefined;
+  #probeTimer: ReturnType<typeof setTimeout> | undefined;
   #auditTimer: ReturnType<typeof setTimeout> | undefined;
   #state: SessionState = EMPTY_STATE;
   #staleIds: ReadonlySet<string> = NO_AUDIT.staleIds;
@@ -103,6 +113,7 @@ export class LensSession {
 
   dispose(): void {
     if (this.#fastTimer) clearTimeout(this.#fastTimer);
+    if (this.#probeTimer) clearTimeout(this.#probeTimer);
     if (this.#auditTimer) clearTimeout(this.#auditTimer);
     this.#stopWaiting();
     for (const watcher of this.#watchers.splice(0)) watcher.dispose();
@@ -169,17 +180,52 @@ export class LensSession {
   }
 
   /**
-   * その保存で取り直すべきか（SPEC-005 制約）。
+   * 保存を受け取る（SPEC-005 制約）。
    *
-   * 判じるのは src/model/trace.ts の純粋な関数である。ここは編集器の位置を
-   * 相対パスへ直して渡すだけ。
+   * 何をするかを判じるのは src/model/trace.ts の純粋な関数である。ここは
+   * 編集器の位置を相対パスへ直して渡し、決まったことを実行するだけ。
    */
-  wantsRefreshFor(uri: vscode.Uri): boolean {
+  onDidSave(uri: vscode.Uri): void {
     const relPath = this.toRelativePath(uri);
     const folder = this.#state.candidate?.folder;
     const docsRoot = this.#state.candidate?.docsRoot;
     const docsRel = folder && docsRoot ? toRelative(folder, docsRoot) : null;
-    return shouldRefreshOnSave(relPath, docsRel, this.#state.snapshot?.ranges ?? null);
+    const action = actionOnSave(relPath, docsRel, this.#state.snapshot?.ranges ?? null);
+    if (action === "refresh") this.scheduleRefresh();
+    else if (action === "probe") this.#scheduleProbe();
+  }
+
+  /**
+   * 範囲だけを上流へ一本訊く。増減していたら取り直す。
+   *
+   * まだ知らないファイルの保存で使う。印を新しく書いた原本を拾うためである。
+   * すべて取り直すと上流の CLI が七本走るので、ここは一本で済ませる。
+   */
+  #scheduleProbe(): void {
+    const config = vscode.workspace.getConfiguration("doctrineLens");
+    if (!config.get<boolean>("autoRefresh", true)) return;
+    if (this.#probeTimer) clearTimeout(this.#probeTimer);
+    this.#probeTimer = setTimeout(() => {
+      this.#probeTimer = undefined;
+      void this.#probe();
+    }, FAST_COALESCE_MS);
+  }
+
+  async #probe(): Promise<void> {
+    const chosen = this.#state.candidate;
+    const known = this.#state.snapshot?.ranges;
+    if (!chosen || !known) return;
+    const config = vscode.workspace.getConfiguration("doctrineLens");
+    const pluginRoot = locatePluginRoot(chosen.folder, config.get<string>("pluginPath", ""));
+    if (!pluginRoot) return;
+    const outcome = await fetchTraceRanges(chosen.folder, chosen.docsRoot, pluginRoot, {
+      pythonPath: config.get<string>("pythonPath", "python3"),
+      timeoutMs: config.get<number>("timeoutMs", 20000),
+      cwd: chosen.folder,
+    });
+    if (!outcome.ok) return;
+    // 範囲の集合が変わっていれば、印が足された（あるいは消えた）ということである。
+    if (!sameRanges(known, outcome.value)) this.scheduleRefresh();
   }
 
   /** 上流が使う相対パスを、編集器の位置へ直す。 */
@@ -208,6 +254,7 @@ export class LensSession {
     }
     if (!chosen) {
       this.#forget();
+      this.#lastCandidateKey = candidateKey(candidates);
       // 敷かれるのを待つ。監視が取り落としても数秒で追いつく。
       this.#installWatcher();
       this.#waitForTree();
@@ -229,13 +276,12 @@ export class LensSession {
       this.#forget();
     }
     this.#lastDocsRoot = chosen.docsRoot;
-    // まだ木を持たない作業フォルダが残っているなら、見張りは続ける。
-    // 二つ目のフォルダに木を敷いたときに切り替えの選択肢が出るようにするため。
-    if (candidates.length >= (vscode.workspace.workspaceFolders?.length ?? 0)) {
-      this.#stopWaiting();
-    } else {
-      this.#waitForTree();
-    }
+    this.#lastCandidateKey = candidateKey(candidates);
+    // 見張りは止めない。木が消えた・戻った・二つ目に敷かれた、のどれも
+    // ファイルの監視だけでは拾えないためである（ディレクトリごと消える回は
+    // 監視が発火せず、45 秒待っても取り直しが一度も走らなかった）。
+    // 見るのは候補の集合の同一性だけで、statSync が数回走るに過ぎない。
+    this.#waitForTree();
 
     const config = vscode.workspace.getConfiguration("doctrineLens");
     const override = config.get<string>("pluginPath", "").trim();
@@ -375,13 +421,17 @@ export class LensSession {
    */
   #waitForTree(): void {
     if (this.#waitTimer) return;
-    // 見張りが見るのは「木を持つフォルダの数が変わったか」だけである。
-    // 数が変わったときに取り直せば、その回で監視も張り直される。
+    // 見るのは候補の集合そのものである。数だけを見ると、片方が消えて片方が
+    // 増えた回を取り落とす。いま見ている木が消えた回も、これで拾える。
     this.#waitTimer = setInterval(() => {
-      if (this.candidates().length === this.#state.candidateCount) return;
+      const now = candidateKey(this.candidates());
+      if (now === this.#lastCandidateKey) return;
       void this.refresh();
     }, TREE_POLL_MS);
   }
+
+  /** いま見えている候補の集合を、一つの字面にする。 */
+  #lastCandidateKey = "";
 
   #stopWaiting(): void {
     if (this.#waitTimer) clearInterval(this.#waitTimer);
@@ -407,9 +457,14 @@ export class LensSession {
       void this.refresh(false);
     }, FAST_COALESCE_MS);
 
-    const auditDelay = config.get<number>("auditDebounceMs", 2500);
+    // 待ち時間は丸める。32bit を超える値を渡すと実行環境が 1 ミリ秒へ潰すので、
+    // 「めったに走らせない」つもりの設定が「保存のたびに即座に全件監査」になる
+    // （利用者の意図の正反対で、案内も出ない。実際に再現した）。
+    // 0 は「自動で走らせない」の意なので、丸める前に分ける。
+    const configured = config.get<number>("auditDebounceMs", 2500);
     if (this.#auditTimer) clearTimeout(this.#auditTimer);
-    if (auditDelay <= 0) return;
+    if (!Number.isFinite(configured) || configured <= 0) return;
+    const auditDelay = Math.min(Math.trunc(configured), MAX_DELAY_MS);
     this.#auditTimer = setTimeout(() => {
       this.#auditTimer = undefined;
       void this.refresh(true);

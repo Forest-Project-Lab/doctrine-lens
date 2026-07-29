@@ -325,15 +325,21 @@ export function buildScene(
   if (lens.depth >= 2 && focus.docId) {
     const doc = all.get(focus.docId);
     if (doc) return buildLevel2(all, graph.edges, doc);
-    if (focus.domain !== null && [...visible.values()].some((n) => n.domain === focus.domain)) {
+    if (focus.domain !== null && hasDomain(all, focus.domain)) {
       return { ...buildLevel1(visible, graph.edges, focus.domain), recovered: "doc-gone" };
     }
     return { ...buildLevel0(visible, all, graph.edges), recovered: "doc-gone" };
   }
 
+  // 段を落とすのは「グラフから消えた」ときだけである。
+  //
+  // 絞りを通した集合（visible）で見ると、絞りでその段が空になっただけの回にも
+  // 段が落ち、しかも「ドメインがグラフから消えた」という偽の説明が出る。
+  // 深度のダイヤルが絞りのダイヤルに引きずられて動くので、ダイヤルの独立
+  // （REQ-002・SPEC-003 受入基準 1）が破れる。しかも絞りを外しても段は戻らない。
+  // 空になったことは、絞りの結果として空の段を描いて示す（受入基準 4）。
   if (lens.depth >= 1 && focus.domain !== null) {
-    const present = [...visible.values()].some((n) => n.domain === focus.domain);
-    if (present) return buildLevel1(visible, graph.edges, focus.domain);
+    if (hasDomain(all, focus.domain)) return buildLevel1(visible, graph.edges, focus.domain);
     return { ...buildLevel0(visible, all, graph.edges), recovered: "domain-gone" };
   }
 
@@ -352,6 +358,12 @@ export interface Position {
  *
  * 降りる操作はどの段でも一つである。段ごとに別の操作を持たせない（REQ-001）。
  */
+/** そのドメインの文書がグラフに一つでも在るか（絞りは通さない）。 */
+function hasDomain(all: ReadonlyMap<string, GraphNode>, domain: string): boolean {
+  for (const node of all.values()) if (node.domain === domain) return true;
+  return false;
+}
+
 export function descend(
   position: Position,
   key: string,

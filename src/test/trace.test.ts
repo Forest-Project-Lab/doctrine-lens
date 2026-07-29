@@ -23,7 +23,8 @@ import { bandsForPath,
   rangeAtLine,
   rangesForDocument,
   rangesForPath,
-  shouldRefreshOnSave,
+  actionOnSave,
+  sameRanges,
   summarizeCoverage,
 } from "../model/trace.js";
 import { node, REGISTRY, twoDomainGraph } from "./fixture.js";
@@ -381,33 +382,47 @@ test("ファイルの行数を超えた範囲は末尾へ寄せる", () => {
 
 // --- 保存の合図（SPEC-005 制約） -----------------------------------------
 
-test("統治の .md と印を持つ原本の保存だけで取り直す", () => {
+test("統治の .md と、既に印を持つ原本は、そのまま取り直す", () => {
   const ranges = [
     { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 9, fingerprint: "sha256:a" },
   ];
-  // 統治木の中の .md。
-  assert.equal(shouldRefreshOnSave("doctrine_docs/lens/SPEC-001.md", "doctrine_docs", ranges), true);
-  // 印を持つ原本。
-  assert.equal(shouldRefreshOnSave("src/a.ts", "doctrine_docs", ranges), true);
-
-  // 無関係な保存では取り直さない。一回の保存で上流の CLI が七本走っていた。
-  assert.equal(shouldRefreshOnSave("notes.txt", "doctrine_docs", ranges), false);
-  assert.equal(shouldRefreshOnSave("package.json", "doctrine_docs", ranges), false);
-  assert.equal(shouldRefreshOnSave("node_modules/x/y.js", "doctrine_docs", ranges), false);
-  assert.equal(shouldRefreshOnSave("src/b.ts", "doctrine_docs", ranges), false);
-  // 統治木の外の .md も対象外。
-  assert.equal(shouldRefreshOnSave("README.md", "doctrine_docs", ranges), false);
+  assert.equal(actionOnSave("doctrine_docs/lens/SPEC-001.md", "doctrine_docs", ranges), "refresh");
+  assert.equal(actionOnSave("src/a.ts", "doctrine_docs", ranges), "refresh");
   // 作業フォルダの外。
-  assert.equal(shouldRefreshOnSave(null, "doctrine_docs", ranges), false);
+  assert.equal(actionOnSave(null, "doctrine_docs", ranges), "ignore");
+});
+
+test("まだ知らないファイルは「無関係」ではなく「訊く」", () => {
+  // 「知っている範囲に載っていない＝無関係」と決めつけると、印を新しく書いて
+  // 保存した原本が永久に拾われない。見出しも帯も出ず、手がかりも出ない。
+  // 「コードに印を書いて保存する」は SPEC-005 の中心の流れである。
+  const ranges = [
+    { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 9, fingerprint: "sha256:a" },
+  ];
+  assert.equal(actionOnSave("src/b.ts", "doctrine_docs", ranges), "probe");
+  assert.equal(actionOnSave("notes.txt", "doctrine_docs", ranges), "probe");
+  assert.equal(actionOnSave("README.md", "doctrine_docs", ranges), "probe");
+  // 訊くのは一本だけである（すべて取り直すと七本走る）。
 });
 
 test("範囲がまだ取れていないうちは取り直す（取れるまで動かないよりよい）", () => {
-  assert.equal(shouldRefreshOnSave("src/a.ts", "doctrine_docs", null), true);
+  assert.equal(actionOnSave("src/a.ts", "doctrine_docs", null), "refresh");
 });
 
 test("統治木の名前が違っても効く（docs/ を使う木）", () => {
-  assert.equal(shouldRefreshOnSave("docs/lens/SPEC-001.md", "docs", []), true);
-  assert.equal(shouldRefreshOnSave("docsx/lens/SPEC-001.md", "docs", []), false, "前方一致だけで通さない");
+  assert.equal(actionOnSave("docs/lens/SPEC-001.md", "docs", []), "refresh");
+  assert.equal(actionOnSave("docsx/lens/SPEC-001.md", "docs", []), "probe", "前方一致だけで通さない");
+});
+
+test("範囲の集合の異同で、印が足された・消えたを見分ける", () => {
+  const a = { id: "SPEC-001", path: "src/a.ts", begin_line: 1, end_line: 9, fingerprint: "sha256:a" };
+  const b = { id: "SPEC-002", path: "src/b.ts", begin_line: 1, end_line: 5, fingerprint: "sha256:b" };
+  assert.equal(sameRanges([a], [a]), true);
+  assert.equal(sameRanges([a], [a, b]), false, "印が足されたことを見落とす");
+  assert.equal(sameRanges([a, b], [b, a]), true, "並びの違いは同じと見る");
+  assert.equal(sameRanges([a], [{ ...a, end_line: 20 }]), false, "範囲が動いたことを見落とす");
+  // 指紋だけが変わった回は、印の集合としては同じである（中身の変化は監査が見る）。
+  assert.equal(sameRanges([a], [{ ...a, fingerprint: "sha256:z" }]), true);
 });
 
 test("経路の突き合わせが Windows の区切りを吸収する", () => {

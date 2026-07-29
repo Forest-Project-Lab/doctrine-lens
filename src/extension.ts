@@ -2,11 +2,12 @@
 import * as vscode from "vscode";
 
 import { RangeDecorations } from "./codelens/decorations.js";
+import { disposeSafeCwd } from "./doctrine/cli.js";
 import { TraceLensProvider } from "./codelens/traceLens.js";
 import { messages } from "./l10n.js";
 import { isInside } from "./model/paths.js";
 import { rangeAtLine, rangesForDocument } from "./model/trace.js";
-import { LensPanel, openRange } from "./panel/lensPanel.js";
+import { LensPanel, openOrExplain, openRange } from "./panel/lensPanel.js";
 import { LensSession } from "./session.js";
 import { LensStatusBar } from "./statusbar.js";
 
@@ -125,7 +126,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // 判定は src/model/trace.ts の純粋な関数が持つ。
     vscode.workspace.onDidSaveTextDocument((document) => {
       if (document.uri.scheme !== "file") return;
-      if (session.wantsRefreshFor(document.uri)) session.scheduleRefresh();
+      session.onDidSave(document.uri);
     }),
   );
 
@@ -134,6 +135,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void {
   LensPanel.current?.dispose();
+  // 上流の CLI を起こすために作った私有の作業フォルダを片づける。
+  disposeSafeCwd();
 }
 
 /** 文書の id から、その文書を開く。 */
@@ -145,8 +148,8 @@ async function openDocumentById(session: LensSession, docId: string): Promise<vo
     return;
   }
   const uri = vscode.Uri.joinPath(vscode.Uri.file(snapshot.docsRoot), node.path);
-  const document = await vscode.workspace.openTextDocument(uri);
-  await vscode.window.showTextDocument(document, { preview: true });
+  // 消えていることがある。包まないと編集器の内部の文言だけが出る。
+  await openOrExplain(uri, node.path);
 }
 
 /** 文書に結ばれた範囲へ跳ぶ。複数あれば選ばせる（SPEC-005）。 */

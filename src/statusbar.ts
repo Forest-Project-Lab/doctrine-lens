@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 
 import { messages } from "./l10n.js";
+import { planStatus } from "./model/status.js";
 import type { LensSession, SessionState } from "./session.js";
 
 export class LensStatusBar {
@@ -45,26 +46,31 @@ export class LensStatusBar {
       return;
     }
 
-    if (state.failure) {
+    // 何を出すかは編集器の型を使わない関数が決める（src/model/status.ts）。
+    // ここは決まったことを帯へ写すだけである。
+    const plan = planStatus({
+      unavailable: false,
+      failed: state.failure !== null,
+      docs: state.snapshot?.graph.nodes.length ?? 0,
+      staleCount: state.staleCount,
+      candidateCount: state.candidateCount,
+    });
+
+    if (plan.kind === "failed") {
       this.#item.text = `$(warning) ${messages.statusUnavailable()}`;
-      this.#item.tooltip = state.failure.detail;
-      this.#item.command = "doctrineLens.refresh";
+      this.#item.tooltip = state.failure?.detail ?? "";
+      this.#item.command = plan.command ?? undefined;
       this.#item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
       return;
     }
 
-    const docs = state.snapshot?.graph.nodes.length ?? 0;
     const label = state.candidate?.label ?? "";
-    const parts = [messages.statusReady(docs, label)];
-    // 数は session が保つ値から取る。`snapshot.findings` は速い拍で null になるため、
-    // そこから数えると保存のたびに 0 へ落ちる（ADR-008・実際に起きた欠陥）。
-    if (state.staleCount > 0) parts.push(messages.statusStale(state.staleCount));
+    const parts = [messages.statusReady(plan.docs, label)];
+    if (plan.stale > 0) parts.push(messages.statusStale(plan.stale));
 
     this.#item.text = `$(telescope) ${parts.join(" · ")}`;
     this.#item.tooltip = tooltipFor(state);
-    // 統治木が二つ以上あるときだけ、押すと切り替えになる（ADR-006）。
-    this.#item.command =
-      state.candidateCount > 1 ? "doctrineLens.selectWorkspaceFolder" : "doctrineLens.open";
+    this.#item.command = plan.command ?? undefined;
     this.#item.backgroundColor = undefined;
   }
 }

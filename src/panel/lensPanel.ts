@@ -243,8 +243,9 @@ export class LensPanel {
         const snapshot = this.#session.snapshot;
         if (!snapshot) return;
         const target = vscode.Uri.joinPath(vscode.Uri.file(snapshot.docsRoot), message.path);
-        const document = await vscode.workspace.openTextDocument(target);
-        await vscode.window.showTextDocument(document, { preview: true });
+        // 文書が消えていることがある（地図は前回取った姿を出しているため）。
+        // 包まないと、押しても何も起きず通知も出ない（受け止める者が居ない）。
+        await openOrExplain(target, message.path);
         return;
       }
       case "openRange":
@@ -270,6 +271,22 @@ export class LensPanel {
         return;
       }
     }
+  }
+}
+
+/**
+ * 文書を開く。消えていたら、その旨を出して終わる。
+ *
+ * 地図は前回取った姿を出しているので、節点が指す文書が既に無いことがある。
+ * 包まないと、押しても何も起きず、通知も帯も変わらない（呼び手が void で
+ * 呼んでいるので拒否を受け止める者が居ない）。
+ */
+export async function openOrExplain(uri: vscode.Uri, shown: string): Promise<void> {
+  try {
+    const document = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(document, { preview: true });
+  } catch {
+    void vscode.window.showInformationMessage(messages.missingFile(shown));
   }
 }
 

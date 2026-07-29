@@ -44,8 +44,12 @@ export function toRelative(
   const pathKey = forCompare(absolute, caseInsensitive);
   if (!rootKey || !pathKey) return null;
   if (!pathKey.startsWith(`${rootKey}/`)) return null;
-  // 切り出しは正規化した長さで行い、返す値は元の大小文字を保つ。
-  return toPosix(absolute).slice(rootKey.length + 1);
+  // 切り出す長さは、畳む前の `root` から数える。
+  //
+  // 畳んだ側の長さで切ると、小文字化で長さが変わる文字（トルコ語の İ など）を
+  // 含む経路で切る位置がずれ、相対パスが壊れる。大小文字を区別しない環境
+  // （Windows・macOS）でだけ起きるので、こちらでは踏めない。
+  return toPosix(absolute).slice(toPosix(root).length + 1);
 }
 
 /**
