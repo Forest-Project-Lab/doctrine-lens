@@ -247,6 +247,18 @@ test("読み幅が一つで、字の大きさに依らない単位で書かれ�
   if (widths.length === 1) assert.equal(widths[0], declared, "CSS の読み幅が DESIGN.md と違う");
 });
 
+test("幅ごとの分岐を一つも持たない（境目の前後で別の設計を保たない）", () => {
+  const queries = [...STYLE.matchAll(/@media[^{]*/g)].map((m) => m[0].trim());
+  assert.deepEqual(queries, [], `幅ごとの分岐がある: ${queries.join(" / ")}`);
+});
+
+test("起点の欄が面であって、面の上に罫を重ねていない", () => {
+  // 高さは面の段だけで表す（DESIGN.md 6 節）。面に罫を足すと段が二重になる。
+  const rule = /\.origin\s*\{[^}]*\}/.exec(STYLE)?.[0] ?? "";
+  assert.ok(rule, ".origin の規則が無い");
+  assert.ok(!/border(?!-radius)/.test(rule), `面に罫を足している: ${rule}`);
+});
+
 test("DESIGN.md が九つの節を持つ（正本の書式を崩さない）", () => {
   const headings = [...DESIGN.matchAll(/^## (\d)\. /gm)].map((m) => Number(m[1]));
   assert.deepEqual(headings, [1, 2, 3, 4, 5, 6, 7, 8, 9], "節の並びが崩れている");
