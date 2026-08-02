@@ -54,6 +54,7 @@ sources: []
 | CHANGE-006 | CHANGE | lens | どちらの向きに辿ったかを言う。捨てた事実を数える |
 | CHANGE-007 | CHANGE | lens | 画面の語を、木が持つ正本へ結ぶ |
 | CHANGE-008 | CHANGE | lens | 出していない所見に、行き先を与える |
+| CHANGE-009 | CHANGE | lens | 上流が答えたので、継ぎを捨てる |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
