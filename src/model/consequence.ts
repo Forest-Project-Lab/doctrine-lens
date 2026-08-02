@@ -211,7 +211,15 @@ type Neighbours = ReadonlyMap<string, ReadonlyMap<string, Reason["kind"]>>;
  * - `X depends_on 起点` → 起点が変われば X の前提が変わる。辺を dst→src で辿る。
  * - `起点 impacts Y` → 起点が変われば Y へ波及する。辺を src→dst で辿る。
  *
- * 自己ループは辿らない。相互のペアは集合なので自然に一つに畳まれる。
+ * 自己ループは辿らない。
+ *
+ * **両端書きかどうかは上流が判じる。** 上流は辺に `mirrored` を付ける
+ * （`A impacts B` と `B depends_on A` が同じ一つの関係であるという事実）。
+ * 以前はこちらが `[src, dst]` を無向の鍵にして自分で畳んでいた。
+ * 畳んでよい理由をこちらが持つと、道具ごとに同じ木が違う形に見える（ADR-020）。
+ *
+ * **どちらを理由として見せるかは画面の判断である**（依存を残す。ADR-012）。
+ * 事実は上流、見せ方はこちら。
  */
 function affectedNeighbours(graph: Graph): Map<string, Map<string, Reason["kind"]>> {
   const out = new Map<string, Map<string, Reason["kind"]>>();

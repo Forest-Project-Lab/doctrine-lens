@@ -9,7 +9,7 @@
 // その理由も消えた。組み立てをここへ寄せると、webview は判断を一つも持たなくなり、
 // 門（単体試験と突然変異）が明細の中身まで届く。
 import { termsIn, type Glossary } from "../doctrine/glossary.js";
-import type { DocMetaIndex } from "../doctrine/titles.js";
+import type { DocMetaIndex } from "../doctrine/model.js";
 import type { GraphNode } from "../doctrine/model.js";
 import type { AuditFinding } from "../doctrine/audit.js";
 import type {

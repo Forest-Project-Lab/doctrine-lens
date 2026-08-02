@@ -69,7 +69,12 @@ llm_context: task
 
 ### 統治外の宣言の適用
 
-`trace-index.py` は統治木の設定を読まない。生成物（`out/`・`dist/`）に印が写った範囲まで返す。
+`trace-index.py` は統治木の設定を読まない。ただし上流 0.8.0 から **git に訊く**ので、
+`.gitignore` された場所（生成物の `out/`・`dist/` など）の範囲は返らない。
+
+以前は `.gitignore` と同じ内容を `trace_exempt` へ二重に書いていた。
+上流が答えたのでその二行は落とした（ADR-020）。`trace_exempt` は
+「git には入れるが統治の対象にしない」ためのものとして残る。
 そのため、このドメインが `<統治木>/_system/.context-config.json` の `trace_exempt` を読み、
 そこに挙がったパスの範囲を落とす。
 

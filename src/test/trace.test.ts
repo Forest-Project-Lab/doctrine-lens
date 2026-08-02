@@ -60,13 +60,35 @@ test("004-2. 統治外に挙げたパスの配下の範囲が落ちる", async (
   const docsRoot = locateDocsRoot(PROJECT);
   assert.ok(docsRoot);
 
+  // この木が実際に挙げているものを使う。特定のパスを試験が決め打たない。
+  // `out/` と `dist/` は上流 0.8.0 が git に訊くようになったので落とした（ADR-020）。
   const exempt = readExemptPaths(docsRoot);
-  assert.ok(exempt.includes("out/"), "この木は out/ を統治外に挙げている");
+  assert.ok(exempt.length > 0, "この木は統治外を一つも挙げていない");
 
   const outcome = await fetchTraceRanges(PROJECT, docsRoot, plugin, options);
   assert.ok(outcome.ok);
-  const offenders = outcome.value.filter((r) => r.path.startsWith("out/") || r.path.startsWith("dist/"));
-  assert.deepEqual(offenders, [], "生成物の範囲が混じっている");
+  const offenders = outcome.value.filter((r) =>
+    exempt.some((p) => (p.endsWith("/") ? r.path.startsWith(p) : r.path === p)),
+  );
+  assert.deepEqual(offenders, [], "統治外に挙げた場所の範囲が混じっている");
+});
+
+test("004-2b. git が無視する場所の範囲は、宣言せずとも落ちる（上流 0.8.0）", async (t) => {
+  // 以前は `.gitignore` と同じ内容を trace_exempt へ二重に書いていた。
+  // 上流が git に訊くようになったので、その二行を落とした（doctrine#150・ADR-020）。
+  const plugin = pluginRoot();
+  if (!plugin) return t.skip("doctrine プラグインが無い");
+  const docsRoot = locateDocsRoot(PROJECT);
+  assert.ok(docsRoot);
+
+  assert.ok(
+    !readExemptPaths(docsRoot).some((p) => p === "out/" || p === "dist/"),
+    "生成物を trace_exempt に二重に書いている",
+  );
+  const outcome = await fetchTraceRanges(PROJECT, docsRoot, plugin, options);
+  assert.ok(outcome.ok);
+  const built = outcome.value.filter((r) => r.path.startsWith("out/") || r.path.startsWith("dist/"));
+  assert.deepEqual(built, [], "生成物の範囲が混じっている（上流が git に訊いていない）");
 });
 
 test("004-3. 宣言を消すとその配下の範囲が現れる", () => {

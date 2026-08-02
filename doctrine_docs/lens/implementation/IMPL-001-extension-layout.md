@@ -64,7 +64,6 @@ llm_context: task
 | 帰結の組み立て | `src/model/consequence.ts` | 起点からの波・五つの記号・並び順を決める |
 | 明細の組み立て | `src/model/view.ts` | 帰結と題名と訳文から、そのまま描ける形を作る。判断はここで終える |
 | 用語の取得 | `src/doctrine/glossary.ts` | 木の用語辞書の表を読む。語彙は持たない（ADR-018） |
-| 題名の取得 | `src/doctrine/titles.ts` | 上流の frontmatter パーサから題名と更新日を取る |
 | 帯の中身 | `src/model/status.ts` | 状態の帯に何を出し、押すと何が走るか |
 | 作業フォルダ | `src/model/workspace.ts` | 統治木を持つフォルダから見るものを選ぶ |
 | 取得の共有 | `src/session.ts` | 取得を持ち、二つの拍で走らせる。画面はその読み手 |

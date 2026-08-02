@@ -280,8 +280,8 @@ test("部分的な失敗の理由と詳細が、呼び手まで届く", async ()
     const partial = outcome.value.partial;
     assert.deepEqual(
       [...partial.map((p) => p.what)].sort(),
-      ["findings", "glossary", "orphans", "ranges", "registry", "titles"],
-      "六つとも部分的な失敗として挙がる",
+      ["findings", "glossary", "orphans", "ranges", "registry"],
+      "五つとも部分的な失敗として挙がる",
     );
     for (const item of partial) {
       assert.ok(item.reason, `${item.what}: 理由が空`);

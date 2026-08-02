@@ -13,7 +13,7 @@ import type { Graph } from "../doctrine/model.js";
 import type { TraceRange } from "../doctrine/trace.js";
 import { buildConsequence, symbolFor, weightOf, type Symbol } from "../model/consequence.js";
 import { buildView } from "../model/view.js";
-import type { DocMetaIndex } from "../doctrine/titles.js";
+import type { DocMetaIndex } from "../doctrine/model.js";
 
 // --- 見本 ------------------------------------------------------------------
 

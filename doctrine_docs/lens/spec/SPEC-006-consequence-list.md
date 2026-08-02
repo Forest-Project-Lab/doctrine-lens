@@ -35,7 +35,7 @@ llm_context: task
 | 所見 | 上流 `docs-audit.py --json` の `findings`（検査名で絞らない） | `×` の行と、脚注の「起点の外に所見 N 件」 |
 | 走らせた検査 | 上流 `docs-audit.py --json` の `checks_run` | 脚注の検査の数。**数をこちらが持たない** |
 | コード範囲 | 上流 `trace-index.py --format json` | 各行の子の行。零件なら `?` |
-| 題名 | 上流の frontmatter パーサ | 行の主文。id は副文へ落とす |
+| 題名 | 上流 `dep-graph.py --json` の節点の `title` | 行の主文。id は副文へ落とす |
 
 **上流の語彙をこちらが持たない。** 型の一覧も、検査の名前の一覧も、
 `REQ→SPEC→IMPL→TEST` のような並びの表も持たない（REQ-003）。
@@ -214,7 +214,6 @@ doctrine プラグインの `trace-index.py` で取り直す。
 22. 出ていない所見が、行き先の在るものと無いものに分かれて出る。行き先の id が押せる。
 
 - sha256:17f05db843bf677eb5a8e2b2ac2e18244d7c1fc3a372737800fc91a0082a1aac
-- sha256:6482ed9f1ec9039d8a681d19f119ddcd82586b4b34c6ba521566a24ee3769a2b
-- sha256:ff70889705b2215ea4b15e65e3c0ab12d6cf22aba8556b3ca947e102a96d4f0c
-- sha256:3d009c9bf8e5e5a3b6c888758630a07279412531d34c30670ee5675e4e083ffa
+- sha256:8e9e8d71f1b7f8b1de0f4cc017a194b93a73f41f0b7577fe927cbbcc9a7dfde7
+- sha256:abcb2f2da35cdad5ba639c133b1eb2e6f45a957ee5850e1b08aee86cd2bb09e4
 - sha256:61b61785706b134ed05f43acc029f47afc6b32ef61329cae511d2652afb8aa8f
