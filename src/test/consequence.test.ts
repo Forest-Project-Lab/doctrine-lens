@@ -58,7 +58,7 @@ const NO_CONTEXT = {
   ranges: [] as TraceRange[] | null,
   reverseOrphans: new Set<string>(),
   // 何も取れていない状態。現行かどうかも判じられない（status は全部出る）。
-  currentStatuses: null as ReadonlySet<string> | null,
+  registry: null as typeof REGISTRY | null,
 };
 
 /** 行を id の順に平らへ均す。波の番号を添える。 */
@@ -206,7 +206,7 @@ test("006-23. 現行は語らず、外れたものだけ語る。語彙は上流
 
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
-    currentStatuses: new Set(REGISTRY.currentStatuses),
+    registry: REGISTRY,
   });
   const rows = c.waves.flatMap((w) => w.rows);
   const 現行行 = rows.find((r) => r.id === "現行のもの");
@@ -234,7 +234,7 @@ test("006-24. 要約の非現行の数が、status の出ている行の本数�
 
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
-    currentStatuses: new Set(REGISTRY.currentStatuses),
+    registry: REGISTRY,
   });
   const view = buildView(c, new Map(), strings(), CONTEXT);
   const 語る行 = view.waves.flatMap((w) => w.rows).filter((r) => r.status !== "").length;
@@ -252,7 +252,7 @@ test("006-25. 判じられない回は隠さない。全行に出し、数は出
   });
 
   // 登録簿が取れなかった回。空集合ではなく null を渡す。
-  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: null });
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, registry: null });
   const rows = c.waves.flatMap((w) => w.rows);
   assert.ok(
     rows.every((r) => r.notCurrent === null),
@@ -276,9 +276,9 @@ test("006-25b. 空集合を渡されても、全行が非現行に化けない�
   (graph.nodes as { id: string; status: string }[]).forEach((n) => {
     n.status = 現行;
   });
-  const 空 = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: new Set() });
+  const 空 = buildConsequence(graph, "O", { ...NO_CONTEXT, registry: { ...REGISTRY, currentStatuses: [] } });
   assert.equal(空.summary.facts.notCurrent, 1, "空集合は『どれも現行でない』を意味する");
-  const 未取得 = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: null });
+  const 未取得 = buildConsequence(graph, "O", { ...NO_CONTEXT, registry: null });
   assert.equal(未取得.summary.facts.notCurrent, null, "取れなかったことは数にならない");
 });
 

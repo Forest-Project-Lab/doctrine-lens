@@ -199,8 +199,8 @@ const consequence = buildConsequence(graph, ORIGIN, {
   findings: audit.findings ?? [],
   ranges,
   reverseOrphans,
-  // 現行の集合は上流が正本。取れなければ null（隠す根拠が無いので隠さない）。
-  currentStatuses: new Set(registry.currentStatuses),
+  // 登録簿は素通し。取れなかったかどうかの扱いは模型が持つ。
+  registry,
 });
 const view = buildView(
   consequence,

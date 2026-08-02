@@ -12,7 +12,7 @@
 // `REQ→SPEC→IMPL→TEST` のような並びの表も持たない（REQ-003）。
 // 並び順は「辺での距離」だけで決まる。
 import type { AuditFinding } from "../doctrine/audit.js";
-import type { Graph, GraphNode } from "../doctrine/model.js";
+import type { Graph, GraphNode, Registry } from "../doctrine/model.js";
 import type { TraceRange } from "../doctrine/trace.js";
 
 /**
@@ -210,23 +210,27 @@ export interface ConsequenceContext {
   /** 上流 `--reverse-orphans` が挙げた id。 */
   readonly reverseOrphans: ReadonlySet<string>;
   /**
-   * 上流の登録簿が「現行」と呼ぶ status の集合。
+   * 上流の登録簿。取れなかったときは `null`。
    *
-   * **取れなかったときは `null` を渡すこと。** 空集合を渡すと「どれも現行でない」に
-   * なり、全行が非現行に化ける。取れなかったことと、現行が無いことは別である
-   * （`ranges` と同じ規律・ADR-017）。
+   * **呼ぶ側は素通しするだけにする。** 「取れなかった」を集合へ均す仕事を
+   * ここでやるのは、**それが試験の届く層だからである。**
    *
-   * **この集合の中身をこちらが書かない**（REQ-003）。上流の `_registry` が正本であり、
+   * 実測でそうなった——以前はこの変換を `src/panel/` で書いていた。
+   * `null` を空集合へ潰す潰しを表に足したら、**どの試験も捕まえなかった**
+   * （`src/panel/` は `tsconfig.test.json` の外に在る）。
+   * 危うい変換を、試験の届かない層に置かない（ADR-017）。
+   *
+   * **語彙の中身をこちらが書かない**（REQ-003）。上流の `_registry` が正本であり、
    * 「他の切片はこれを使え、素の比較を書くな」と明記している。
    */
-  readonly currentStatuses: ReadonlySet<string> | null;
+  readonly registry: Registry | null;
 }
 
 const EMPTY_CONTEXT: ConsequenceContext = {
   findings: [],
   ranges: [],
   reverseOrphans: new Set(),
-  currentStatuses: null,
+  registry: null,
 };
 
 /** 起点からの向きつき隣接。値は「その相手へ渡る辺の種類」。 */
@@ -475,6 +479,10 @@ export function buildConsequence(
 ): Consequence {
   const all = new Map<string, GraphNode>(graph.nodes.map((n) => [n.id, n]));
   const origin = originId ? (all.get(originId) ?? null) : null;
+  // 取れなかったことと、現行が無いことは別である。空集合へ潰さない（ADR-021 決定 3）。
+  const currentStatuses: ReadonlySet<string> | null = context.registry
+    ? new Set(context.registry.currentStatuses)
+    : null;
 
   if (!origin) {
     return {
@@ -570,7 +578,7 @@ export function buildConsequence(
       alsoDirect: directNeighbours.has(id),
       status: typeof node.status === "string" ? node.status : "",
       // 現行かどうかは上流が判じる。取れていなければ null のまま運ぶ。
-      notCurrent: judgeNotCurrent(node.status, context.currentStatuses),
+      notCurrent: judgeNotCurrent(node.status, currentStatuses),
       symbol: symbolFor({
         findings: own,
         isReverseOrphan: context.reverseOrphans.has(id),
@@ -666,9 +674,7 @@ export function buildConsequence(
         noRange: rows.filter((r) => r.ranges.length === 0).length,
         // 判じられない回は数を出さない。0 と書くと「一つも無い」ことになる。
         notCurrent:
-          context.currentStatuses === null
-            ? null
-            : rows.filter((r) => r.notCurrent === true).length,
+          currentStatuses === null ? null : rows.filter((r) => r.notCurrent === true).length,
       },
       cycles: cycles.length,
       inCycle: inCycle.size,

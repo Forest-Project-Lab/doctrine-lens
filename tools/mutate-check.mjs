@@ -133,12 +133,12 @@ const MUTATIONS = [
     to: '      "doctrineLens.open",',
   },
   {
-    label: "取れなかった現行の集合を、空集合に潰す（全行が非現行に化ける）",
-    file: "src/panel/lensPanel.ts",
-    from: `          currentStatuses: snapshot.registry
-            ? new Set(snapshot.registry.currentStatuses)
-            : null,`,
-    to: "          currentStatuses: new Set(snapshot.registry?.currentStatuses ?? []),",
+    label: "取れなかった登録簿を、空集合に潰す（全行が非現行に化ける）",
+    file: "src/model/consequence.ts",
+    from: `  const currentStatuses: ReadonlySet<string> | null = context.registry
+    ? new Set(context.registry.currentStatuses)
+    : null;`,
+    to: "  const currentStatuses: ReadonlySet<string> | null = new Set(context.registry?.currentStatuses ?? []);",
   },
   {
     label: "判じられない回にも status を隠す（取れなかったが全部現行に化ける）",

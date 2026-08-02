@@ -205,10 +205,8 @@ export class LensPanel {
           // 取れなかったときは null のまま渡す。空配列に潰すと「無い」と断定する。
           ranges: snapshot.ranges,
           reverseOrphans: new Set(snapshot.reverseOrphans),
-          // 登録簿が取れなければ null のまま渡す。空集合に潰すと全行が非現行に化ける。
-          currentStatuses: snapshot.registry
-            ? new Set(snapshot.registry.currentStatuses)
-            : null,
+          // 素通しする。取れなかったかどうかの扱いは模型が持つ（試験が届く層）。
+          registry: snapshot.registry,
         });
         const message = {
           kind: "view" as const,
