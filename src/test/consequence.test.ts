@@ -634,7 +634,8 @@ function strings(): Parameters<typeof buildView>[2] {
     summarySymbols: "× {0} / + {1} / ? {2} / ! {3} / ~ {4}",
     summaryFacts: "壊れている {0} / 足りない {1} / 範囲無し {2}",
     summaryFactNotCurrent: "非現行 {0}",
-    summaryFactsNote: "（注記）",
+    footHeaviest: "行には最も重い記号だけが出る",
+
     summaryCycles: "循環 {0} 本（{1} 文書）",
     waveHeading: "第 {0} 波",
     waveCount: "{0} 文書",

@@ -544,7 +544,25 @@ if (baseline.verdict !== "試験は通った") {
   console.error(`先に全件を緑にすること（${commit.slice(0, 8)} で型検査か試験が落ちている）。`);
   process.exit(2);
 }
-console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）\n`);
+console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）`);
+
+// **何を検めているのかを、先頭で言う。** この道具は commit を潰すので、作業木に
+// 未コミットの変更が在れば、緑は**手元の版についての緑ではない。**
+// 実際そうなった——新しい行を足して未コミットのまま回し、五行が「対象不明」に
+// なるまで、古い版を検めていることに気づかなかった（ADR-017）。
+// 走り終えたあとの由来書きにも出るが、それでは 20 分遅い。
+{
+  const dirty = capture("git status --porcelain", projectRoot);
+  const lines = dirty.status === 0 ? dirty.stdout.split("\n").filter(Boolean) : [];
+  if (lines.length > 0) {
+    console.log(
+      `\n注意: 作業木に未コミットの変更が ${lines.length} 件ある。` +
+        `検めているのは ${commit.slice(0, 8)} であって、手元の版ではない。\n` +
+        "  手元の版を検めるには、先にコミットすること。",
+    );
+  }
+}
+console.log("");
 
 const unguarded = [];
 const invalid = [];

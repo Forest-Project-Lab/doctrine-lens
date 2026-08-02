@@ -22,43 +22,57 @@ That is the **origin**. You select nothing; the screen follows the cursor.
 ```
 Follows the cursor                                                   [Refresh]
 
-  コード側の面
-  SPEC-005 · lens/spec/SPEC-005-code-side-surface.md · current · 2026-07-29
+  ? いま触れているものから、直すことになるものを順に辿る
+    REQ-001 · lens/REQ-001-zoom-navigation.md · current · 2026-07-29
 
-  4 documents to fix · 4 code ranges · 3 with nowhere to fix
-  broken 1 · missing 0 · cycles 0
+    11 documents to fix · 9 code ranges
+    × 0 · + 0 · ? 8 · ! 3 · ~ 0
+    already broken 0 · missing 0 · no code range 8 · not current 4
+    0 cycles (0 documents)
 
-  Wave 1   directly on the origin                                2 documents
-  ×  帰結の明細                       SPEC-006                              2
-     Has SPEC-005 in depends_on. Its premise changes.
-     記録した実装の指紋と、いまのコードの指紋が食い違う (src/doctrine/titles.ts,
-     src/model/consequence.ts, src/model/view.ts, src/webview/main.ts)。
-     src/doctrine/titles.ts:1-137
-     src/model/consequence.ts:1-493
-     src/model/view.ts:1-218
-     src/webview/main.ts:1-174
-  ?  コード側の面の受入               TEST-005
-     Has SPEC-005 in depends_on. Its premise changes.
+  Wave 1   nothing else has to be fixed first                    2 documents
+  !  追跡索引への橋渡し               SPEC-004                              6
+     Has REQ-001 in depends_on. Its premise changes.
+     src/doctrine/audit.ts:1-156
+     src/doctrine/trace.ts:1-116
+  ?  深度の段と行き来                 SPEC-002  deprecated                  4
+     Has REQ-001 in depends_on. Its premise changes.
+     succeeded by SPEC-006
 
-  Wave 2   not settled until wave 1 is done                      2 documents
-  ?  拡張機能の部品の配置             IMPL-001
-     Depends on SPEC-005 through SPEC-006.
-  ?  帰結の明細の受入                 TEST-006
-     Depends on SPEC-005 through SPEC-006.
+  Wave 2   something in wave 1 has to be fixed first             4 documents
+  !  コード側の面                     SPEC-005                              4
+     Depends on REQ-001 through SPEC-004.
+     src/codelens/decorations.ts:1-78
+     …
+  ?  レンズ文法                       SPEC-003  deprecated                  2
+     Depends on REQ-001 through SPEC-002.
+     succeeded by SPEC-006
+  …
 
-  40 documents are not reachable from the origin and are not listed
-  2 findings sit outside the origin
+  Wave 3   something in wave 2 has to be fixed first             3 documents
+  !  帰結の明細                       SPEC-006                              2
+     Depends on REQ-001 through SPEC-005. It also has REQ-001 directly.
+     src/model/consequence.ts:1-746
+     …
+
+  57 documents reach the origin in neither direction and are not listed
+  1 finding is outside this screen's question (it belongs to no document)
   The number on the right of a row is how many others it settles once fixed
-  Upstream docs-audit ran all checks at 2026-07-29 09:14
+  Upstream docs-audit ran 36 checks at 2026-08-02 00:00
   × broken   + missing   ? nowhere to fix   ! fix   ~ review
 ```
 
-That is this repository's own tree, captured mid-rewrite. `SPEC-006` is `×`
-because its recorded fingerprints did not yet match the code, and the `2` on its
-right says two more documents settle once it is fixed — which is why it sorts
-first. `TEST-005` is `?`: it depends on the origin, but has no code bound to it,
-so there is nowhere to make the change. Rows with nothing behind them show no
-number at all, because a number that is always zero is noise.
+That is this repository's own tree. `SPEC-004` sorts first in wave 1 because the
+`6` on its right says six more documents settle once it is fixed. `SPEC-002` is
+`?`: it depends on the origin, but has no code bound to it, so there is nowhere
+to make the change. Rows with nothing behind them show no number at all, because
+a number that is always zero is noise.
+
+Four rows say `deprecated`; the other seven say nothing about status, because
+they are current and **the default is not narrated**. The summary's `not
+current 4` is what keeps that silence honest — count the words on screen and you
+get 4. Each of those four also names its successor, so a row you should not be
+editing tells you where to go instead.
 
 ### Five symbols, strictly exclusive
 

@@ -115,7 +115,7 @@ export function viewStrings(): ViewStrings {
       "{0}", "{1}", "{2}",
     ),
     summaryFactNotCurrent: t("not current {0}", "{0}"),
-    summaryFactsNote: t(" (a row shows only its heaviest symbol)"),
+
     summaryCycles: t("{0} cycles ({1} documents)", "{0}", "{1}"),
     waveHeading: t("Wave {0}", "{0}"),
     waveCount: t("{0} documents", "{0}"),
@@ -151,6 +151,9 @@ export function viewStrings(): ViewStrings {
     footAuditNever: t("Upstream docs-audit has not run yet"),
     footNoTitles: t("Some titles could not be read; those rows show the id instead"),
     footBehind: t("The number on the right of a row is how many others it settles once fixed"),
+    footHeaviest: t(
+      "A row shows only its heaviest symbol, so the per-symbol counts and the per-fact counts differ",
+    ),
     rowSucceeds: t("succeeded by {0}", "{0}"),
     cycleNote: t("{0} cycles: those documents have no wave until the cycle is broken", "{0}"),
     legendBroken: t("× broken"),

@@ -33,8 +33,8 @@ export interface ViewStrings {
   readonly summaryFacts: string;
   /** 現行でない行の本数。判じられた回だけ出る。`非現行 {0}` */
   readonly summaryFactNotCurrent: string;
-  /** 事実の行の末尾に付ける注記。記号の排他と数の違いを言う */
-  readonly summaryFactsNote: string;
+  /** 記号ごとの数と事実ごとの数が食い違う理由。脚注に置く */
+  readonly footHeaviest: string;
   /** `循環 {0} 本（{1} 文書）` */
   readonly summaryCycles: string;
   /** `第 {0} 波` */
@@ -254,7 +254,7 @@ export function buildView(
       ...(s.facts.notCurrent === null
         ? []
         : [fill(strings.summaryFactNotCurrent, String(s.facts.notCurrent))]),
-    ].join(" · ") + strings.summaryFactsNote,
+    ].join(" · "),
     // 循環は文書の内数ではないので、本数と文書数を分けて言う。
     fill(strings.summaryCycles, String(s.cycles), String(s.inCycle)),
   ].join("\n");
@@ -286,6 +286,19 @@ export function buildView(
   // 右端の数は説明の無い記号である。説明しないなら出してはいけない。
   if (consequence.waves.some((w) => w.rows.some((r) => r.behind > 0))) {
     footnotes.push(strings.footBehind);
+  }
+  // 記号ごとの数と事実ごとの数が食い違う理由を言う。要約の行に括弧で足すと、
+  // 280px で要約が六行になり、数そのものが読みにくくなる（DESIGN.md 9-4）。
+  // 説明は脚注へ置く。「右端の数が何か」を脚注で言うのと同じ扱いである。
+  //
+  // **実際に食い違っている回だけ出す。** 一致している画面に置くと、説明だけが浮く
+  // （SPEC-006 制約。右端の数が一つも無いときにその脚注を出さないのと同じ）。
+  if (
+    s.facts.broken !== s.bySymbol.broken ||
+    s.facts.missing !== s.bySymbol.missing ||
+    s.facts.noRange !== s.bySymbol.nowhere
+  ) {
+    footnotes.push(strings.footHeaviest);
   }
   if (context.titlesMissing) footnotes.push(strings.footNoTitles);
   footnotes.push(
