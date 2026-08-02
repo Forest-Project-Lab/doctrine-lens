@@ -211,7 +211,7 @@ export class LensPanel {
             openFile,
             auditAt,
             // 一件でも取れていなければ言う。全滅のときだけ言うと、
-            // 48 件中 1 件欠けが黙って通る（ADR-015）。
+            // 48 件中 1 件欠けが黙って通る（ADR-017）。
             titlesMissing: snapshot.graph.nodes.some(
               (n) => !snapshot.docMeta.get(n.id)?.title?.trim(),
             ),

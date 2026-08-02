@@ -169,7 +169,7 @@ test("001-10f. session が引き継ぎを自前で書き直していない", () 
 test("001-10h. 引き継ぐのは判定そのものである（所見と検査を落とさない）", () => {
   // 判定から導いた id だけを引き継いでいた時期があり、そのあいだ画面は
   // 保存のたびに所見を丸ごと失って「壊れている 0」と言い、脚注は
-  // 「0 検査を走らせた時刻」という起きていないことを述べていた（ADR-015）。
+  // 「0 検査を走らせた時刻」という起きていないことを述べていた（ADR-017）。
   const finding = {
     check: "trace_stale",
     severity: "warn",
@@ -232,7 +232,7 @@ test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査�
   assert.deepEqual(carry.checksRun, ["x"], "最後の監査の検査が残っていない");
 });
 
-/** 見本の引き継ぎ。判定そのものを持つ形に揃える（ADR-015）。 */
+/** 見本の引き継ぎ。判定そのものを持つ形に揃える（ADR-017）。 */
 function carry(auditAt: Date | null, staleIds: ReadonlySet<string>): AuditCarry {
   return { auditAt, staleIds, findings: staleIds.size >= 0 ? [] : null, checksRun: [] };
 }

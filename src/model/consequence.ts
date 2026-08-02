@@ -64,7 +64,7 @@ export interface Row {
    *
    * 波は**最長距離**で決まるので、直の辺を持つ文書が後の波へ回ることがある。
    * その行に「{X} を経由して依存している」とだけ書くと、**存在する直の辺を
-   * 無いことにする。** 両方を言うためにここで持つ（ADR-015）。
+   * 無いことにする。** 両方を言うためにここで持つ（ADR-017）。
    */
   readonly alsoDirect: boolean;
   /**
@@ -172,7 +172,7 @@ export interface ConsequenceContext {
    *
    * **取れなかったときは `null` を渡すこと。** 空配列を渡すと、
    * 「本当に範囲が無い」と区別が付かず、全部の行が `?`（直す場所が無い）に化ける。
-   * 実測でそうなった（ADR-015）。
+   * 実測でそうなった（ADR-017）。
    */
   readonly ranges: readonly TraceRange[] | null;
   /** 上流 `--reverse-orphans` が挙げた id。 */

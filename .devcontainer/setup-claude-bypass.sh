@@ -12,9 +12,10 @@
 #
 # ⚠️ bypassPermissions auto-approves ALL tool calls (file delete, arbitrary
 #    shell, etc.) with no prompt. Only enable in disposable/trusted containers.
-#    OFF by default. This repository is public, so whoever clones it must not
-#    get an auto-approving agent without asking for it. To opt IN, set
-#    CLAUDE_BYPASS=1 in devcontainer.json's containerEnv.
+#    This repository's devcontainer.json sets CLAUDE_BYPASS=1, so it is ON by
+#    default here — the maintainer's deliberate choice for their own container.
+#    The repository is public: if you cloned it, set CLAUDE_BYPASS=0 in
+#    devcontainer.json's containerEnv unless you want an auto-approving agent.
 set -euo pipefail
 
 # 既定は「入れない」。値が明示的に 1 のときだけ設定する。

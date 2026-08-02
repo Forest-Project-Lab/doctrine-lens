@@ -6,7 +6,12 @@
 // 三巡ぶんの直しのうち七つが、個別に潰しても全件が通る状態で放置されていた。
 // 「数だけ合わせて中身が無い試験」を、字面でなく実測で止める。
 //
-//   使い方: node tools/mutate-check.mjs
+//   使い方: node tools/mutate-check.mjs [対象の commit。既定は HEAD]
+//
+// **潰すのは利用者の作業木ではない**（ADR-015）。対象の commit から一時ディレクトリへ
+// detached の worktree を立て、その中だけで潰す。走らせている間に作業木で build や編集を
+// しても構わない。走行が途中で死んでも作業木は無傷で、次回起動が孤児の隔離木を片づける。
+// 既定は commit を潰すので、未コミットの変更は検査対象に入らない。
 //
 // 遅い（一件あたり全件を回す）ので `npm run check` には入れない。直しを入れた
 // ときと、公開の前に回す。表に一行足すのは、新しい直しを入れた人の仕事である。
@@ -24,8 +29,16 @@
 // 見ていないのは、その判断を編集器の物へ写す数行だけである。
 // この頭注を、README と CHANGELOG の文言と食い違わせないこと。
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { TEST_REPORTER, capture, selfCheck, verdictOf } from "./mutate-verdict.mjs";
+import {
+  acquireLock,
+  createIsolated,
+  pruneOrphans,
+  removeIsolated,
+  treeState,
+} from "./mutate-worktree.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 
@@ -319,9 +332,13 @@ const MUTATIONS = [
   },
 ];
 
+// 潰す先。**利用者の作業木ではない**（ADR-015）。走り出しに隔離木を作って差し替える。
+// 既定のままだと作業木を指すので、隔離木を作る前に潰しへ入らないこと。
+let workRoot = null;
+
 const run = (command) => {
   try {
-    execFileSync("sh", ["-c", command], { cwd: projectRoot, encoding: "utf8", stdio: "pipe" });
+    execFileSync("sh", ["-c", command], { cwd: workRoot, encoding: "utf8", stdio: "pipe" });
     return true;
   } catch {
     return false;
@@ -345,6 +362,11 @@ const run = (command) => {
 const TEST_GLOB =
   "$(ls out/test/*.test.js | grep -v mutation-table)";
 
+// doctrine:begin SPEC-007
+// 判定器は tools/mutate-verdict.mjs に置く（検査器自身を試験できる場所へ出すため）。
+// 合否は試験processの終了符号とシグナルで決め、`not ok` の照合は人へ見せる補助に留める。
+const TEST_COMMAND = `node --test-reporter=${TEST_REPORTER} --test ${TEST_GLOB}`;
+
 /**
  * 型検査と試験を**別々に**回し、赤くなった試験の名前も返す。
  *
@@ -354,75 +376,119 @@ const TEST_GLOB =
  */
 const check = () => {
   if (!run(`npx tsc -p tsconfig.test.json`)) return { verdict: "型検査が落ちた", failed: [] };
-  const out = capture(`node --test ${TEST_GLOB}`);
-  const failed = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1].trim());
-  return { verdict: failed.length > 0 ? "試験が落ちた" : "試験は通った", failed };
+  return verdictOf(capture(TEST_COMMAND, workRoot));
 };
 
-/** 走らせて、終了符号に関わらず出力を返す。 */
-const capture = (command) => {
-  try {
-    return execFileSync("sh", ["-c", command], {
-      cwd: projectRoot,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
-  } catch (error) {
-    return `${error.stdout ?? ""}${error.stderr ?? ""}`;
-  }
+/** 判定が何の上に載っていたかを刻む。後から誰でも読めるようにする。 */
+const provenance = () => {
+  // 隔離木は detached なので、その HEAD がそのまま「潰した対象」である。
+  const head = workRoot ? capture("git rev-parse HEAD", workRoot) : { status: 1 };
+  const commit = head.status === 0 ? head.stdout.trim() : "（取れなかった）";
+  return [
+    `Node: ${process.version}`,
+    `reporter: ${TEST_REPORTER}（明示。既定に委ねない）`,
+    `試験: ${TEST_COMMAND}`,
+    `対象: ${commit}`,
+    `潰した木: ${workRoot ?? "（未作成）"}（隔離。作業木ではない）`,
+  ].join("\n");
 };
 
-// 潰している最中に殺されても元へ戻す。
-//
-// try/finally はシグナルでは走らない。シグナルの受け口を置いても、この道具は
-// ほぼ全区間 execFileSync の中に居るので、事象ループが空くまで受け口が動けない。
-// 実測で、Ctrl-C の直後には潰れたソースと古い束の両方が残った。
-// だから、潰す前に「戻し方」をディスクへ書く。次に走らせたとき最初にそれを見て、
-// 残っていれば戻す。殺され方に依らない（SIGKILL でも効く）。
-//
-// **親の殻を止めても、この道具は止まらない。** 実測: 走らせた殻を止めたあと、
-// この node の処理は生き続け、次の行を潰し、記録を書き直していた。止めた側は
-// 「止めた」と思って記録から戻し、その裏で新しい潰しが当たっていた。
-// 木が二箇所潰れたまま「全件が緑」に見える状態が残る。
-// 止めるときは、この処理の pid を確かめて落とすこと。落としたあと、
-// **記録が残っていれば必ず戻すこと**（残っていれば潰れたままである）。
-//
-// 走らせている間、木を触らないこと。同時に `npm run build:test` を叩くと、
-// 互いの束を作り直して両方の判定が汚れる。これも実測している。
-const JOURNAL = join(projectRoot, ".mutate-restore.json");
-
-const recoverFromJournal = () => {
-  if (!existsSync(JOURNAL)) return;
-  try {
-    const { file, original } = JSON.parse(readFileSync(JOURNAL, "utf8"));
-    writeFileSync(join(projectRoot, file), original, "utf8");
-    console.log(`前回の走行が途中で止まっていた。${file} を元へ戻した。`);
-  } catch (error) {
-    console.error(`戻し方の記録を読めない（${JOURNAL}）。手で確かめること。`, error);
-    process.exit(2);
-  }
-  rmSync(JOURNAL, { force: true });
+/** 判定不能。数字を出す資格が無いので、元へ戻して止める。 */
+const abortOnCheckerFault = (label, result) => {
+  restore();
+  console.error(`\n検査器の異常のため止めた（${label}）。`);
+  console.error(`  ${result.why ?? "理由不明"}`);
+  console.error(`  拾えた not ok の行: ${result.failed.length} 件`);
+  console.error(`\n${provenance()}`);
+  console.error("\nこの走行の判定は読めない。score を出さない。");
+  process.exit(2);
 };
+// doctrine:end SPEC-007
 
+// doctrine:begin SPEC-008
+// 潰す先を、利用者の作業木から捨てられる隔離木へ移した（ADR-015）。
+//
+// 以前はここで作業木のソースを直接書き換え、戻し方を .mutate-restore.json に置いていた。
+// 実測で次が起きていた —— Ctrl-C の直後に潰れたソースと古い束が残る。親の殻を止めても
+// この処理は生き続け、止めた側が記録から戻した裏で新しい潰しが当たり、**木が二箇所
+// 潰れたまま「全件が緑」に見える状態が残る。**同時に build を叩くと互いの束を壊し合う。
+//
+// 戻し方の記録は事故のあとの回復手段でしかなく、破壊的な書き込み自体は防がない。
+// だから書き込む先を変えた。作業木へは一バイトも書かない。隔離木は使い捨てなので、
+// 走行が途中で死んでも作業木は無傷であり、次回起動が孤児の木だけを片づける。
+const targetRef = process.argv[2] ?? "HEAD";
+
+const before = treeState(projectRoot);
+const orphans = pruneOrphans(projectRoot);
+for (const path of orphans) console.log(`前の走行が残した隔離木を片づけた: ${path}`);
+
+let lock;
+try {
+  lock = acquireLock(projectRoot);
+} catch (error) {
+  console.error(String(error.message ?? error));
+  process.exit(2);
+}
+
+let commit;
+try {
+  commit = execFileSync("git", ["rev-parse", targetRef], {
+    cwd: projectRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  }).trim();
+} catch {
+  lock.release();
+  console.error(`潰す対象を解決できない（${targetRef}）。`);
+  process.exit(2);
+}
+
+try {
+  workRoot = createIsolated(projectRoot, commit);
+} catch (error) {
+  lock.release();
+  console.error("隔離木を作れない。", error);
+  process.exit(2);
+}
+console.log(`隔離木: ${workRoot}（${commit.slice(0, 8)} を detached で展開。作業木は触らない）`);
+
+let cleaned = false;
+const cleanup = () => {
+  if (cleaned) return;
+  cleaned = true;
+  if (workRoot) removeIsolated(projectRoot, workRoot);
+  lock.release();
+};
+process.on("exit", cleanup);
+for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+  process.on(signal, () => {
+    cleanup();
+    process.exit(130);
+  });
+}
+
+/** 隔離木の中で一行を戻す。木ごと捨てるが、次の一行の baseline を保つために戻す。 */
 let restoring = null;
 const restore = () => {
   if (!restoring) return;
   writeFileSync(restoring.path, restoring.original, "utf8");
   restoring = null;
-  rmSync(JOURNAL, { force: true });
 };
-process.on("exit", restore);
-for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
-  process.on(signal, () => {
-    restore();
-    process.exit(130);
-  });
+// doctrine:end SPEC-008
+
+// 判定器を先に検める。ここが壊れていれば、以降の数字は全部読めない。
+const faults = selfCheck();
+if (faults.length > 0) {
+  console.error("判定器が自分を検められない。score を出さない。");
+  for (const fault of faults) console.error(`  - ${fault}`);
+  console.error(`\n${provenance()}`);
+  process.exit(2);
 }
 
-recoverFromJournal();
-
-if (check().verdict !== "試験は通った") {
-  console.error("先に全件を緑にすること（いまの木で型検査か試験が落ちている）。");
+const baseline = check();
+if (baseline.verdict === "検査器の異常") abortOnCheckerFault("baseline", baseline);
+if (baseline.verdict !== "試験は通った") {
+  console.error(`先に全件を緑にすること（${commit.slice(0, 8)} で型検査か試験が落ちている）。`);
   process.exit(2);
 }
 console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）\n`);
@@ -430,16 +496,13 @@ console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）\n`);
 const unguarded = [];
 const invalid = [];
 for (const { label, file, from, to } of MUTATIONS) {
-  const path = join(projectRoot, file);
+  const path = join(workRoot, file);
   const original = readFileSync(path, "utf8");
   if (!original.includes(from)) {
     console.log(`?? ${label} — 対象の行が見つからない（${file}）。表が古い。`);
     invalid.push(`${label}（対象不明）`);
     continue;
   }
-  // 先に戻し方を書いてから潰す。順を逆にすると、その隙間で殺されたときに
-  // 戻し方が無いまま潰れたソースだけが残る。
-  writeFileSync(JOURNAL, JSON.stringify({ file, original }), "utf8");
   restoring = { path, original };
   writeFileSync(path, original.replace(from, to), "utf8");
   let result;
@@ -449,6 +512,9 @@ for (const { label, file, from, to } of MUTATIONS) {
     restore();
   }
   const { verdict, failed } = result;
+  // 判定不能を「通った」＝守られていない側へ寄せない。足場の故障を、守られていない
+  // 直しの一覧に混ぜると、直す先を誤らせる。故障は故障として立てて止める。
+  if (verdict === "検査器の異常") abortOnCheckerFault(label, result);
   const mark =
     verdict === "試験が落ちた" ? "落ちた  " : verdict === "型検査が落ちた" ? "型のみ!!" : "通った!!";
   // 赤くなった試験の名前も刷る。取り違え（別の理由で落ちているだけ）が目で分かる。
@@ -458,8 +524,8 @@ for (const { label, file, from, to } of MUTATIONS) {
   else if (verdict === "試験は通った") unguarded.push(label);
 }
 
-// 束ねを元に戻しておく。
-run("npx tsc -p tsconfig.test.json");
+// 報告は隔離木を消す前に組む（消したあとでは HEAD を引けない）。
+const report = provenance();
 
 if (unguarded.length > 0) {
   console.error(`\n試験に守られていない直しが ${unguarded.length} 件:`);
@@ -469,6 +535,19 @@ if (invalid.length > 0) {
   console.error(`\n潰し方が不正な行が ${invalid.length} 件（表を直すこと）:`);
   for (const line of invalid) console.error(`  - ${line}`);
 }
+console.log(`\n${report}`);
+
+// 作業木が一バイトも動いていないことを確かめる。動いていたら掃除はしない（利用者の
+// dirty state を勝手に戻さない。ADR-015）。報せるだけにする。
+cleanup();
+if (treeState(projectRoot) !== before) {
+  console.error(
+    "\n作業木の状態が走行の前後で変わっている。この道具は作業木へ書かないので、" +
+      "別の何かが触った疑いがある。手で確かめること（この道具は掃除しない）。",
+  );
+  process.exit(2);
+}
+
 if (unguarded.length > 0 || invalid.length > 0) process.exit(1);
 console.log(`\n表に載せた ${MUTATIONS.length} 件は、いずれも試験が捕まえる。`);
-console.log("（表に無い直しについては何も言っていない。頭注を読むこと。）");
+console.log("（表に無い直しについては何も言っていない。頭注を読むこと。）")

@@ -24,7 +24,7 @@ export interface RangeLink {
  * 上流の所見一件。**六項をそのまま運ぶ。**
  *
  * 以前は `message` だけを運んでいた。`severity` を捨てると error と advisory が
- * 同じ見え方になり、`path` を捨てると所見が指すファイルへ跳べない（ADR-015）。
+ * 同じ見え方になり、`path` を捨てると所見が指すファイルへ跳べない（ADR-017）。
  */
 export interface FindingView {
   readonly check: string;

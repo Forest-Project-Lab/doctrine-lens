@@ -26,7 +26,8 @@
   // npm install (skips silently if package.json has no deps) + Playwright Chromium
   // (required by tools/doc-manager fetch) + Claude Code bypassPermissions setup +
   // doctrine plugin install from the Forest-Project-Lab/doctrine marketplace.
-  // The bypass segment is a no-op unless CLAUDE_BYPASS=1 is set below (it is "0").
+  // The bypass segment is gated on CLAUDE_BYPASS below, which is "1" — read the
+  // warning there before rebuilding from a clone.
   // Drop the doctrine segment (or set CLAUDE_DOCTRINE=0 below) to skip the plugin.
   "postCreateCommand": "sudo chown -R node:node /home/node/.claude && npm install && npx playwright install --with-deps chromium && bash .devcontainer/setup-claude-bypass.sh && bash .devcontainer/setup-doctrine-plugin.sh",
   // Persist Claude Code state (memory, conversation history, login credentials)
@@ -62,11 +63,14 @@
   "remoteUser": "node",
   "containerEnv": {
     // Claude Code's bypassPermissions mode auto-approves EVERY tool call —
-    // arbitrary shell, file deletion — with no prompt. That is a reasonable
-    // trade inside your own disposable container, but this repository is public,
-    // so it must not be the default for whoever clones it. Opt in by setting
-    // this to "1" (and see .devcontainer/setup-claude-bypass.sh).
-    "CLAUDE_BYPASS": "0",
+    // arbitrary shell, file deletion — with no prompt. It is ON here ("1") by
+    // the maintainer's deliberate choice: this is their own disposable
+    // container and they want the mode to survive rebuilds.
+    // ⚠️ This repository is public, so a clone inherits that default. If you
+    //    cloned this repo, set this to "0" and rebuild unless you genuinely
+    //    want an agent that runs shell commands and deletes files without
+    //    ever asking. See .devcontainer/setup-claude-bypass.sh.
+    "CLAUDE_BYPASS": "1",
     // Set to "0" to skip the doctrine plugin install (marketplace + install).
     "CLAUDE_DOCTRINE": "1"
   }

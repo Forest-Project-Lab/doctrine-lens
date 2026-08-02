@@ -104,7 +104,7 @@ function fill(template: string, ...values: readonly string[]): string {
 /** 題名。取れていなければ id へ落とす。 */
 function titleOf(id: string, meta: DocMetaIndex): string {
   // 空白だけの題名も id へ落とす。真値なのでそのまま通し、
-  // 画面で一番大きい文字が空白になっていた（ADR-015）。
+  // 画面で一番大きい文字が空白になっていた（ADR-017）。
   return meta.get(id)?.title?.trim() || id;
 }
 
@@ -121,7 +121,7 @@ function reasonText(
   strings: ViewStrings,
 ): string {
   const base = reasonBase(reason, originId, strings);
-  // 迂回路だけを名乗って、存在する直の辺を無いことにしない（ADR-015）。
+  // 迂回路だけを名乗って、存在する直の辺を無いことにしない（ADR-017）。
   return reason.kind === "depends-through" && alsoDirect
     ? `${base} ${fill(strings.reasonAlsoDirect, originId)}`
     : base;
@@ -167,7 +167,7 @@ function rowView(row: Row, originId: string, meta: DocMetaIndex, strings: ViewSt
     reason: reasonText(row.reason, originId, row.alsoDirect, strings),
     behind: row.behind,
     ranges: rangeLinks(row, strings),
-    // 上流の六項を一字も変えずに運ぶ（SPEC-006 制約・ADR-015）。
+    // 上流の六項を一字も変えずに運ぶ（SPEC-006 制約・ADR-017）。
     findings: row.findings.map(toFindingView),
   };
 }
@@ -244,7 +244,7 @@ export function buildView(
   // 畳んだら必ず件数を書く。隠すことは抽象ではない（SPEC-006 制約）。
   const footnotes: string[] = [];
   // 「辿る向きが違うので出さない」と「繋がらないので出さない」は別の事実である。
-  // 一語に畳むと、前者が「影響なし」と読まれる（ADR-015）。
+  // 一語に畳むと、前者が「影響なし」と読まれる（ADR-017）。
   if (consequence.premiseCount > 0) {
     footnotes.push(fill(strings.footPremises, String(consequence.premiseCount)));
   }

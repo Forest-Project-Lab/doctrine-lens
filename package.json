@@ -178,7 +178,7 @@
     "mutate": "node tools/mutate-check.mjs",
     "package": "vsce package -o doctrine-lens.vsix",
     "preview": "node tools/preview-webview.mjs && node tools/shoot-preview.mjs",
-    "test": "npm run build:test && node --test \"out/test/*.test.js\"",
+    "test": "npm run build:test && node --test \"out/test/*.test.js\" \"tools/*.test.mjs\"",
     "test:integration": "npm run compile && tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "vscode:prepublish": "npm run compile",
