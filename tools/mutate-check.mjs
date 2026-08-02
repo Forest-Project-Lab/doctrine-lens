@@ -26,6 +26,7 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { TEST_REPORTER, capture, selfCheck, verdictOf } from "./mutate-verdict.mjs";
 
 const projectRoot = resolve(import.meta.dirname, "..");
 
@@ -297,6 +298,11 @@ const run = (command) => {
 const TEST_GLOB =
   "$(ls out/test/*.test.js | grep -v mutation-table)";
 
+// doctrine:begin SPEC-007
+// 判定器は tools/mutate-verdict.mjs に置く（検査器自身を試験できる場所へ出すため）。
+// 合否は試験processの終了符号とシグナルで決め、`not ok` の照合は人へ見せる補助に留める。
+const TEST_COMMAND = `node --test-reporter=${TEST_REPORTER} --test ${TEST_GLOB}`;
+
 /**
  * 型検査と試験を**別々に**回し、赤くなった試験の名前も返す。
  *
@@ -306,23 +312,32 @@ const TEST_GLOB =
  */
 const check = () => {
   if (!run(`npx tsc -p tsconfig.test.json`)) return { verdict: "型検査が落ちた", failed: [] };
-  const out = capture(`node --test ${TEST_GLOB}`);
-  const failed = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1].trim());
-  return { verdict: failed.length > 0 ? "試験が落ちた" : "試験は通った", failed };
+  return verdictOf(capture(TEST_COMMAND, projectRoot));
 };
 
-/** 走らせて、終了符号に関わらず出力を返す。 */
-const capture = (command) => {
-  try {
-    return execFileSync("sh", ["-c", command], {
-      cwd: projectRoot,
-      encoding: "utf8",
-      stdio: "pipe",
-    });
-  } catch (error) {
-    return `${error.stdout ?? ""}${error.stderr ?? ""}`;
-  }
+/** 判定が何の上に載っていたかを刻む。後から誰でも読めるようにする。 */
+const provenance = () => {
+  const head = capture("git rev-parse HEAD", projectRoot);
+  const commit = head.status === 0 ? head.stdout.trim() : "（取れなかった）";
+  return [
+    `Node: ${process.version}`,
+    `reporter: ${TEST_REPORTER}（明示。既定に委ねない）`,
+    `試験: ${TEST_COMMAND}`,
+    `対象: ${commit}`,
+  ].join("\n");
 };
+
+/** 判定不能。数字を出す資格が無いので、元へ戻して止める。 */
+const abortOnCheckerFault = (label, result) => {
+  restore();
+  console.error(`\n検査器の異常のため止めた（${label}）。`);
+  console.error(`  ${result.why ?? "理由不明"}`);
+  console.error(`  拾えた not ok の行: ${result.failed.length} 件`);
+  console.error(`\n${provenance()}`);
+  console.error("\nこの走行の判定は読めない。score を出さない。");
+  process.exit(2);
+};
+// doctrine:end SPEC-007
 
 // 潰している最中に殺されても元へ戻す。
 //
@@ -373,7 +388,18 @@ for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
 
 recoverFromJournal();
 
-if (check().verdict !== "試験は通った") {
+// 判定器を先に検める。ここが壊れていれば、以降の数字は全部読めない。
+const faults = selfCheck();
+if (faults.length > 0) {
+  console.error("判定器が自分を検められない。score を出さない。");
+  for (const fault of faults) console.error(`  - ${fault}`);
+  console.error(`\n${provenance()}`);
+  process.exit(2);
+}
+
+const baseline = check();
+if (baseline.verdict === "検査器の異常") abortOnCheckerFault("baseline", baseline);
+if (baseline.verdict !== "試験は通った") {
   console.error("先に全件を緑にすること（いまの木で型検査か試験が落ちている）。");
   process.exit(2);
 }
@@ -401,6 +427,9 @@ for (const { label, file, from, to } of MUTATIONS) {
     restore();
   }
   const { verdict, failed } = result;
+  // 判定不能を「通った」＝守られていない側へ寄せない。足場の故障を、守られていない
+  // 直しの一覧に混ぜると、直す先を誤らせる。故障は故障として立てて止める。
+  if (verdict === "検査器の異常") abortOnCheckerFault(label, result);
   const mark =
     verdict === "試験が落ちた" ? "落ちた  " : verdict === "型検査が落ちた" ? "型のみ!!" : "通った!!";
   // 赤くなった試験の名前も刷る。取り違え（別の理由で落ちているだけ）が目で分かる。
@@ -421,6 +450,7 @@ if (invalid.length > 0) {
   console.error(`\n潰し方が不正な行が ${invalid.length} 件（表を直すこと）:`);
   for (const line of invalid) console.error(`  - ${line}`);
 }
+console.log(`\n${provenance()}`);
 if (unguarded.length > 0 || invalid.length > 0) process.exit(1);
 console.log(`\n表に載せた ${MUTATIONS.length} 件は、いずれも試験が捕まえる。`);
 console.log("（表に無い直しについては何も言っていない。頭注を読むこと。）");
