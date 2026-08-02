@@ -46,6 +46,7 @@ sources: []
 | ADR-018 | ADR | lens | 語の意味は木の辞書から引く。実装が語彙を持たない |
 | ADR-019 | ADR | lens | 数を出したら行き先も出す。行き先が無いなら、無いと言う |
 | ADR-020 | ADR | lens | 上流が答えたら、継ぎをその場で捨てる |
+| ADR-021 | ADR | lens | 既定は語らない。語らない分を数で支える |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -64,6 +65,7 @@ sources: []
 | IMPACT-007 | IMPACT | lens | 画面の語を木の正本へ結ぶことの影響 |
 | IMPACT-008 | IMPACT | lens | 出していない所見に行き先を与えることの影響 |
 | IMPACT-009 | IMPACT | lens | 継ぎを捨てることの影響 |
+| IMPACT-010 | IMPACT | lens | 「現行だ」と言うのをやめることの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

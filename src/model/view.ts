@@ -31,6 +31,10 @@ export interface ViewStrings {
   readonly summarySymbols: string;
   /** 事実ごとの件数。記号に負けたものも数える。`壊れている {0} ・ 足りない {1} ・ 範囲が無い {2}` */
   readonly summaryFacts: string;
+  /** 現行でない行の本数。判じられた回だけ出る。`非現行 {0}` */
+  readonly summaryFactNotCurrent: string;
+  /** 記号ごとの数と事実ごとの数が食い違う理由。脚注に置く */
+  readonly footHeaviest: string;
   /** `循環 {0} 本（{1} 文書）` */
   readonly summaryCycles: string;
   /** `第 {0} 波` */
@@ -162,8 +166,10 @@ function rowView(row: Row, originId: string, meta: DocMetaIndex, strings: ViewSt
   const successor = meta.get(row.id)?.supersededBy ?? "";
   return {
     id: row.id,
-    // 上流が返した値をそのまま運ぶ。語彙をこちらが持たない（REQ-003）。
-    status: row.status,
+    // **既定は語らない**（ADR-021）。上流が現行と呼ぶ status は出さない。
+    // 判じられなかった回（`null`）は出す——隠す根拠が無いのに隠さない（ADR-017）。
+    // 値そのものは上流のものを一字も変えずに運ぶ（REQ-003）。
+    status: row.notCurrent === false ? "" : row.status,
     succeeds: successor ? fill(strings.rowSucceeds, successor) : "",
     symbol: row.symbol as Symbol,
     title: titleOf(row.id, meta),
@@ -236,12 +242,19 @@ export function buildView(
       String(s.bySymbol.review),
     ),
     // 事実ごと。記号に負けたものも数える。互いに排他ではない。
-    fill(
-      strings.summaryFacts,
-      String(s.facts.broken),
-      String(s.facts.missing),
-      String(s.facts.noRange),
-    ),
+    // 非現行は記号を争わない。行から消した語を、この数が支える（ADR-021 決定 2）。
+    // 判じられなかった回は数を出さない。0 と書くと「一つも無い」ことになる。
+    [
+      fill(
+        strings.summaryFacts,
+        String(s.facts.broken),
+        String(s.facts.missing),
+        String(s.facts.noRange),
+      ),
+      ...(s.facts.notCurrent === null
+        ? []
+        : [fill(strings.summaryFactNotCurrent, String(s.facts.notCurrent))]),
+    ].join(" · "),
     // 循環は文書の内数ではないので、本数と文書数を分けて言う。
     fill(strings.summaryCycles, String(s.cycles), String(s.inCycle)),
   ].join("\n");
@@ -273,6 +286,19 @@ export function buildView(
   // 右端の数は説明の無い記号である。説明しないなら出してはいけない。
   if (consequence.waves.some((w) => w.rows.some((r) => r.behind > 0))) {
     footnotes.push(strings.footBehind);
+  }
+  // 記号ごとの数と事実ごとの数が食い違う理由を言う。要約の行に括弧で足すと、
+  // 280px で要約が六行になり、数そのものが読みにくくなる（DESIGN.md 9-4）。
+  // 説明は脚注へ置く。「右端の数が何か」を脚注で言うのと同じ扱いである。
+  //
+  // **実際に食い違っている回だけ出す。** 一致している画面に置くと、説明だけが浮く
+  // （SPEC-006 制約。右端の数が一つも無いときにその脚注を出さないのと同じ）。
+  if (
+    s.facts.broken !== s.bySymbol.broken ||
+    s.facts.missing !== s.bySymbol.missing ||
+    s.facts.noRange !== s.bySymbol.nowhere
+  ) {
+    footnotes.push(strings.footHeaviest);
   }
   if (context.titlesMissing) footnotes.push(strings.footNoTitles);
   footnotes.push(

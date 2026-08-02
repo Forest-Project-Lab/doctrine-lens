@@ -133,6 +133,39 @@ const MUTATIONS = [
     to: '      "doctrineLens.open",',
   },
   {
+    label: "取れなかった登録簿を、空集合に潰す（全行が非現行に化ける）",
+    file: "src/model/consequence.ts",
+    from: `  const currentStatuses: ReadonlySet<string> | null = context.registry
+    ? new Set(context.registry.currentStatuses)
+    : null;`,
+    to: "  const currentStatuses: ReadonlySet<string> | null = new Set(context.registry?.currentStatuses ?? []);",
+  },
+  {
+    label: "判じられない回にも status を隠す（取れなかったが全部現行に化ける）",
+    file: "src/model/view.ts",
+    from: 'status: row.notCurrent === false ? "" : row.status,',
+    to: 'status: row.notCurrent === true ? row.status : "",',
+  },
+  {
+    label: "現行の行にも status を出し続ける（消し忘れ）",
+    file: "src/model/view.ts",
+    from: 'status: row.notCurrent === false ? "" : row.status,',
+    to: "status: row.status,",
+  },
+  {
+    label: "判じられない回に非現行を 0 と数える（測っていないものを良い知らせにする）",
+    file: "src/model/consequence.ts",
+    from: `        notCurrent:
+          currentStatuses === null ? null : rows.filter((r) => r.notCurrent === true).length,`,
+    to: "        notCurrent: rows.filter((r) => r.notCurrent === true).length,",
+  },
+  {
+    label: "現行の判定を反転（現行だけが語り出す）",
+    file: "src/model/consequence.ts",
+    from: "  return typeof status === \"string\" ? !currentStatuses.has(status) : true;",
+    to: "  return typeof status === \"string\" ? currentStatuses.has(status) : true;",
+  },
+  {
     label: "部分失敗の詳細を捨てる・登録簿（設定の誤りが一時的失敗に見える）",
     file: "src/doctrine/graph.ts",
     from: 'partial.push({ what: "registry", reason: registryOutcome.reason, detail: registryOutcome.detail });',
@@ -509,7 +542,25 @@ if (baseline.verdict !== "試験は通った") {
   console.error(`先に全件を緑にすること（${commit.slice(0, 8)} で型検査か試験が落ちている）。`);
   process.exit(2);
 }
-console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）\n`);
+console.log(`baseline: 緑（潰す対象 ${MUTATIONS.length} 件）`);
+
+// **何を検めているのかを、先頭で言う。** この道具は commit を潰すので、作業木に
+// 未コミットの変更が在れば、緑は**手元の版についての緑ではない。**
+// 実際そうなった——新しい行を足して未コミットのまま回し、五行が「対象不明」に
+// なるまで、古い版を検めていることに気づかなかった（ADR-017）。
+// 走り終えたあとの由来書きにも出るが、それでは 20 分遅い。
+{
+  const dirty = capture("git status --porcelain", projectRoot);
+  const lines = dirty.status === 0 ? dirty.stdout.split("\n").filter(Boolean) : [];
+  if (lines.length > 0) {
+    console.log(
+      `\n注意: 作業木に未コミットの変更が ${lines.length} 件ある。` +
+        `検めているのは ${commit.slice(0, 8)} であって、手元の版ではない。\n` +
+        "  手元の版を検めるには、先にコミットすること。",
+    );
+  }
+}
+console.log("");
 
 const unguarded = [];
 const invalid = [];

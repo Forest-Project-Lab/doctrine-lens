@@ -22,43 +22,57 @@ That is the **origin**. You select nothing; the screen follows the cursor.
 ```
 Follows the cursor                                                   [Refresh]
 
-  コード側の面
-  SPEC-005 · lens/spec/SPEC-005-code-side-surface.md · current · 2026-07-29
+  ? いま触れているものから、直すことになるものを順に辿る
+    REQ-001 · lens/REQ-001-zoom-navigation.md · current · 2026-07-29
 
-  4 documents to fix · 4 code ranges · 3 with nowhere to fix
-  broken 1 · missing 0 · cycles 0
+    11 documents to fix · 9 code ranges
+    × 0 · + 0 · ? 8 · ! 3 · ~ 0
+    already broken 0 · missing 0 · no code range 8 · not current 4
+    0 cycles (0 documents)
 
-  Wave 1   directly on the origin                                2 documents
-  ×  帰結の明細                       SPEC-006                              2
-     Has SPEC-005 in depends_on. Its premise changes.
-     記録した実装の指紋と、いまのコードの指紋が食い違う (src/doctrine/titles.ts,
-     src/model/consequence.ts, src/model/view.ts, src/webview/main.ts)。
-     src/doctrine/titles.ts:1-137
-     src/model/consequence.ts:1-493
-     src/model/view.ts:1-218
-     src/webview/main.ts:1-174
-  ?  コード側の面の受入               TEST-005
-     Has SPEC-005 in depends_on. Its premise changes.
+  Wave 1   nothing else has to be fixed first                    2 documents
+  !  追跡索引への橋渡し               SPEC-004                              6
+     Has REQ-001 in depends_on. Its premise changes.
+     src/doctrine/audit.ts:1-156
+     src/doctrine/trace.ts:1-116
+  ?  深度の段と行き来                 SPEC-002  deprecated                  4
+     Has REQ-001 in depends_on. Its premise changes.
+     succeeded by SPEC-006
 
-  Wave 2   not settled until wave 1 is done                      2 documents
-  ?  拡張機能の部品の配置             IMPL-001
-     Depends on SPEC-005 through SPEC-006.
-  ?  帰結の明細の受入                 TEST-006
-     Depends on SPEC-005 through SPEC-006.
+  Wave 2   something in wave 1 has to be fixed first             4 documents
+  !  コード側の面                     SPEC-005                              4
+     Depends on REQ-001 through SPEC-004.
+     src/codelens/decorations.ts:1-78
+     …
+  ?  レンズ文法                       SPEC-003  deprecated                  2
+     Depends on REQ-001 through SPEC-002.
+     succeeded by SPEC-006
+  …
 
-  40 documents are not reachable from the origin and are not listed
-  2 findings sit outside the origin
+  Wave 3   something in wave 2 has to be fixed first             3 documents
+  !  帰結の明細                       SPEC-006                              2
+     Depends on REQ-001 through SPEC-005. It also has REQ-001 directly.
+     src/model/consequence.ts:1-746
+     …
+
+  57 documents reach the origin in neither direction and are not listed
+  1 finding is outside this screen's question (it belongs to no document)
   The number on the right of a row is how many others it settles once fixed
-  Upstream docs-audit ran all checks at 2026-07-29 09:14
+  Upstream docs-audit ran 36 checks at 2026-08-02 00:00
   × broken   + missing   ? nowhere to fix   ! fix   ~ review
 ```
 
-That is this repository's own tree, captured mid-rewrite. `SPEC-006` is `×`
-because its recorded fingerprints did not yet match the code, and the `2` on its
-right says two more documents settle once it is fixed — which is why it sorts
-first. `TEST-005` is `?`: it depends on the origin, but has no code bound to it,
-so there is nowhere to make the change. Rows with nothing behind them show no
-number at all, because a number that is always zero is noise.
+That is this repository's own tree. `SPEC-004` sorts first in wave 1 because the
+`6` on its right says six more documents settle once it is fixed. `SPEC-002` is
+`?`: it depends on the origin, but has no code bound to it, so there is nowhere
+to make the change. Rows with nothing behind them show no number at all, because
+a number that is always zero is noise.
+
+Four rows say `deprecated`; the other seven say nothing about status, because
+they are current and **the default is not narrated**. The summary's `not
+current 4` is what keeps that silence honest — count the words on screen and you
+get 4. Each of those four also names its successor, so a row you should not be
+editing tells you where to go instead.
 
 ### Five symbols, strictly exclusive
 
@@ -87,6 +101,33 @@ order" must not answer it wrongly.
 Cycles have no order, so they are not given one. They drop out of the waves and
 are written down as a line of text — `A → B → A` — with upstream's `dep_cycle`
 message attached.
+
+### It does not narrate the default
+
+Rows used to print `current` next to every id. Measured on this repository's own
+tree at `497e13b` — 70 documents, each used as an origin in turn, 273 rows in
+total — **225 of them (82.4%) said `current`.** Four rows on screen, four
+identical words, nothing distinguished.
+
+The count carries the commit it was taken at, because the tree grows: writing
+this one change added four governance documents and moved the number 67 → 70.
+**A measurement without its basis goes stale in silence.**
+
+Now only the 17.6% that are *not* current say so, and they are the only rows on
+the screen carrying a status word at all. Two rows that used to wrap to a second
+line at 280px now fit on one.
+
+Removing a word cannot silently mean "everything is fine", so the summary
+carries the count: `already broken 0 · missing 0 · no code range 2 · not
+current 4`. **The number says how many; the rows say which.** You can check one
+against the other, and a build gate does exactly that on the real screen.
+
+Which statuses count as "current" is not written down here. Upstream's registry
+says `CURRENT_STATUSES = {"current", "accepted"}` and adds *"other slices MUST
+use this, never a bare `== "current"`"* — so this extension asks, and compares
+against the answer. If upstream cannot be read, nothing is hidden: every row
+shows its status and the count is omitted. **Not knowing is never rendered as
+good news.**
 
 ### It is designed for 280px
 
@@ -240,22 +281,25 @@ No type list, no status vocabulary, no location table, no fingerprint comparison
 It runs the upstream CLI and renders the JSON (ADR-001).
 
 ```
-dep-graph.py --classify-edges --json  → all nodes and edges
+dep-graph.py --classify-edges --json  → nodes (with titles), edges, mirrored pairs
 dep-graph.py --reverse-orphans        → what is missing
 read _registry in place               → type order, which statuses mean "current"
-read _frontmatter in place            → titles and updated dates*
+read _termcheck in place              → which glossary words are approved
 trace-index.py --format json          → document ↔ code ranges
-docs-audit.py --json                  → all 34 checks, unfiltered
+docs-audit.py --json                  → every check upstream ran, unfiltered
 ```
 
-\* A stopgap. `dep-graph --json` doesn't return `title` yet
-([doctrine#149](https://github.com/Forest-Project-Lab/doctrine/issues/149));
-when it does, that layer goes away. Two other findings from this rewrite are
-filed upstream too:
+Three findings from this rewrite were filed upstream and answered in 0.8.0:
+[#149](https://github.com/Forest-Project-Lab/doctrine/issues/149) (nodes withheld
+`title` — upstream dropped the whitelist entirely),
 [#150](https://github.com/Forest-Project-Lab/doctrine/issues/150) (trace-index
-ignores `.gitignore`) and
+ignored `.gitignore`) and
 [#151](https://github.com/Forest-Project-Lab/doctrine/issues/151) (one relation
-returned as two edges).
+returned as two edges). **The local stopgaps were deleted the same day**
+(`CHANGE-009`, `ADR-020`) — 137 lines gone, one fewer walk of the tree.
+
+The number of checks is never written down here either: the footer says
+"N checks" using the length of `checks_run` that upstream returned.
 
 Even the vocabulary is read from upstream at runtime, so a new document type
 appears without changing this extension. `npm test` enforces this literally: if
@@ -453,6 +497,31 @@ Playwright, Claude Code).
 
 循環には順が無いので、順を付けません。波から外し、`A → B → A` という
 一行の文字列として書き下し、上流の `dep_cycle` の文を添えます。
+
+### 既定は語りません
+
+以前は id の隣に必ず `current` が出ていました。この木の 70 文書すべてを順に起点に
+置いて測ると、**出た 273 行のうち 225 行（82.4%）が `current`** でした。
+画面に四行、四行とも同じ語。何も区別していません。
+
+いまは**現行でない 17.6% だけ**が語ります。その行は、画面で唯一 status を持つ行です。
+280px で二行に折り返していた行が、一行に収まるようになりました。
+
+語を消すことが「問題なし」を黙って意味してはいけないので、要約が数で支えます。
+
+```
+既に壊れている 0 ・ 足りない 0 ・ 範囲が無い 2 ・ 非現行 4
+```
+
+**数が「幾つか」を言い、行が「どれか」を言う。** 読み手は突き合わせられます。
+写しの門が、実物の画面で毎回それを検めています。
+
+どの status が「現行」かは、ここに書いてありません。上流の登録簿が
+`CURRENT_STATUSES = {"current", "accepted"}` と定め、
+*「他の切片はこれを使え。素の比較（`== "current"`）を書くな」*と明記しているので、
+**訊いて、返ってきた集合と突き合わせます。**
+上流が読めない回は、何も隠しません——全行が status を出し、数は出しません。
+**知らないことを、良い知らせとして描かない。**
 
 ### なぜ地図をやめたか（ADR-012）
 

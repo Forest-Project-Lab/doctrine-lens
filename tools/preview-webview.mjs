@@ -44,17 +44,8 @@ const graph = run([
   join(pluginRoot, "scripts/dep-graph.py"),
   "--root", join(projectRoot, "doctrine_docs"), "--classify-edges", "--json",
 ]);
-const registry = run([
-  "-c",
-  [
-    "import json,sys",
-    "sys.path.insert(0, sys.argv[1])",
-    "import _registry as r",
-    'json.dump({"types": list(r.TYPES), "currentStatuses": sorted(r.CURRENT_STATUSES),'
-    + ' "allStatuses": list(r.ALL_STATUSES), "projectionTypes": list(r.PROJECTION_TYPES)}, sys.stdout)',
-  ].join("\n"),
-  join(pluginRoot, "scripts"),
-]);
+// 登録簿は**本体と同じ取得**を使う。ここに問い合わせを書き写すと、
+// 上流が項を増やしたとき写しの側だけが古びる（REQ-003・ADR-020）。
 
 // コード範囲と、指紋の食い違いの判定。判定は監査から取る（ADR-005）。
 const traceIndex = run([
@@ -179,7 +170,8 @@ const modelBundle = join(outDir, "model.mjs");
 writeFileSync(
   join(outDir, "model-entry.ts"),
   'export { buildConsequence } from "../src/model/consequence.js";\n' +
-    'export { buildView, formatTime } from "../src/model/view.js";\n',
+    'export { buildView, formatTime } from "../src/model/view.js";\n' +
+    'export { fetchRegistry } from "../src/doctrine/registry.js";\n',
   "utf8",
 );
 execFileSync(
@@ -188,15 +180,55 @@ execFileSync(
    "--platform=node", `--outfile=${modelBundle}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
-const { buildConsequence, buildView, formatTime } = await import(pathToFileURL(modelBundle).href);
+const { buildConsequence, buildView, formatTime, fetchRegistry } = await import(
+  pathToFileURL(modelBundle).href
+);
 
-// 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。実際に範囲を持つ文書を選ぶ。
-const ORIGIN = process.env["PREVIEW_ORIGIN"] || ranges[0]?.id || graph.nodes[0]?.id || null;
-const consequence = buildConsequence(graph, ORIGIN, {
+const registryOutcome = await fetchRegistry(pluginRoot, {
+  pythonPath: "python3", timeoutMs: 60000, cwd: projectRoot,
+});
+if (!registryOutcome.ok) {
+  console.error(`登録簿が取れない: ${registryOutcome.detail}`);
+  process.exit(1);
+}
+const registry = registryOutcome.value;
+
+// 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。
+//
+// **画面を実際に試す起点を選ぶ。** 以前は `ranges[0]` を無条件に採っていたので、
+// 非現行の行が一つも出ない起点になり、**「語る行の本数と要約の数が一致する」門が
+// 毎回 0 === 0 で自動的に通っていた**（行の status 欄を丸ごと消しても緑のまま）。
+// 門が発火しない起点で撮ることを、黙って許さない（ADR-017）。
+//
+// 選び方は決め打ちで、同じ木からは必ず同じ起点が出る。
+// 記号の種類が多い順 → 行が少ない順 → id の順。
+const context = {
   findings: audit.findings ?? [],
   ranges,
   reverseOrphans,
-});
+  // 登録簿は素通し。取れなかったかどうかの扱いは模型が持つ。
+  registry,
+};
+
+const chooseOrigin = () => {
+  const scored = [];
+  for (const node of graph.nodes) {
+    const c = buildConsequence(graph, node.id, context);
+    const rows = c.waves.flatMap((w) => w.rows);
+    // 門を試せない起点は候補にしない。非現行の行と、コード範囲と、
+    // 記号の種類——この三つが無いと、それぞれの門が空振りする。
+    if (rows.length === 0) continue;
+    if (!c.summary.facts.notCurrent) continue;
+    if (c.summary.codeRanges === 0) continue;
+    scored.push({ id: node.id, kinds: new Set(rows.map((r) => r.symbol)).size, rows: rows.length });
+  }
+  scored.sort((a, b) => b.kinds - a.kinds || a.rows - b.rows || a.id.localeCompare(b.id));
+  return scored[0]?.id ?? null;
+};
+
+const ORIGIN =
+  process.env["PREVIEW_ORIGIN"] || chooseOrigin() || ranges[0]?.id || graph.nodes[0]?.id || null;
+const consequence = buildConsequence(graph, ORIGIN, context);
 const view = buildView(
   consequence,
   new Map(Object.entries(titleReport)),

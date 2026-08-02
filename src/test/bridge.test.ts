@@ -214,6 +214,37 @@ test("python が無ければ起動の失敗として返る", async () => {
 
 // --- 走査の道具 ----------------------------------------------------------
 
+test("006-26. 上流から取って使わない値を、登録簿の写しに残さない", async (t) => {
+  const pluginRoot = pluginRootOrSkip();
+  if (!pluginRoot) return t.skip("doctrine プラグインが無い");
+  const outcome = await fetchRegistry(pluginRoot, options(PROJECT));
+  assert.ok(outcome.ok, "登録簿を読めること");
+
+  // 取って使わない値は、次に読む人に「どこかで効いている」と読ませる。
+  // 実際 `currentStatuses` がそうだった——必要な値が既に手元に在ったのに、
+  // 無いものとして設計を始めていた（ADR-021 決定 4）。
+  //
+  // **使い手は拡張機能とは限らない。** `types` と `allStatuses` は門だけが使う
+  // （実装が語彙を持っていないことを、上流の語彙そのもので検める）。門も使い手である。
+  //
+  // 数えないのは三箇所だけ。項の宣言（`model.ts`）、問い合わせ（`registry.ts`）、
+  // 偽の登録簿（`fixture.ts`）である。**偽物は使い手ではない**——
+  // 見本にだけ載っている項は、誰も読まないまま毎回の取得で運ばれ続ける。
+  //
+  // **注釈は使い手ではない。** 落とさずに数えると、この試験の注釈が
+  // `types` と `allStatuses` と `currentStatuses` を名指しているせいで、
+  // 実装が一つも読んでいなくても「使っている」と読める。
+  // 実際そうなっていた（独立の走査が挙げた）。**門が自分の注釈で通っていた。**
+  const 出所 = new Set(["doctrine/model.ts", "doctrine/registry.ts", "test/fixture.ts"]);
+  const 使い手 = sourceFiles(join(PROJECT, "src")).filter(
+    (f) => ![...出所].some((s) => f.endsWith(s)),
+  );
+  const 字面 = 使い手.map((f) => stripComments(readFileSync(f, "utf8"))).join("\n");
+
+  const 孤児 = Object.keys(outcome.value).filter((項) => !字面.includes(項));
+  assert.deepEqual(孤児, [], "取っておいて誰も使っていない項が在る");
+});
+
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir).sort()) {

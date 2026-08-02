@@ -203,8 +203,10 @@ export class LensPanel {
         const consequence = buildConsequence(snapshot.graph, id, {
           findings: snapshot.findings ?? [],
           // 取れなかったときは null のまま渡す。空配列に潰すと「無い」と断定する。
-        ranges: snapshot.ranges,
+          ranges: snapshot.ranges,
           reverseOrphans: new Set(snapshot.reverseOrphans),
+          // 素通しする。取れなかったかどうかの扱いは模型が持つ（試験が届く層）。
+          registry: snapshot.registry,
         });
         const message = {
           kind: "view" as const,

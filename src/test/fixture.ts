@@ -29,7 +29,6 @@ export const REGISTRY: Registry = {
   types: ["ICD", "REQ", "SPEC", "ADR", "IMPL", "TEST"],
   currentStatuses: ["accepted", "current"],
   allStatuses: ["proposed", "accepted", "current", "deprecated", "superseded", "archived"],
-  projectionTypes: ["OVERVIEW", "CTXMAP"],
 };
 
 /**
