@@ -153,7 +153,16 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
   padding: 16px; margin: 16px;
   background: var(--vscode-editorWidget-background); border-radius: 8px;
 }
-.origin h1 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3; }
+.origin h1 {
+  margin: 0; font-size: 20px; font-weight: 600; line-height: 1.3;
+  display: flex; gap: 8px; align-items: baseline;
+}
+.origin h1 .mark { font-family: var(--vscode-editor-font-family); font-size: 12px; }
+.origin.broken h1 .mark { color: var(--vscode-charts-red); }
+.origin.missing h1 .mark { color: var(--vscode-charts-yellow); }
+.origin.nowhere h1 .mark, .origin.review h1 .mark { color: var(--vscode-descriptionForeground); }
+.origin .note { margin: 12px 0 0; color: var(--vscode-descriptionForeground); }
+.origin .finding { margin: 4px 0 0; }
 .origin .detail {
   margin: 4px 0 0; font-family: var(--vscode-editor-font-family); font-size: 12px;
   color: var(--vscode-descriptionForeground); word-break: break-all;
@@ -194,7 +203,23 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 }
 .row .behind { margin-left: auto; }
 .row .reason, .row .succeeds { color: var(--vscode-descriptionForeground); }
-.row .finding { color: var(--vscode-charts-red); }
+.row .finding, .origin .finding, .cycles .finding {
+  color: var(--vscode-descriptionForeground);
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline;
+}
+.row .finding .message, .origin .finding .message, .cycles .finding .message { flex: 1 1 auto; }
+.finding .severity, .finding .check {
+  font-family: var(--vscode-editor-font-family); font-size: 11px;
+}
+.finding.error .severity { color: var(--vscode-charts-red); }
+.finding.warn .severity { color: var(--vscode-charts-yellow); }
+.finding .at {
+  padding: 0; border: none; background: none; cursor: pointer; text-align: left;
+  font-family: var(--vscode-editor-font-family); font-size: 12px;
+  color: var(--vscode-textLink-foreground);
+}
+.finding .at:hover { text-decoration: underline; }
+.finding .at:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
 .row .range {
   display: block; padding: 0; margin: 0; border: none; background: none;
   font-family: var(--vscode-editor-font-family); font-size: 12px;

@@ -10,8 +10,10 @@
 // 門（単体試験と突然変異）が明細の中身まで届く。
 import type { DocMetaIndex } from "../doctrine/titles.js";
 import type { GraphNode } from "../doctrine/model.js";
+import type { AuditFinding } from "../doctrine/audit.js";
 import type {
   ConsequenceView,
+  FindingView,
   CycleView,
   OriginView,
   RangeLink,
@@ -22,10 +24,14 @@ import type { Consequence, Reason, Row, Symbol } from "./consequence.js";
 
 /** 訳し終えた文言の型。`{0}` は差し込み位置。 */
 export interface ViewStrings {
-  /** `{0} 文書を直す ・ {1} か所 ・ 直す場所が無い {2} 件` */
+  /** `{0} 文書を直す ・ コード {1} か所` */
   readonly summaryCounts: string;
-  /** `壊れている {0} ・ 足りない {1} ・ 循環 {2}` */
-  readonly summaryJudgements: string;
+  /** 記号ごとの内訳。五つの和が文書数に一致する。`× {0} ・ + {1} ・ ? {2} ・ ! {3} ・ ~ {4}` */
+  readonly summarySymbols: string;
+  /** 事実ごとの件数。記号に負けたものも数える。`壊れている {0} ・ 足りない {1} ・ 範囲が無い {2}` */
+  readonly summaryFacts: string;
+  /** `循環 {0} 本（{1} 文書）` */
+  readonly summaryCycles: string;
   /** `第 {0} 波` */
   readonly waveHeading: string;
   /** 波の見出しの右端に置く件数。`{0} 文書` */
@@ -34,6 +40,8 @@ export interface ViewStrings {
   readonly waveFirstNote: string;
   /** 第 2 波以降に添える一文。`{0}` は一つ前の番号 */
   readonly waveLaterNote: string;
+  /** 直の辺も在るときに理由へ添える一文 */
+  readonly reasonAlsoDirect: string;
   /** `depends_on に {0} を持つ。前提が変わる。` */
   readonly reasonDirect: string;
   /** `{0} を経由して {1} に依存している。` */
@@ -46,10 +54,14 @@ export interface ViewStrings {
   readonly noOrigin: string;
   /** 起点が全く分からないとき（ファイルを開いていない） */
   readonly noOriginNoFile: string;
-  /** `起点に繋がらない {0} 文書は出していない` */
+  /** `起点が前提にしている {0} 文書は出していない（この画面は逆向きに辿らない）` */
+  readonly footPremises: string;
+  /** `帰結にも前提にも繋がらない {0} 文書は出していない` */
   readonly footHidden: string;
-  /** `起点の外に所見 {0} 件` */
+  /** `画面に出していない所見が {0} 件` */
   readonly footElsewhere: string;
+  /** 起点自身に所見が付いているときの前置き */
+  readonly originFindingsNote: string;
   /** `上流 docs-audit（{1} 検査）を {0} に実行` */
   readonly footAudit: string;
   /** 監査をまだ取っていないとき */
@@ -91,7 +103,9 @@ function fill(template: string, ...values: readonly string[]): string {
 
 /** 題名。取れていなければ id へ落とす。 */
 function titleOf(id: string, meta: DocMetaIndex): string {
-  return meta.get(id)?.title || id;
+  // 空白だけの題名も id へ落とす。真値なのでそのまま通し、
+  // 画面で一番大きい文字が空白になっていた（ADR-017）。
+  return meta.get(id)?.title?.trim() || id;
 }
 
 /** 起点の副文。`SPEC-001 · path · status · 更新 2026-07-28` の形。 */
@@ -100,12 +114,36 @@ function originDetail(node: GraphNode, meta: DocMetaIndex): string {
   return [node.id, node.path, node.status, updated].filter(Boolean).join(" · ");
 }
 
-function reasonText(reason: Reason, originId: string, strings: ViewStrings): string {
+function reasonText(
+  reason: Reason,
+  originId: string,
+  alsoDirect: boolean,
+  strings: ViewStrings,
+): string {
+  const base = reasonBase(reason, originId, strings);
+  // 迂回路だけを名乗って、存在する直の辺を無いことにしない（ADR-017）。
+  return reason.kind === "depends-through" && alsoDirect
+    ? `${base} ${fill(strings.reasonAlsoDirect, originId)}`
+    : base;
+}
+
+function reasonBase(reason: Reason, originId: string, strings: ViewStrings): string {
   // 影響は「直前の相手が宣言した」と書く。三段先の行に「起点が宣言している」と
   // 書くと、それは事実ではない。起点は宣言していない。
   if (reason.kind === "impacted") return fill(strings.reasonImpacted, reason.by);
   if (reason.kind === "depends-directly") return fill(strings.reasonDirect, originId);
   return fill(strings.reasonThrough, reason.through, originId);
+}
+
+/** 上流の所見を、そのまま描ける形へ。**判断を足さない。** */
+function toFindingView(f: AuditFinding): FindingView {
+  return {
+    check: typeof f.check === "string" ? f.check : "",
+    severity: typeof f.severity === "string" ? f.severity : "",
+    message: f.message,
+    path: typeof f.path === "string" ? f.path : "",
+    refs: Array.isArray(f.refs) ? f.refs : [],
+  };
 }
 
 function rangeLinks(row: Row, strings: ViewStrings): RangeLink[] {
@@ -126,11 +164,11 @@ function rowView(row: Row, originId: string, meta: DocMetaIndex, strings: ViewSt
     succeeds: successor ? fill(strings.rowSucceeds, successor) : "",
     symbol: row.symbol as Symbol,
     title: titleOf(row.id, meta),
-    reason: reasonText(row.reason, originId, strings),
+    reason: reasonText(row.reason, originId, row.alsoDirect, strings),
     behind: row.behind,
     ranges: rangeLinks(row, strings),
-    // 上流の文を一字も変えずに運ぶ（SPEC-006 制約）。
-    findings: row.findings.map((f) => f.message),
+    // 上流の六項を一字も変えずに運ぶ（SPEC-006 制約・ADR-017）。
+    findings: row.findings.map(toFindingView),
   };
 }
 
@@ -156,6 +194,10 @@ export function buildView(
     ? {
         title: titleOf(consequence.origin.id, meta),
         detail: originDetail(consequence.origin, meta),
+        // 起点は行にならない。ここに出さないと画面のどこにも現れない。
+        symbol: consequence.originSymbol,
+        findings: consequence.originFindings.map(toFindingView),
+        findingsNote: consequence.originFindings.length > 0 ? strings.originFindingsNote : "",
       }
     : null;
 
@@ -173,26 +215,39 @@ export function buildView(
 
   const cycles: CycleView[] = consequence.cycles.map((cycle) => ({
     path: cycle.path.join(" → "),
-    findings: cycle.findings.map((f) => f.message),
+    findings: cycle.findings.map(toFindingView),
   }));
 
+  const s = consequence.summary;
   const summary = [
+    fill(strings.summaryCounts, String(s.documents), String(s.codeRanges)),
+    // 記号ごと。五つの和が documents に一致する（読み手が足し算できる）。
     fill(
-      strings.summaryCounts,
-      String(consequence.summary.documents),
-      String(consequence.summary.codeRanges),
-      String(consequence.summary.nowhere),
+      strings.summarySymbols,
+      String(s.bySymbol.broken),
+      String(s.bySymbol.missing),
+      String(s.bySymbol.nowhere),
+      String(s.bySymbol.fix),
+      String(s.bySymbol.review),
     ),
+    // 事実ごと。記号に負けたものも数える。互いに排他ではない。
     fill(
-      strings.summaryJudgements,
-      String(consequence.summary.broken),
-      String(consequence.summary.missing),
-      String(consequence.summary.cycles),
+      strings.summaryFacts,
+      String(s.facts.broken),
+      String(s.facts.missing),
+      String(s.facts.noRange),
     ),
+    // 循環は文書の内数ではないので、本数と文書数を分けて言う。
+    fill(strings.summaryCycles, String(s.cycles), String(s.inCycle)),
   ].join("\n");
 
   // 畳んだら必ず件数を書く。隠すことは抽象ではない（SPEC-006 制約）。
   const footnotes: string[] = [];
+  // 「辿る向きが違うので出さない」と「繋がらないので出さない」は別の事実である。
+  // 一語に畳むと、前者が「影響なし」と読まれる（ADR-017）。
+  if (consequence.premiseCount > 0) {
+    footnotes.push(fill(strings.footPremises, String(consequence.premiseCount)));
+  }
   if (consequence.unreached > 0) {
     footnotes.push(fill(strings.footHidden, String(consequence.unreached)));
   }

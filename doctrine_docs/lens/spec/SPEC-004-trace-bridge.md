@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-29
+updated: 2026-08-02
 sources: []
 depends_on: [REQ-001, SPEC-001, ICD-001]
 impacts: [IMPL-001]
@@ -46,6 +46,13 @@ llm_context: task
 
 追跡に関わるものだけが要る呼び手（帯・見出し）は、受け取ってから
 `traceFindings` を通す。絞るのは呼び手の仕事であって、橋の仕事ではない。
+
+**所見は六項をそのまま渡す。** `check` / `severity` / `doc_id` / `path` / `refs` / `message`。
+どれかに潰さない。潰すと `error` と `advisory` が同じ見え方になる（ADR-017）。
+
+**範囲が取れなかったときは、空ではなく「取れていない」を返す。**
+空配列で返すと、呼び手は「本当に範囲が無い」と区別が付かず、
+全部の行に「直す場所が無い」を当ててしまう。実測でそうなった。
 
 **検査の数を実装が持たない。** 上流の報告の `checks_run` の長さをそのまま運ぶ。
 定数で持つと、上流が検査を増やしたときに追随しない側が正しいことになる（REQ-003）。

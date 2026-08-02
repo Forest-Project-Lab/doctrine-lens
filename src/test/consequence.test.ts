@@ -52,7 +52,11 @@ function range(id: string, path = "src/a.ts"): TraceRange {
   return { id, path, begin_line: 1, end_line: 9, fingerprint: "" } as unknown as TraceRange;
 }
 
-const NO_CONTEXT = { findings: [], ranges: [], reverseOrphans: new Set<string>() };
+const NO_CONTEXT = {
+  findings: [],
+  ranges: [] as TraceRange[] | null,
+  reverseOrphans: new Set<string>(),
+};
 
 /** 行を id の順に平らへ均す。波の番号を添える。 */
 function flatten(c: ReturnType<typeof buildConsequence>): string[] {
@@ -251,7 +255,7 @@ test("006-9. 上流の所見の文が、一字も変えずに出る", () => {
   assert.equal(row?.symbol, "broken", "重い所見が付いていれば × が最も重い");
   assert.equal(row?.findings[0]?.message, long);
   const view = buildView(c, new Map(), strings(), CONTEXT);
-  assert.equal(view.waves[0]?.rows[0]?.findings[0], long, "描く側でも切り詰めない");
+  assert.equal(view.waves[0]?.rows[0]?.findings[0]?.message, long, "描く側でも切り詰めない");
 });
 
 test("006-9b. 起点の外の所見の件数を脚注に出す（黙って捨てない）", () => {
@@ -324,14 +328,10 @@ test("所見は doc_id だけでなく refs でも引く（上流が二つの持
 test("良い状態を空白で表さず、数で言う", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: [range("P")] });
-  assert.deepEqual(c.summary, {
-    documents: 1,
-    codeRanges: 1,
-    nowhere: 0,
-    broken: 0,
-    missing: 0,
-    cycles: 0,
-  });
+  assert.deepEqual(c.summary.bySymbol, { broken: 0, missing: 0, nowhere: 0, fix: 1, review: 0 });
+  assert.deepEqual(c.summary.facts, { broken: 0, missing: 0, noRange: 0 });
+  assert.equal(c.summary.documents, 1);
+  assert.equal(c.summary.codeRanges, 1);
   const view = buildView(c, new Map(), strings(), CONTEXT);
   assert.ok(view.summary.includes("壊れている 0"), `要約: ${view.summary}`);
 });
@@ -361,6 +361,125 @@ test("深い鎖でも呼び出し段が尽きない（再帰で書くと落ち�
   assert.equal(c.waves.at(-1)?.distance, 6000);
 });
 
+
+// --- ADR-017: 画面が確かめていないことを言わない -----------------------------
+
+test("006-15. 強連結成分の全員が数えられる（一巡に載らない要素が消えない）", () => {
+  // A↔B, B↔C。A から書き下せる一巡は A→B→A で、C は経路に載らない。
+  // 経路から件数を数えていたので、C は行にも循環にも出ず「届かない」に化けていた。
+  const graph = graphOf(["O", "A", "B", "C"], ["O>A", "A>B", "B>A", "B>C", "C>B"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  assert.equal(c.cycles.length, 1);
+  assert.deepEqual([...(c.cycles[0]?.members ?? [])], ["A", "B", "C"], "成分の全員を運ぶ");
+  assert.equal(c.summary.inCycle, 3, "畳んだ文書の数を言う");
+  assert.equal(c.unreached, 0, "届くものを「届かない」と数えない");
+});
+
+test("006-15b. 件数が負にならない（辺だけが指す死んだ参照）", () => {
+  const graph = graphOf(["O", "A"], ["O>A", "A>幽霊", "幽霊>A"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  assert.ok(c.unreached >= 0, `件数が負である: ${c.unreached}`);
+  assert.equal(c.unreached, 0);
+});
+
+test("006-16. 起点自身の所見が画面に届く（壊れていても 0 と言わない）", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [finding("O", "error", "起点が壊れている")],
+  });
+  assert.equal(c.originSymbol, "broken", "起点の記号が出ない");
+  assert.equal(c.originFindings.length, 1, "起点の所見が落ちている");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.equal(view.origin?.symbol, "broken");
+  assert.equal(view.origin?.findings[0]?.message, "起点が壊れている");
+  assert.equal(view.origin?.findings[0]?.severity, "error");
+});
+
+test("006-17. 「外」は「画面のどこにも出ていない」である（起点以外ではない）", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [finding("P", "error", "行に出る"), finding("よそ", "info", "出ない")],
+  });
+  assert.equal(c.waves[0]?.rows[0]?.findings.length, 1, "行に出ている");
+  assert.equal(c.findingsElsewhere, 1, "行に出ている所見を「外」に数えている");
+});
+
+test("006-18. 記号に負けた事実も数える（排他は行の規律であって数の規律ではない）", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [finding("P", "error", "壊れている")],
+    reverseOrphans: new Set(["P"]),
+  });
+  assert.equal(c.summary.bySymbol.broken, 1, "行の記号は最も重いもの");
+  assert.equal(c.summary.facts.missing, 1, "逆孤児である事実が数から消えている");
+  assert.equal(c.summary.facts.noRange, 1, "範囲が無い事実が数から消えている");
+});
+
+test("006-19. 記号ごとの件数の和が、直すことになる文書の数に一致する", () => {
+  const graph = graphOf(["O", "A", "B", "C"], ["O>A", "O>B", "O~C"]);
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: [range("A")] });
+  const sum = Object.values(c.summary.bySymbol).reduce((a, b) => a + b, 0);
+  assert.equal(sum, c.summary.documents, `和が合わない: ${JSON.stringify(c.summary.bySymbol)}`);
+});
+
+test("006-20. 起点が前提にしているものを「繋がらない」に混ぜない", () => {
+  // O は A に依存し、B は O に依存する。C はどちらにも繋がらない。
+  const graph = graphOf(["O", "A", "B", "C"], ["A>O", "O>B"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  assert.deepEqual(c.waves.flatMap((w) => w.rows.map((r) => r.id)), ["B"], "帰結は B だけ");
+  assert.equal(c.premiseCount, 1, "起点が前提にしている A を数えていない");
+  assert.equal(c.unreached, 1, "どちらにも繋がらないのは C だけ");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.ok(view.footnotes.some((f) => f.includes("前提 1")), `脚注: ${view.footnotes}`);
+  assert.ok(view.footnotes.some((f) => f.includes("隠した 1")), `脚注: ${view.footnotes}`);
+});
+
+
+test("006-21. 範囲を取れなかったことと、範囲が無いことを区別する", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  // 取れなかった（null）。「直す場所が無い」と断定してはならない。
+  const unknown = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: null });
+  assert.equal(unknown.rangesKnown, false);
+  assert.notEqual(unknown.waves[0]?.rows[0]?.symbol, "nowhere", "知らないことを断定している");
+  // 取れていて、本当に零件。
+  const known = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: [] });
+  assert.equal(known.rangesKnown, true);
+  assert.equal(known.waves[0]?.rows[0]?.symbol, "nowhere");
+});
+
+test("006-22. 迂回路だけを名乗って、存在する直の辺を無いことにしない", () => {
+  // P は O を直に depends_on に持ち、かつ M を経由してもいる（最長距離で第 2 波）。
+  const graph = graphOf(["O", "M", "P"], ["O>M", "O>P", "M>P"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  const row = c.waves.find((w) => w.distance === 2)?.rows[0];
+  assert.equal(row?.id, "P");
+  assert.equal(row?.reason.kind, "depends-through");
+  assert.equal(row?.alsoDirect, true, "直の辺が在ることを持っていない");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const shown = view.waves.find((w) => w.heading.includes("2"))?.rows[0]?.reason ?? "";
+  assert.ok(shown.includes("直にも持つ"), `直の辺を名乗っていない: ${shown}`);
+});
+
+test("006-23. 空白だけの題名は id へ落とす", () => {
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  const meta: DocMetaIndex = new Map([["P", { title: "   ", updated: "", supersededBy: "" }]]);
+  assert.equal(buildView(c, meta, strings(), CONTEXT).waves[0]?.rows[0]?.title, "P");
+});
+
+test("006-24. 所見の六項がそのまま届く（severity や path を捨てない）", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const f = { ...finding("P", "error", "壊れている"), check: "dead_link", path: "a/b.md", refs: ["X"] };
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
+  const got = buildView(c, new Map(), strings(), CONTEXT).waves[0]?.rows[0]?.findings[0];
+  assert.equal(got?.severity, "error");
+  assert.equal(got?.check, "dead_link");
+  assert.equal(got?.path, "a/b.md");
+  assert.deepEqual([...(got?.refs ?? [])], ["X"]);
+});
+
 // --- 道具 ------------------------------------------------------------------
 
 const CONTEXT = {
@@ -373,20 +492,25 @@ const CONTEXT = {
 /** 差し込みの位置だけを見る、短い見本の文言。訳の中身は l10n.test.ts が見る。 */
 function strings(): Parameters<typeof buildView>[2] {
   return {
-    summaryCounts: "{0} 文書 / コード {1} / 場所無し {2}",
-    summaryJudgements: "壊れている {0} / 足りない {1} / 循環 {2}",
+    summaryCounts: "{0} 文書 / コード {1}",
+    summarySymbols: "× {0} / + {1} / ? {2} / ! {3} / ~ {4}",
+    summaryFacts: "壊れている {0} / 足りない {1} / 範囲無し {2}",
+    summaryCycles: "循環 {0} 本（{1} 文書）",
     waveHeading: "第 {0} 波",
     waveCount: "{0} 文書",
-    waveFirstNote: "直に載る",
-    waveLaterNote: "第 {0} 波の後",
+    waveFirstNote: "先に直すものは無い",
+    waveLaterNote: "第 {0} 波を先に",
     reasonDirect: "depends_on に {0}",
     reasonThrough: "{0} を経由して {1}",
     reasonImpacted: "{0} が影響すると宣言",
+    reasonAlsoDirect: "{0} を直にも持つ。",
     rangeLabel: "{0}:{1}-{2}",
     noOrigin: "起点が無い。開いているのは {0}",
     noOriginNoFile: "起点が無い",
+    footPremises: "前提 {0}",
     footHidden: "隠した {0}",
     footElsewhere: "外に {0}",
+    originFindingsNote: "起点自身が壊れている:",
     footAudit: "監査 {0}／{1} 検査",
     footAuditNever: "監査まだ",
     footNoTitles: "題名が無い",

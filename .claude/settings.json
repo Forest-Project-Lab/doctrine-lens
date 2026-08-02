@@ -1,4 +1,19 @@
 {
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:eventmodeling.org)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c ' *)",
+      "WebFetch(domain:www.jamasoftware.com)",
+      "Read(//tmp/dl-shots/**)",
+      "Bash(rm -rf p)",
+      "Bash(cp -r /workspaces/doctrine_lens/.preview p)",
+      "Bash(node -e ' *)",
+      "Bash(python3 -)"
+    ]
+  },
   "enabledPlugins": {
     "doctrine@forest-project-lab": true
   },

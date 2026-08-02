@@ -20,6 +20,20 @@ export interface RangeLink {
 }
 
 /** 明細の一行。すべて訳し終えた文字列である。 */
+/**
+ * 上流の所見一件。**六項をそのまま運ぶ。**
+ *
+ * 以前は `message` だけを運んでいた。`severity` を捨てると error と advisory が
+ * 同じ見え方になり、`path` を捨てると所見が指すファイルへ跳べない（ADR-017）。
+ */
+export interface FindingView {
+  readonly check: string;
+  readonly severity: string;
+  readonly message: string;
+  readonly path: string;
+  readonly refs: readonly string[];
+}
+
 export interface RowView {
   /** 上流が返した status。空なら出さない。語彙は上流のもの（REQ-003）。 */
   readonly status: string;
@@ -35,7 +49,7 @@ export interface RowView {
   readonly behind: number;
   readonly ranges: readonly RangeLink[];
   /** 上流の所見の文。一字も変えずに運ぶ。 */
-  readonly findings: readonly string[];
+  readonly findings: readonly FindingView[];
 }
 
 /** 一つの波。 */
@@ -58,11 +72,17 @@ export interface WaveView {
 export interface CycleView {
   /** `A → B → A` の形にした一行。題名ではなく id で書く（短く読ませるため）。 */
   readonly path: string;
-  readonly findings: readonly string[];
+  readonly findings: readonly FindingView[];
 }
 
 /** 起点の欄。 */
 export interface OriginView {
+  /** 起点自身の記号。行と同じ規則で決まる。起点が無ければ null。 */
+  readonly symbol: RowView["symbol"] | null;
+  /** 起点自身に付いた所見の文。上流の文をそのまま。 */
+  readonly findings: readonly FindingView[];
+  /** 所見が在るときの前置き。無ければ空。 */
+  readonly findingsNote: string;
   readonly title: string;
   /** `SPEC-001 · src/doctrine/cli.ts:1-231 · 現行 · 更新 2026-07-28` の形。 */
   readonly detail: string;
