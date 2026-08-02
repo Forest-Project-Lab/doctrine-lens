@@ -3,7 +3,7 @@ id: CHANGE-008
 title: 出していない所見に、行き先を与える
 type: CHANGE
 domain: lens
-status: proposed
+status: accepted
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -99,3 +99,39 @@ id は押せる。押すとその文書が開き、**開いた瞬間にそれが
 
 `refs` にだけ id を持つ所見が在る。その場合は「文書に属する」側へ入れる
 （`findingsFor` が既に `doc_id` と `refs` の両方で引いている）。
+
+## 実施の記録（段 14）
+
+2026-08-02 に一周を終えた。見積との差は無い（文書 2 本・実装 6 ファイル・新しいファイル 0）。
+
+### 実測を先にしたことが効いた
+
+起票の前に、人工の所見を足して「出ていない所見」の中身を調べた。
+**確かめずに書いていたら「全部に行き先を与える」という誤った変更になっていた**
+——文書に属さない所見には行き先が作れない。
+
+### 門の実測
+
+| 門 | 結果 |
+|---|---|
+| 単体 | 213 件すべて通る（209 → 213） |
+| 突然変異 | 表の 53 件すべてを試験が捕まえる |
+| 写し（画面） | 誤り 0・食い違い 0 |
+| 統合 | 10 件すべて通る |
+| 監査 | error 0・warn 0・advisory 1（環境の hooks） |
+| 梱包 | 12 ファイル・61.79 KB |
+
+### 画面に出たもの（実測）
+
+```
+13 documents the origin relies on are not listed — this screen only walks forward
+44 documents reach the origin in neither direction and are not listed
+2 documents that do not reach the origin carry findings — open one to see them
+1 findings are outside this screen's question (they belong to no document)
+    CHANGE-008   IMPACT-008          ← 押せる。押すと開き、開けば起点になる
+```
+
+### 監査が捕まえたもの
+
+`IMPACT-008` を書き忘れたまま `CHANGE-008` から参照していた。
+`dead_link` が error で鳴った。**統治の門が、統治文書の欠けを捕まえた例である。**
