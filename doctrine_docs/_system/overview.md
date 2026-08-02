@@ -29,6 +29,7 @@ sources: []
 | SPEC-005 | SPEC | lens | コード側の面 |
 | SPEC-006 | SPEC | lens | 帰結の明細 |
 | SPEC-007 | SPEC | lens | 潰しの検査器の合否 |
+| SPEC-008 | SPEC | lens | 潰しの隔離 |
 | ADR-001 | ADR | lens | グラフの取得を doctrine の Python CLI に委ねる |
 | ADR-006 | ADR | lens | 作業フォルダが複数のときは統治木を持つものを選び、覚える |
 | ADR-007 | ADR | lens | 表示の原文を英語にし、日本語を翻訳として持つ |
@@ -39,6 +40,7 @@ sources: []
 | ADR-012 | ADR | lens | 地図を捨て、起点からの帰結を一枚の明細で出す |
 | ADR-013 | ADR | lens | 意匠の値の正本を DESIGN.md に置き、実装は値を持たない |
 | ADR-014 | ADR | lens | 潰しの合否は試験の終了符号で決め、出力の照合は補助に降ろす |
+| ADR-015 | ADR | lens | 潰しは利用者の作業木ではなく、捨てられる隔離木で当てる |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -53,3 +55,4 @@ sources: []
 | TEST-005 | TEST | lens | コード側の面の受入 |
 | TEST-006 | TEST | lens | 帰結の明細の受入 |
 | TEST-007 | TEST | lens | 潰しの検査器の合否の受入 |
+| TEST-008 | TEST | lens | 潰しの隔離の受入 |
