@@ -96,6 +96,7 @@ export const messages = {
   staleShort: (): string => t("fingerprint mismatch"),
   partialOrphans: (): string => t("what is missing"),
   partialTitles: (): string => t("document titles"),
+  partialGlossary: (): string => t("the glossary"),
   showOnMap: (): string => t("Show what this changes"),
 } as const;
 

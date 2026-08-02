@@ -241,4 +241,7 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 }
 .foot p { margin: 0 0 4px; }
 .foot .legend { margin: 8px 0 0; display: flex; gap: 12px; flex-wrap: wrap; }
+.foot .terms { margin: 8px 0 0; }
+.foot .terms dt { font-weight: 600; margin: 8px 0 0; }
+.foot .terms dd { margin: 0; }
 `;

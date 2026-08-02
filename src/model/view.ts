@@ -8,6 +8,7 @@
 // ダイヤルを回すたびに本体と往復するのを避けるためだった。ダイヤルが無くなったので、
 // その理由も消えた。組み立てをここへ寄せると、webview は判断を一つも持たなくなり、
 // 門（単体試験と突然変異）が明細の中身まで届く。
+import { termsIn, type Glossary } from "../doctrine/glossary.js";
 import type { DocMetaIndex } from "../doctrine/titles.js";
 import type { GraphNode } from "../doctrine/model.js";
 import type { AuditFinding } from "../doctrine/audit.js";
@@ -188,6 +189,8 @@ export function buildView(
     readonly titlesMissing: boolean;
     /** 上流が実際に走らせた検査の数。数えた数であって、代弁の語ではない（ADR-014）。 */
     readonly checksRun: number;
+    /** 木の用語辞書。取れなければ空。 */
+    readonly glossary: Glossary;
   },
 ): ConsequenceView {
   const origin: OriginView | null = consequence.origin
@@ -277,6 +280,23 @@ export function buildView(
     waves,
     cycles,
     footnotes,
+    // 画面に実際に出た文字列と辞書を突き合わせる。
+    // **出す語の一覧を実装が持たない**（ADR-018）。
+    terms: termsIn(
+      [
+        origin?.title ?? "",
+        origin?.detail ?? "",
+        summary,
+        ...waves.flatMap((w) => [
+          w.heading,
+          w.note,
+          ...w.rows.flatMap((r) => [r.title, r.reason, r.succeeds, ...r.findings.map((f) => f.message)]),
+        ]),
+        ...cycles.flatMap((c) => c.findings.map((f) => f.message)),
+        ...footnotes,
+      ].join("\n"),
+      context.glossary,
+    ),
     legend: [
       strings.legendBroken,
       strings.legendMissing,

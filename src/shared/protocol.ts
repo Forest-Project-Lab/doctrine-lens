@@ -89,6 +89,12 @@ export interface OriginView {
 }
 
 /** 画面ひと揃い。これがそのまま描ける。 */
+/** 画面に出た語ひとつと、その定義。木の用語辞書から引く（ADR-018）。 */
+export interface TermView {
+  readonly word: string;
+  readonly meaning: string;
+}
+
 export interface ConsequenceView {
   /** 起点が無ければ `null`。そのときは `emptyReason` を出す。 */
   readonly origin: OriginView | null;
@@ -102,6 +108,12 @@ export interface ConsequenceView {
   readonly footnotes: readonly string[];
   /** 記号の語彙（`×壊れている` など）。 */
   readonly legend: readonly string[];
+  /**
+   * 画面に出た語の定義。木の用語辞書から引いたもの（ADR-018）。
+   *
+   * 辞書が取れなければ空。**画面はこれを説明として書かない**——正本は木に在る。
+   */
+  readonly terms: readonly TermView[];
 }
 
 /** 本体から webview へ。 */

@@ -7,6 +7,7 @@
 import { join } from "node:path";
 
 import { fetchFindings, type AuditFinding } from "./audit.js";
+import { fetchGlossary, type Glossary } from "./glossary.js";
 import { runJson, type RunOptions } from "./cli.js";
 import { fetchTraceRanges, type TraceRange } from "./trace.js";
 import { fetchRegistry } from "./registry.js";
@@ -28,6 +29,8 @@ export interface Snapshot {
   reverseOrphans: string[];
   /** 文書の題名など。取れなければ空の表。主文が id へ落ちる。 */
   docMeta: DocMetaIndex;
+  /** 木の用語辞書。取れなければ空。語の定義を出さないだけで、明細は出る（ADR-018）。 */
+  glossary: Glossary;
   docsRoot: string;
   projectDir: string;
 }
@@ -35,7 +38,7 @@ export interface Snapshot {
 /** 部分的に取れなかったものの名前。表示は呼び手が訳す（ADR-007）。 */
 /** 部分的に取れなかったもの。 */
 export interface PartialFetch {
-  readonly what: "registry" | "ranges" | "findings" | "orphans" | "titles";
+  readonly what: "registry" | "ranges" | "findings" | "orphans" | "titles" | "glossary";
   /** 取れなかった理由の符号。表示の文言は呼び手が訳す（ADR-007）。 */
   readonly reason: string;
   /**
@@ -84,14 +87,22 @@ export async function fetchSnapshot(
 
   // 残る三つは互いに独立なので並べて走らせる。どれが落ちても他を巻き込まない。
   // 監査は最も重いので、速い拍では走らせない（ADR-008）。
-  const [registryOutcome, rangesOutcome, findingsOutcome, orphanOutcome, metaOutcome] =
-    await Promise.all([
-      fetchRegistry(pluginRoot, options),
-      fetchTraceRanges(projectDir, docsRoot, pluginRoot, options),
-      withAudit ? fetchFindings(projectDir, docsRoot, pluginRoot, options) : Promise.resolve(null),
-      fetchReverseOrphans(docsRoot, pluginRoot, options),
-      fetchDocMeta(docsRoot, pluginRoot, options),
-    ]);
+  const [
+    registryOutcome,
+    rangesOutcome,
+    findingsOutcome,
+    orphanOutcome,
+    metaOutcome,
+    glossaryOutcome,
+  ] = await Promise.all([
+    fetchRegistry(pluginRoot, options),
+    fetchTraceRanges(projectDir, docsRoot, pluginRoot, options),
+    withAudit ? fetchFindings(projectDir, docsRoot, pluginRoot, options) : Promise.resolve(null),
+    fetchReverseOrphans(docsRoot, pluginRoot, options),
+    fetchDocMeta(docsRoot, pluginRoot, options),
+    // 辞書の場所はグラフから引くので、グラフが取れたあとで良い。
+    fetchGlossary(raw, docsRoot, pluginRoot, options),
+  ]);
 
   const partial: PartialFetch[] = [];
   if (!registryOutcome.ok) {
@@ -105,6 +116,9 @@ export async function fetchSnapshot(
   }
   if (!orphanOutcome.ok) {
     partial.push({ what: "orphans", reason: orphanOutcome.reason, detail: orphanOutcome.detail });
+  }
+  if (!glossaryOutcome.ok) {
+    partial.push({ what: "glossary", reason: glossaryOutcome.reason, detail: glossaryOutcome.detail });
   }
   if (!metaOutcome.ok) {
     partial.push({ what: "titles", reason: metaOutcome.reason, detail: metaOutcome.detail });
@@ -120,6 +134,7 @@ export async function fetchSnapshot(
       checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : [],
       reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],
       docMeta: metaOutcome.ok ? metaOutcome.value : new Map(),
+      glossary: glossaryOutcome.ok ? glossaryOutcome.value : new Map(),
       docsRoot,
       projectDir,
     },
