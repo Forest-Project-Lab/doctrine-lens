@@ -241,24 +241,6 @@ const MUTATIONS = [
     to: "unreached: 0,",
   },
   {
-    label: "題名の三つ組を二つで受ける（全件が黙って題名を失う）",
-    file: "src/doctrine/titles.ts",
-    from: '"            meta, _body, _errors = fm.parse_file(path)",',
-    to: '"            meta, _body = fm.parse_file(path)",',
-  },
-  {
-    label: "題名の根の検めを外す（相対パスで空の表が成功として返る）",
-    file: "src/doctrine/titles.ts",
-    from: '"if not os.path.isdir(root):",',
-    to: '"if False:",',
-  },
-  {
-    label: "解析が全件落ちても成功として返す（0/N を題名の無い木と呼ぶ）",
-    file: "src/doctrine/titles.ts",
-    from: '"if seen > 0 and len(broken) == seen:",',
-    to: '"if False:",',
-  },
-  {
     label: "所見を追跡の検査だけに絞る（上流の判断を橋の上で捨てる）",
     file: "src/doctrine/audit.ts",
     from: "  return ok({ findings: outcome.value.findings, checksRun });",

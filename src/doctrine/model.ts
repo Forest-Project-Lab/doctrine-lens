@@ -80,3 +80,25 @@ export function fail<T>(reason: FailureReason, detail: string): Outcome<T> {
   return { ok: false, reason, detail };
 }
 // doctrine:end SPEC-001
+
+/** 一つの文書について、frontmatter から取る値。上流の節点がそのまま持つ。 */
+export interface DocMeta {
+  /** 主文に出す題名。取れなければ空。 */
+  readonly title: string;
+  /** 最後に更新した日。取れなければ空。 */
+  readonly updated: string;
+  /** 後継の id。無ければ空。 */
+  readonly supersededBy: string;
+}
+
+/** 文書の id から `DocMeta` を引く表。 */
+export type DocMetaIndex = ReadonlyMap<string, DocMeta>;
+
+/**
+ * 主文に出す文字列。題名が取れていなければ id へ落とす。
+ *
+ * 落ちたことは画面の脚注が言う。
+ */
+export function displayTitle(id: string, meta: DocMetaIndex): string {
+  return meta.get(id)?.title?.trim() || id;
+}

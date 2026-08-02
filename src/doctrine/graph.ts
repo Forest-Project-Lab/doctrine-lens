@@ -11,7 +11,7 @@ import { fetchGlossary, type Glossary } from "./glossary.js";
 import { runJson, type RunOptions } from "./cli.js";
 import { fetchTraceRanges, type TraceRange } from "./trace.js";
 import { fetchRegistry } from "./registry.js";
-import { fetchDocMeta, type DocMetaIndex } from "./titles.js";
+import type { DocMetaIndex } from "./model.js";
 import { fail, ok, type Graph, type Outcome, type Registry } from "./model.js";
 
 /** 取得したひと揃い。地図を描くのに要るものを束ねる。 */
@@ -38,7 +38,7 @@ export interface Snapshot {
 /** 部分的に取れなかったものの名前。表示は呼び手が訳す（ADR-007）。 */
 /** 部分的に取れなかったもの。 */
 export interface PartialFetch {
-  readonly what: "registry" | "ranges" | "findings" | "orphans" | "titles" | "glossary";
+  readonly what: "registry" | "ranges" | "findings" | "orphans" | "glossary";
   /** 取れなかった理由の符号。表示の文言は呼び手が訳す（ADR-007）。 */
   readonly reason: string;
   /**
@@ -67,6 +67,26 @@ export interface FetchResult {
  * グラフの取得だけが必須である。残る三つの失敗はグラフの失敗にしない。
  * それぞれが止めるのは、その値に依る表示だけである（SPEC-004 制約）。
  */
+/**
+ * 節点から題名などを組む。
+ *
+ * 上流 0.8.0 が節点の白名簿を捨てたので、frontmatter の項がそのまま届く。
+ * 以前は上流の内部モジュールを直接呼ぶ継ぎ（`titles.ts` 137 行）で補っていた。
+ * **上流が答えたので捨てた**（ADR-020）。
+ */
+function docMetaFrom(graph: Graph): DocMetaIndex {
+  const out = new Map<string, { title: string; updated: string; supersededBy: string }>();
+  for (const node of graph.nodes) {
+    if (typeof node.id !== "string" || !node.id) continue;
+    out.set(node.id, {
+      title: typeof node.title === "string" ? node.title : "",
+      updated: typeof node.updated === "string" ? node.updated : "",
+      supersededBy: typeof node.superseded_by === "string" ? node.superseded_by : "",
+    });
+  }
+  return out;
+}
+
 export async function fetchSnapshot(
   projectDir: string,
   docsRoot: string,
@@ -87,19 +107,12 @@ export async function fetchSnapshot(
 
   // 残る三つは互いに独立なので並べて走らせる。どれが落ちても他を巻き込まない。
   // 監査は最も重いので、速い拍では走らせない（ADR-008）。
-  const [
-    registryOutcome,
-    rangesOutcome,
-    findingsOutcome,
-    orphanOutcome,
-    metaOutcome,
-    glossaryOutcome,
-  ] = await Promise.all([
+  const [registryOutcome, rangesOutcome, findingsOutcome, orphanOutcome, glossaryOutcome] =
+    await Promise.all([
     fetchRegistry(pluginRoot, options),
     fetchTraceRanges(projectDir, docsRoot, pluginRoot, options),
     withAudit ? fetchFindings(projectDir, docsRoot, pluginRoot, options) : Promise.resolve(null),
     fetchReverseOrphans(docsRoot, pluginRoot, options),
-    fetchDocMeta(docsRoot, pluginRoot, options),
     // 辞書の場所はグラフから引くので、グラフが取れたあとで良い。
     fetchGlossary(raw, docsRoot, pluginRoot, options),
   ]);
@@ -120,9 +133,6 @@ export async function fetchSnapshot(
   if (!glossaryOutcome.ok) {
     partial.push({ what: "glossary", reason: glossaryOutcome.reason, detail: glossaryOutcome.detail });
   }
-  if (!metaOutcome.ok) {
-    partial.push({ what: "titles", reason: metaOutcome.reason, detail: metaOutcome.detail });
-  }
 
   return ok({
     snapshot: {
@@ -133,7 +143,8 @@ export async function fetchSnapshot(
       findings: findingsOutcome?.ok ? findingsOutcome.value.findings : null,
       checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : [],
       reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],
-      docMeta: metaOutcome.ok ? metaOutcome.value : new Map(),
+      // 題名は節点が持つ（上流 0.8.0 以降）。継ぎは捨てた（ADR-020）。
+      docMeta: docMetaFrom(raw),
       glossary: glossaryOutcome.ok ? glossaryOutcome.value : new Map(),
       docsRoot,
       projectDir,
