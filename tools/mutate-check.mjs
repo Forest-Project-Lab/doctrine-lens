@@ -206,7 +206,7 @@ const MUTATIONS = [
   {
     label: "記号の排他を崩す（+ より ? を先に当てる）",
     file: "src/model/consequence.ts",
-    from: '  if (input.isReverseOrphan) return "missing";\n  if (input.rangeCount === 0) return "nowhere";',
+    from: '  if (input.isReverseOrphan) return "missing";\n  // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。\n  if (input.rangeCount === 0) return "nowhere";',
     to: '  if (input.rangeCount === 0) return "nowhere";\n  if (input.isReverseOrphan) return "missing";',
   },
   {
@@ -224,7 +224,7 @@ const MUTATIONS = [
   {
     label: "畳んだ件数を数え損なう（隠したことを黙る）",
     file: "src/model/consequence.ts",
-    from: "unreached: all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1),",
+    from: "unreached: Math.max(0, all.size - rows.length - inCycle.size - 1 - premises.size),",
     to: "unreached: 0,",
   },
   {
@@ -266,8 +266,56 @@ const MUTATIONS = [
   {
     label: "題名を主文から落とす（画面が id だけになる — 利用者が最初に言った不満）",
     file: "src/model/view.ts",
-    from: "return meta.get(id)?.title || id;",
+    from: "return meta.get(id)?.title?.trim() || id;",
     to: "return id;",
+  },
+  {
+    label: "循環の塊ではなく一巡から件数を数える（成分の要素が黙って消える）",
+    file: "src/model/consequence.ts",
+    from: "const inCycle = new Set(tangles.flat().filter((id) => all.has(id)));",
+    to: "const inCycle = new Set(cycles.flatMap((c) => c.path));",
+  },
+  {
+    label: "起点自身の所見を捨てる（起点が壊れていても 0 と言う）",
+    file: "src/model/consequence.ts",
+    from: "const originFindings = findingsFor(origin.id, context.findings);",
+    to: "const originFindings: AuditFinding[] = [];",
+  },
+  {
+    label: "「外」を「起点以外」へ戻す（画面に出ている所見を外と数える）",
+    file: "src/model/consequence.ts",
+    from: "findingsElsewhere: context.findings.filter((f) => !shown.has(f)).length,",
+    to: "findingsElsewhere: context.findings.filter((f) => f.doc_id !== origin.id).length,",
+  },
+  {
+    label: "前提を「繋がらない」へ混ぜる（辿る向きの違いを影響なしと読ませる）",
+    file: "src/model/consequence.ts",
+    from: "    premiseCount: premises.size,",
+    to: "    premiseCount: 0,",
+  },
+  {
+    label: "範囲を取れなかったことを「無い」と断定する（全部 ? に化ける）",
+    file: "src/model/consequence.ts",
+    from: "        rangeCount: rangesKnown ? ranges.length : null,",
+    to: "        rangeCount: ranges.length,",
+  },
+  {
+    label: "直の辺が在ることを捨てる（迂回路だけを名乗る）",
+    file: "src/model/consequence.ts",
+    from: "      alsoDirect: directNeighbours.has(id),",
+    to: "      alsoDirect: false,",
+  },
+  {
+    label: "所見を message だけに潰す（severity と path を捨てる）",
+    file: "src/model/view.ts",
+    from: "    findings: row.findings.map(toFindingView),",
+    to: '    findings: row.findings.map((f) => ({ check: "", severity: "", message: f.message, path: "", refs: [] })),',
+  },
+  {
+    label: "判定の引き継ぎから所見を落とす（保存のたびに壊れている 0 へ落ちる）",
+    file: "src/model/cadence.ts",
+    from: "    findings: round.findings,",
+    to: "    findings: previous.findings,",
   },
 ];
 

@@ -13,7 +13,7 @@ import { canAudit } from "../doctrine/audit.js";
 import type { RunOptions } from "../doctrine/cli.js";
 import { GraphStore } from "../doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "../doctrine/locate.js";
-import { carryAudit } from "../model/cadence.js";
+import { carryAudit, NO_AUDIT, type AuditCarry } from "../model/cadence.js";
 
 const PROJECT = resolve(__dirname, "..", "..");
 const options: RunOptions = { pythonPath: "python3", timeoutMs: 60000, cwd: PROJECT };
@@ -98,12 +98,12 @@ test("子プロセスの作業フォルダに、利用者の作業フォルダ�
 
 const AT = new Date("2026-01-01T00:00:00.000Z");
 const LATER = new Date("2026-01-02T00:00:00.000Z");
-const HELD = { auditAt: AT, staleIds: new Set(["SPEC-001"]) };
+const HELD = carry(AT, new Set(["SPEC-001"]));
 
 test("001-10. 速い拍では前回の判定と時刻がそのまま保たれる", () => {
   const next = carryAudit(
     HELD,
-    { withAudit: false, failed: false, staleIds: null },
+    { withAudit: false, failed: false, staleIds: null , findings: [], checksRun: []},
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "時刻が進まない");
@@ -113,7 +113,7 @@ test("001-10. 速い拍では前回の判定と時刻がそのまま保たれる
 test("001-10b. 監査を求めた回に判定が返れば、判定も時刻も入れ替わる", () => {
   const next = carryAudit(
     HELD,
-    { withAudit: true, failed: false, staleIds: new Set(["SPEC-002"]) },
+    { withAudit: true, failed: false, staleIds: new Set(["SPEC-002"]) , findings: [], checksRun: []},
     () => LATER,
   );
   assert.equal(next.auditAt, LATER);
@@ -123,7 +123,7 @@ test("001-10b. 監査を求めた回に判定が返れば、判定も時刻も�
 test("001-10c. 判定が空で返るのと、取れないのは別である", () => {
   const cleared = carryAudit(
     HELD,
-    { withAudit: true, failed: false, staleIds: new Set() },
+    { withAudit: true, failed: false, staleIds: new Set() , findings: [], checksRun: []},
     () => LATER,
   );
   assert.deepEqual([...cleared.staleIds], [], "食い違いが消えたなら消える");
@@ -135,7 +135,7 @@ test("001-10e. 取得が失敗した回は時刻を進めない", () => {
   // 見ていると、古い判定に「いま」の時刻が付き、帯が嘘をつく。
   const next = carryAudit(
     HELD,
-    { withAudit: true, failed: true, staleIds: new Set(["SPEC-009"]) },
+    { withAudit: true, failed: true, staleIds: new Set(["SPEC-009"]) , findings: [], checksRun: []},
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "失敗した回に時刻を進めない");
@@ -148,7 +148,7 @@ test("001-10g. 監査を求めていない回は、判定が返っていても�
   // そこに載っている判定は前回の使い回しである。
   const next = carryAudit(
     HELD,
-    { withAudit: false, failed: false, staleIds: new Set(["SPEC-777"]) },
+    { withAudit: false, failed: false, staleIds: new Set(["SPEC-777"]) , findings: [], checksRun: []},
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "時刻を進めてはならない");
@@ -164,3 +164,75 @@ test("001-10f. session が引き継ぎを自前で書き直していない", () 
     "session が時刻を自前で進めている",
   );
 });
+
+
+test("001-10h. 引き継ぐのは判定そのものである（所見と検査を落とさない）", () => {
+  // 判定から導いた id だけを引き継いでいた時期があり、そのあいだ画面は
+  // 保存のたびに所見を丸ごと失って「壊れている 0」と言い、脚注は
+  // 「0 検査を走らせた時刻」という起きていないことを述べていた（ADR-015）。
+  const finding = {
+    check: "trace_stale",
+    severity: "warn",
+    doc_id: "SPEC-001",
+    path: "",
+    message: "指紋が食い違う",
+    refs: [],
+  };
+  const audited = carryAudit(NO_AUDIT, {
+    withAudit: true,
+    failed: false,
+    staleIds: new Set(["SPEC-001"]),
+    findings: [finding],
+    checksRun: ["trace_stale", "dead_link"],
+  });
+  assert.equal(audited.findings?.length, 1, "監査した回に所見を持たない");
+  assert.equal(audited.checksRun.length, 2, "監査した回に検査の一覧を持たない");
+
+  // 速い拍（監査を求めない回）。事実は新しくても、判定は前回のまま残る。
+  const fast = carryAudit(audited, {
+    withAudit: false,
+    failed: false,
+    staleIds: null,
+    findings: null,
+    checksRun: [],
+  });
+  assert.equal(fast.findings?.length, 1, "速い拍で所見が落ちている");
+  assert.equal(fast.checksRun.length, 2, "速い拍で検査の一覧が落ちている");
+  assert.equal(fast.auditAt, audited.auditAt, "時刻だけが動いている");
+  assert.deepEqual([...fast.staleIds], ["SPEC-001"]);
+});
+
+test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査だけ落ちるが起きない）", () => {
+  // 時刻・所見・検査は同じ判定の三つの面である。別々に動けば、画面は
+  // 「その時刻に 0 検査が走った」のような、起きていないことを述べる。
+  const rounds = [
+    { withAudit: false, failed: false, staleIds: null, findings: null, checksRun: [] },
+    { withAudit: true, failed: true, staleIds: null, findings: null, checksRun: [] },
+    { withAudit: true, failed: false, staleIds: new Set(["A"]), findings: [], checksRun: ["x"] },
+    { withAudit: false, failed: false, staleIds: null, findings: null, checksRun: [] },
+  ] as const;
+  let carry = NO_AUDIT;
+  for (const round of rounds) {
+    const before = carry;
+    carry = carryAudit(carry, round);
+    const moved = carry.auditAt !== before.auditAt;
+    // 動いたなら三つとも動く。動かないなら三つとも据え置き。
+    assert.equal(
+      moved,
+      carry.findings !== before.findings,
+      "時刻と所見が別々に動いた",
+    );
+    assert.equal(
+      moved,
+      carry.checksRun !== before.checksRun,
+      "時刻と検査の一覧が別々に動いた",
+    );
+  }
+  assert.ok(carry.auditAt, "最後まで判定を取れていない");
+  assert.deepEqual(carry.checksRun, ["x"], "最後の監査の検査が残っていない");
+});
+
+/** 見本の引き継ぎ。判定そのものを持つ形に揃える（ADR-015）。 */
+function carry(auditAt: Date | null, staleIds: ReadonlySet<string>): AuditCarry {
+  return { auditAt, staleIds, findings: staleIds.size >= 0 ? [] : null, checksRun: [] };
+}

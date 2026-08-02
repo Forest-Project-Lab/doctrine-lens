@@ -7,13 +7,26 @@
 // 付き、帯が「いま確かめた」と嘘をつく。引き継ぎの規則をここに一つだけ置く。
 //
 // ここは編集器の機能を使わない純粋な関数である（IMPL-001）。
+import type { AuditFinding } from "../doctrine/audit.js";
 
-/** 引き継ぐもの。判定そのものと、それを取った時刻。 */
+/**
+ * 引き継ぐもの。**判定そのもの**と、それを取った時刻。
+ *
+ * `staleIds` だけを引き継いでいた時期があり、そのあいだ画面は
+ * 保存のたびに所見を丸ごと失って「壊れている 0」と言い、
+ * 脚注は「0 検査を走らせた時刻」という起きていないことを述べていた。
+ * **判定から導いたものだけを引き継ぐと、判定そのものが落ちる。**
+ * 三つを一つの型に束ね、必ず同時に動かす（ADR-015）。
+ */
 export interface AuditCarry {
   /** 判定を取った時刻。一度も取れていなければ `null`。 */
   readonly auditAt: Date | null;
   /** 指紋が食い違っている文書の id。 */
   readonly staleIds: ReadonlySet<string>;
+  /** その回に返った所見そのもの。一度も取れていなければ `null`。 */
+  readonly findings: readonly AuditFinding[] | null;
+  /** その回に上流が走らせた検査の名。 */
+  readonly checksRun: readonly string[];
 }
 
 /** この回の取得がどうだったか。 */
@@ -30,9 +43,18 @@ export interface AuditRound {
    * 区別できなくなる。
    */
   readonly staleIds: ReadonlySet<string> | null;
+  /** この回に実際に返った所見。返らなければ `null`。 */
+  readonly findings: readonly AuditFinding[] | null;
+  /** この回に上流が走らせた検査の名。 */
+  readonly checksRun: readonly string[];
 }
 
-export const NO_AUDIT: AuditCarry = { auditAt: null, staleIds: new Set() };
+export const NO_AUDIT: AuditCarry = {
+  auditAt: null,
+  staleIds: new Set(),
+  findings: null,
+  checksRun: [],
+};
 
 /**
  * この回のあとに保つべき判定と時刻を返す。
@@ -47,6 +69,12 @@ export function carryAudit(
 ): AuditCarry {
   const audited = round.withAudit && !round.failed && round.staleIds !== null;
   if (!audited || round.staleIds === null) return previous;
-  return { auditAt: now(), staleIds: round.staleIds };
+  // 三つを同時に動かす。時刻だけ進む・検査の数だけ落ちる、が型の上で起きない。
+  return {
+    auditAt: now(),
+    staleIds: round.staleIds,
+    findings: round.findings,
+    checksRun: round.checksRun,
+  };
 }
 // doctrine:end SPEC-001

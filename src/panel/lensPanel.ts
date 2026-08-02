@@ -201,7 +201,8 @@ export class LensPanel {
       } else {
         const consequence = buildConsequence(snapshot.graph, id, {
           findings: snapshot.findings ?? [],
-          ranges: snapshot.ranges ?? [],
+          // 取れなかったときは null のまま渡す。空配列に潰すと「無い」と断定する。
+        ranges: snapshot.ranges,
           reverseOrphans: new Set(snapshot.reverseOrphans),
         });
         const message = {
@@ -209,7 +210,11 @@ export class LensPanel {
           view: buildView(consequence, snapshot.docMeta, viewStrings(), {
             openFile,
             auditAt,
-            titlesMissing: snapshot.docMeta.size === 0,
+            // 一件でも取れていなければ言う。全滅のときだけ言うと、
+            // 48 件中 1 件欠けが黙って通る（ADR-015）。
+            titlesMissing: snapshot.graph.nodes.some(
+              (n) => !snapshot.docMeta.get(n.id)?.title?.trim(),
+            ),
             checksRun: snapshot.checksRun.length,
           }),
         };

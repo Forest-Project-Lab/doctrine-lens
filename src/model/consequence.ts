@@ -60,6 +60,14 @@ export type Reason =
 export interface Row {
   readonly id: string;
   /**
+   * 起点と直に結ばれているか。
+   *
+   * 波は**最長距離**で決まるので、直の辺を持つ文書が後の波へ回ることがある。
+   * その行に「{X} を経由して依存している」とだけ書くと、**存在する直の辺を
+   * 無いことにする。** 両方を言うためにここで持つ（ADR-015）。
+   */
+  readonly alsoDirect: boolean;
+  /**
    * 上流が返した status を素通しする。
    *
    * 非現行が現行と交互に混ざるので、行が自分で言う必要がある（ADR-014）。
@@ -85,30 +93,73 @@ export interface Wave {
 
 /** 循環に入っていて波が決まらない組。 */
 export interface Cycle {
-  /** 循環の並び。先頭と末尾が同じ id になる（`A → B → A`）。 */
+  /**
+   * 見せるための一巡。先頭と末尾が同じ id になる（`A → B → A`）。
+   *
+   * **成分の全員を覆うとは限らない。** `A↔B, B↔C` の成分から書き下せる一巡は
+   * `A → B → A` で、`C` は載らない。件数を数えるときは `members` を使う。
+   */
   readonly path: readonly string[];
+  /** 強連結成分の全員。畳んだ件数はここから数える。 */
+  readonly members: readonly string[];
   readonly findings: readonly AuditFinding[];
 }
 
 /** 画面が出す要約。 */
+/**
+ * 画面が出す要約。
+ *
+ * **記号ごとの数（`bySymbol`）と、事実ごとの数（`facts`）を分ける。**
+ * 記号は重い順に排他なので、`broken` に負けた「足りない」は記号の数から消える。
+ * 排他は「一行にどれを出すか」の規律であって、数の規律ではない。
+ * 実測で、逆孤児かつ範囲 0 の文書に error が付くと「足りない 0 ・ 直す場所が無い 0」
+ * と出ていた。どちらも事実ではない。
+ */
 export interface Summary {
   readonly documents: number;
   readonly codeRanges: number;
-  readonly nowhere: number;
-  readonly broken: number;
-  readonly missing: number;
+  /** 記号ごとの件数。五つの和が `documents` に一致する。 */
+  readonly bySymbol: Readonly<Record<Symbol, number>>;
+  /** 事実ごとの件数。記号に負けたものも数える。互いに排他ではない。 */
+  readonly facts: {
+    readonly broken: number;
+    readonly missing: number;
+    readonly noRange: number;
+  };
+  /** 循環の本数。文書の数ではない。 */
   readonly cycles: number;
+  /** 循環に落ちて波に入らなかった文書の数。 */
+  readonly inCycle: number;
 }
 
 /** 明細ひと揃い。 */
 export interface Consequence {
   readonly origin: GraphNode | null;
+  /**
+   * 起点自身に付いている所見。
+   *
+   * 起点は行にならないので、ここに出さないと画面のどこにも現れない。
+   * 実測で、起点に `error` が付いていても「壊れている 0」と言い切っていた。
+   */
+  readonly originFindings: readonly AuditFinding[];
+  /** 起点自身の記号。所見と逆孤児と範囲の有無から、行と同じ規則で決まる。 */
+  readonly originSymbol: Symbol | null;
   readonly waves: readonly Wave[];
   readonly cycles: readonly Cycle[];
   readonly summary: Summary;
-  /** 起点に繋がらない文書の数。畳んだことを必ず言う（SPEC-006 制約）。 */
+  /** コード範囲を取れたか。取れていなければ、範囲に関する数は意味を持たない。 */
+  readonly rangesKnown: boolean;
+  /**
+   * 起点が前提にしている文書の数。
+   *
+   * この画面は「起点を変えると何が壊れるか」の向きにしか辿らないので、
+   * 起点が依っているものは一件も出ない。**それは「無関係」ではない。**
+   * 「繋がらない」に混ぜると読み手が「影響なし」と読む。
+   */
+  readonly premiseCount: number;
+  /** 帰結にも前提にも繋がらない文書の数。畳んだことを必ず言う（SPEC-006 制約）。 */
   readonly unreached: number;
-  /** 起点の外に付いている所見の数。 */
+  /** **画面のどこにも出ていない**所見の数。「起点以外」ではない。 */
   readonly findingsElsewhere: number;
 }
 
@@ -116,8 +167,14 @@ export interface Consequence {
 export interface ConsequenceContext {
   /** 上流が返した所見。34 検査すべて。 */
   readonly findings: readonly AuditFinding[];
-  /** 上流が返したコード範囲。取れていなければ空。 */
-  readonly ranges: readonly TraceRange[];
+  /**
+   * 上流が返したコード範囲。
+   *
+   * **取れなかったときは `null` を渡すこと。** 空配列を渡すと、
+   * 「本当に範囲が無い」と区別が付かず、全部の行が `?`（直す場所が無い）に化ける。
+   * 実測でそうなった（ADR-015）。
+   */
+  readonly ranges: readonly TraceRange[] | null;
   /** 上流 `--reverse-orphans` が挙げた id。 */
   readonly reverseOrphans: ReadonlySet<string>;
 }
@@ -304,11 +361,13 @@ function hasHeavyFinding(findings: readonly AuditFinding[]): boolean {
 export function symbolFor(input: {
   readonly findings: readonly AuditFinding[];
   readonly isReverseOrphan: boolean;
-  readonly rangeCount: number;
+  /** 結ばれた範囲の数。**取れていなければ `null`。** */
+  readonly rangeCount: number | null;
   readonly kind: Reason["kind"];
 }): Symbol {
   if (hasHeavyFinding(input.findings)) return "broken";
   if (input.isReverseOrphan) return "missing";
+  // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。
   if (input.rangeCount === 0) return "nowhere";
   return input.kind === "impacted" ? "review" : "fix";
 }
@@ -334,9 +393,13 @@ export function buildConsequence(
   if (!origin) {
     return {
       origin: null,
+      originFindings: [],
+      originSymbol: null,
       waves: [],
       cycles: [],
+      rangesKnown: context.ranges !== null,
       summary: emptySummary(),
+      premiseCount: 0,
       unreached: all.size,
       findingsElsewhere: context.findings.length,
     };
@@ -350,13 +413,19 @@ export function buildConsequence(
   const groupOf = new Map<string, number>();
   groups.forEach((group, at) => group.forEach((id) => groupOf.set(id, at)));
 
-  const cycles: Cycle[] = groups
-    .filter((group) => group.length > 1)
-    .map((group) => ({
-      path: cyclePath(group, neighbours),
-      findings: group.flatMap((member) => findingsFor(member, context.findings)),
-    }));
-  const inCycle = new Set(cycles.flatMap((c) => c.path));
+  // 塊そのものを持つ。`path` は見せるための一巡であって、成分の全員を覆うとは限らない。
+  // 覆わない場合（`A↔B, B↔C` など）、経路に載らない要素が行にも循環にも出ず、
+  // 「起点から届かない」件数に化けていた。実測で再現した。
+  const tangles = groups.filter((group) => group.length > 1);
+  const cycles: Cycle[] = tangles.map((group) => ({
+    path: cyclePath(group, neighbours),
+    // 成分の全員を運ぶ。画面はこの件数を言える（畳んだら必ず件数を書く）。
+    members: [...group].sort(),
+    findings: group.flatMap((member) => findingsFor(member, context.findings)),
+  }));
+  // 節点として実在するものだけを数える。辺だけが指す死んだ参照を混ぜると、
+  // `unreached` の引き算が合わなくなり、件数が負になりうる（実測で -1 になった）。
+  const inCycle = new Set(tangles.flat().filter((id) => all.has(id)));
 
   // 縮約の上で最長距離を取る。位相順に一度なめれば済む。
   const originGroup = groupOf.get(origin.id) as number;
@@ -383,14 +452,18 @@ export function buildConsequence(
     }
   }
 
+  // 取れなかったときは表を作らない。`null` のまま下へ流し、「無い」と言わない。
+  const rangesKnown = context.ranges !== null;
   const rangesById = new Map<string, TraceRange[]>();
-  for (const range of context.ranges) {
+  for (const range of context.ranges ?? []) {
     const bucket = rangesById.get(range.id) ?? [];
     bucket.push(range);
     rangesById.set(range.id, bucket);
   }
 
   const descendants = descendantCounts(scope, neighbours, groupOf);
+  // 起点と直に結ばれている相手。最長距離で後の波へ回っても、この事実は消えない。
+  const directNeighbours = new Set(neighbours.get(origin.id)?.keys() ?? []);
 
   const rows: Row[] = [];
   for (const id of [...scope].sort()) {
@@ -405,11 +478,12 @@ export function buildConsequence(
     const node = all.get(id) as GraphNode;
     rows.push({
       id,
+      alsoDirect: directNeighbours.has(id),
       status: typeof node.status === "string" ? node.status : "",
       symbol: symbolFor({
         findings: own,
         isReverseOrphan: context.reverseOrphans.has(id),
-        rangeCount: ranges.length,
+        rangeCount: rangesKnown ? ranges.length : null,
         kind: hit.kind,
       }),
       reason:
@@ -445,25 +519,91 @@ export function buildConsequence(
       ),
     }));
 
+  // 起点自身。行にならないので、ここで組まないと画面のどこにも出ない。
+  const originFindings = findingsFor(origin.id, context.findings);
+  const originRanges = rangesById.get(origin.id) ?? [];
+  const originSymbol = symbolFor({
+    findings: originFindings,
+    isReverseOrphan: context.reverseOrphans.has(origin.id),
+    rangeCount: rangesKnown ? originRanges.length : null,
+    kind: "depends-directly",
+  });
+
+  // 起点が前提にしているもの。**この画面はそこを辿らない**（設計どおり）。
+  // 辿らないことと「関係が無い」ことは別なので、件数を分けて数える。
+  // 起点自身を除く。`reachFrom` は起点を含めて返す。
+  const premises = new Set(
+    [...reachFrom(origin.id, reversed(neighbours))].filter(
+      (id) => id !== origin.id && all.has(id) && !inCycle.has(id),
+    ),
+  );
+
+  // 画面のどこかに現れた所見。ここに入らないものだけが「外」である。
+  const shown = new Set<AuditFinding>([
+    ...originFindings,
+    ...rows.flatMap((r) => r.findings),
+    ...cycles.flatMap((c) => c.findings),
+  ]);
+
+  const bySymbol: Record<Symbol, number> = {
+    broken: 0,
+    missing: 0,
+    nowhere: 0,
+    fix: 0,
+    review: 0,
+  };
+  for (const row of rows) bySymbol[row.symbol] += 1;
+
   return {
     origin,
+    originFindings,
+    originSymbol,
     waves,
     cycles,
+    rangesKnown,
     summary: {
       documents: rows.length,
       codeRanges: rows.reduce((n, r) => n + r.ranges.length, 0),
-      nowhere: rows.filter((r) => r.symbol === "nowhere").length,
-      broken: rows.filter((r) => r.symbol === "broken").length,
-      missing: rows.filter((r) => r.symbol === "missing").length,
+      bySymbol,
+      // 記号に負けた事実も数える。排他は行の規律であって数の規律ではない。
+      facts: {
+        broken: rows.filter((r) => hasHeavyFinding(r.findings)).length,
+        missing: rows.filter((r) => context.reverseOrphans.has(r.id)).length,
+        noRange: rows.filter((r) => r.ranges.length === 0).length,
+      },
       cycles: cycles.length,
+      inCycle: inCycle.size,
     },
-    unreached: all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1),
-    findingsElsewhere: context.findings.filter((f) => f.doc_id !== origin.id).length,
+    // 起点が前提にしているもの。辿る向きが違うので出さない（無関係ではない）。
+    premiseCount: premises.size,
+    unreached: Math.max(0, all.size - rows.length - inCycle.size - 1 - premises.size),
+    // 「外」は「画面のどこにも出ていない」である。「起点以外」ではない。
+    findingsElsewhere: context.findings.filter((f) => !shown.has(f)).length,
   };
 }
 
+/** 隣接を逆向きにする。起点が前提にしているものを辿るために使う。 */
+function reversed(neighbours: Neighbours): Neighbours {
+  const out = new Map<string, Map<string, Reason["kind"]>>();
+  for (const [from, bucket] of neighbours) {
+    for (const [to, kind] of bucket) {
+      const back = out.get(to) ?? new Map<string, Reason["kind"]>();
+      back.set(from, kind);
+      out.set(to, back);
+    }
+  }
+  return out;
+}
+
 function emptySummary(): Summary {
-  return { documents: 0, codeRanges: 0, nowhere: 0, broken: 0, missing: 0, cycles: 0 };
+  return {
+    documents: 0,
+    codeRanges: 0,
+    bySymbol: { broken: 0, missing: 0, nowhere: 0, fix: 0, review: 0 },
+    facts: { broken: 0, missing: 0, noRange: 0 },
+    cycles: 0,
+    inCycle: 0,
+  };
 }
 
 /**

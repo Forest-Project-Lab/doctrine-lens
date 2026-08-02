@@ -107,12 +107,18 @@ export const messages = {
  */
 export function viewStrings(): ViewStrings {
   return {
-    summaryCounts: t("{0} documents to fix · {1} code ranges · {2} with nowhere to fix", "{0}", "{1}", "{2}"),
-    summaryJudgements: t("broken {0} · missing {1} · cycles {2}", "{0}", "{1}", "{2}"),
+    summaryCounts: t("{0} documents to fix · {1} code ranges", "{0}", "{1}"),
+    summarySymbols: t("× {0} · + {1} · ? {2} · ! {3} · ~ {4}", "{0}", "{1}", "{2}", "{3}", "{4}"),
+    summaryFacts: t(
+      "already broken {0} · missing {1} · no code range {2} (a row shows only its heaviest)",
+      "{0}", "{1}", "{2}",
+    ),
+    summaryCycles: t("{0} cycles ({1} documents)", "{0}", "{1}"),
     waveHeading: t("Wave {0}", "{0}"),
     waveCount: t("{0} documents", "{0}"),
-    waveFirstNote: t("directly on the origin"),
-    waveLaterNote: t("not settled until wave {0} is done", "{0}"),
+    waveFirstNote: t("nothing else has to be fixed first"),
+    waveLaterNote: t("something in wave {0} has to be fixed first", "{0}"),
+    reasonAlsoDirect: t("It also has {0} directly.", "{0}"),
     reasonDirect: t("Has {0} in depends_on. Its premise changes.", "{0}"),
     reasonThrough: t("Depends on {1} through {0}.", "{0}", "{1}"),
     reasonImpacted: t("{0} declares that it impacts this.", "{0}"),
@@ -124,8 +130,13 @@ export function viewStrings(): ViewStrings {
     noOriginNoFile: t(
       "No origin. This screen only answers \"what happens if I change what I have open\". Open a file that carries a doctrine marker, or a .md inside the tree.",
     ),
-    footHidden: t("{0} documents are not reachable from the origin and are not listed", "{0}"),
-    footElsewhere: t("{0} findings sit outside the origin", "{0}"),
+    footPremises: t(
+      "{0} documents the origin relies on are not listed — this screen only walks forward",
+      "{0}",
+    ),
+    footHidden: t("{0} documents reach the origin in neither direction and are not listed", "{0}"),
+    footElsewhere: t("{0} findings are not shown anywhere on this screen", "{0}"),
+    originFindingsNote: t("Upstream says this document itself is broken:"),
     footAudit: t("Upstream docs-audit ran {1} checks at {0}", "{0}", "{1}"),
     footAuditNever: t("Upstream docs-audit has not run yet"),
     footNoTitles: t("Some titles could not be read; those rows show the id instead"),

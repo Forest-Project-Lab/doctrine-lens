@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-30
+updated: 2026-08-02
 sources: []
 depends_on: [SPEC-001, SPEC-004, SPEC-005, SPEC-006]
 llm_context: task
@@ -60,7 +60,7 @@ llm_context: task
 | 範囲の見出し | `src/codelens/traceLens.ts` | 印が囲む範囲の上に結ばれた文書を示す |
 | 範囲の帯 | `src/codelens/decorations.ts` | 範囲の行に余白の帯を付ける |
 | 経路 | `src/model/paths.ts` | 区切りと大小文字を吸収して突き合わせる |
-| 拍の引き継ぎ | `src/model/cadence.ts` | 速い拍と遅い拍のあいだで判定と時刻をどう保つか |
+| 拍の引き継ぎ | `src/model/cadence.ts` | 速い拍と遅い拍のあいだで**判定そのもの**（所見・検査・食い違いの id）と時刻をどう保つか |
 | 帰結の組み立て | `src/model/consequence.ts` | 起点からの波・五つの記号・並び順を決める |
 | 明細の組み立て | `src/model/view.ts` | 帰結と題名と訳文から、そのまま描ける形を作る。判断はここで終える |
 | 題名の取得 | `src/doctrine/titles.ts` | 上流の frontmatter パーサから題名と更新日を取る |

@@ -6,7 +6,13 @@
 //
 // `<svg>` を一要素も作らない。座標を持たない。深度を持たない。
 // 表示の仕方を変える操作子を持たない（REQ-002・ADR-012）。
-import type { ConsequenceView, RowView, ToHost, ToWebview } from "../shared/protocol.js";
+import type {
+  ConsequenceView,
+  FindingView,
+  RowView,
+  ToHost,
+  ToWebview,
+} from "../shared/protocol.js";
 
 declare function acquireVsCodeApi(): {
   postMessage(message: ToHost): void;
@@ -44,6 +50,27 @@ function text(tag: string, className: string, content: string): HTMLElement {
 }
 
 /** 一行を組む。押すと文書が開く。 */
+/** 所見一件。上流の六項を並べるだけで、重さの判断は足さない。 */
+function drawFinding(f: FindingView): HTMLElement {
+  const box = document.createElement("div");
+  box.className = `finding ${f.severity}`;
+  if (f.severity) box.append(text("span", "severity", f.severity));
+  box.append(text("span", "message", f.message));
+  if (f.check) box.append(text("span", "check", f.check));
+  if (f.path) {
+    const link = document.createElement("button");
+    link.type = "button";
+    link.className = "at";
+    link.textContent = f.path;
+    link.addEventListener("click", (event) => {
+      event.stopPropagation();
+      send({ kind: "openRange", path: f.path, beginLine: 1, endLine: 1 });
+    });
+    box.append(link);
+  }
+  return box;
+}
+
 function drawRow(row: RowView): HTMLElement {
   const item = document.createElement("div");
   item.className = `row ${row.symbol}`;
@@ -63,8 +90,8 @@ function drawRow(row: RowView): HTMLElement {
 
   body.append(text("div", "reason", row.reason));
   if (row.succeeds) body.append(text("div", "succeeds", row.succeeds));
-  // 上流の所見の文はそのまま出す。書き直さない（SPEC-006 制約）。
-  for (const finding of row.findings) body.append(text("div", "finding", finding));
+  // 上流の所見はそのまま出す。書き直さない（SPEC-006 制約）。
+  for (const finding of row.findings) body.append(drawFinding(finding));
 
   for (const range of row.ranges) {
     const link = document.createElement("button");
@@ -100,12 +127,16 @@ function draw(view: ConsequenceView): void {
 
   if (view.origin) {
     const box = document.createElement("section");
-    box.className = "origin";
-    box.append(
-      text("h1", "", view.origin.title),
-      text("p", "detail", view.origin.detail),
-      text("p", "summary", view.summary),
-    );
+    box.className = `origin${view.origin.symbol ? ` ${view.origin.symbol}` : ""}`;
+    const head = document.createElement("h1");
+    // 起点の記号。行と同じ字を、行と同じ規則で出す。
+    if (view.origin.symbol) head.append(text("span", "mark", MARK[view.origin.symbol]));
+    head.append(text("span", "", view.origin.title));
+    box.append(head, text("p", "detail", view.origin.detail));
+    // 起点自身の所見。行にならないので、ここに出さないと画面から消える。
+    if (view.origin.findingsNote) box.append(text("p", "note", view.origin.findingsNote));
+    for (const finding of view.origin.findings) box.append(drawFinding(finding));
+    box.append(text("p", "summary", view.summary));
     sheet.append(box);
   } else {
     // 空の絵を出さず、文で断る。何を開けばよいかまで書く（SPEC-006 エラー時挙動）。
@@ -132,7 +163,7 @@ function draw(view: ConsequenceView): void {
     for (const cycle of view.cycles) {
       // 循環は一行の文字列で書き下す。図より短く、絡んだ線より遥かに読める。
       section.append(text("div", "path", cycle.path));
-      for (const finding of cycle.findings) section.append(text("div", "finding", finding));
+      for (const finding of cycle.findings) section.append(drawFinding(finding));
     }
     sheet.append(section);
   }

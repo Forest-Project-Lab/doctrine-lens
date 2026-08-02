@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-30
-updated: 2026-07-30
+updated: 2026-08-02
 sources: []
 depends_on: [CHANGE-005]
 impacts: [SPEC-004, SPEC-006, TEST-004, TEST-006, IMPL-001]

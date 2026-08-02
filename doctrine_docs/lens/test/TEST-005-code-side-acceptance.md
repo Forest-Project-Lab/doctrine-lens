@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-29
+updated: 2026-08-02
 sources: []
 depends_on: [SPEC-005]
 llm_context: task
@@ -50,6 +50,11 @@ SPEC-005 の受入基準の十項に対応させる。編集器を要する項�
 
 この処理は `tools/run-vscode-test.mjs` が持つ。落とした変数名を毎回表に出すので、
 効いていることが走らせるたびに見える。
+
+## 上流の変更への追随
+
+`SPEC-005` に「所見の六項化に追随を要さない」の一節が増えた（2026-08-02）。
+**受入は変わらない。** 見出しと帯が読む値も、確かめ方も同じである。
 
 ## 退行観点
 

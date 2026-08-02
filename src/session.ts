@@ -10,7 +10,7 @@ import type { RunOptions } from "./doctrine/cli.js";
 import { GraphStore, type PartialFetch, type Snapshot } from "./doctrine/graph.js";
 import { locateDocsRoot, locatePluginRoot } from "./doctrine/locate.js";
 import { messages } from "./l10n.js";
-import { carryAudit, NO_AUDIT } from "./model/cadence.js";
+import { carryAudit, NO_AUDIT, type AuditCarry } from "./model/cadence.js";
 import { toRelative } from "./model/paths.js";
 import { fetchTraceRanges } from "./doctrine/trace.js";
 import { actionOnSave, sameRanges } from "./model/trace.js";
@@ -83,7 +83,7 @@ export class LensSession {
   #probeTimer: ReturnType<typeof setTimeout> | undefined;
   #auditTimer: ReturnType<typeof setTimeout> | undefined;
   #state: SessionState = EMPTY_STATE;
-  #staleIds: ReadonlySet<string> = NO_AUDIT.staleIds;
+  #carry: AuditCarry = NO_AUDIT;
   #watchedRoot: string | undefined;
   /**
    * 最後に見ていた統治木。
@@ -131,7 +131,7 @@ export class LensSession {
 
   /** 上流が指紋の食い違いを挙げた文書の id。判定は上流が済ませてある（ADR-005）。 */
   get staleIds(): ReadonlySet<string> {
-    return this.#staleIds;
+    return this.#carry.staleIds;
   }
 
   /** 統治木を持つ作業フォルダの候補（ADR-006）。 */
@@ -162,7 +162,7 @@ export class LensSession {
    */
   #forget(): void {
     this.#store.clear();
-    this.#staleIds = NO_AUDIT.staleIds;
+    this.#carry = NO_AUDIT;
     this.#watchedRoot = undefined;
     this.#lastDocsRoot = undefined;
   }
@@ -287,7 +287,7 @@ export class LensSession {
     const override = config.get<string>("pluginPath", "").trim();
     const pluginRoot = locatePluginRoot(chosen.folder, override);
     if (!pluginRoot) {
-      this.#staleIds = NO_AUDIT.staleIds;
+      this.#carry = NO_AUDIT;
       // 設定で指したのに解決できない場合と、そもそも入っていない場合を分ける。
       // 分けないと、入っているのに指定を誤った利用者へ「導入せよ」と案内して
       // しまい、直し方に辿り着けない。
@@ -325,18 +325,25 @@ export class LensSession {
       // 監査を飛ばした回は、前回の判定と時刻を保つ（ADR-008・受入基準 10）。
       // 引き継ぎの規則は carryAudit に一つだけ置いてある。
       const findings = result.failure === null ? result.snapshot?.findings : null;
-      const carried = carryAudit(
-        { auditAt: this.#state.auditAt, staleIds: this.#staleIds },
-        {
-          withAudit,
-          failed: result.failure !== null,
-          staleIds: findings ? staleDocumentIds(findings) : null,
-        },
-      );
-      const auditAt = carried.auditAt;
-      this.#staleIds = carried.staleIds;
+      this.#carry = carryAudit(this.#carry, {
+        withAudit,
+        failed: result.failure !== null,
+        staleIds: findings ? staleDocumentIds(findings) : null,
+        findings: findings ?? null,
+        checksRun: result.snapshot?.checksRun ?? [],
+      });
+      const auditAt = this.#carry.auditAt;
+      // 監査を飛ばした回の取得は判定を持たない。持たない値で前回の判定を
+      // 上書きしない。事実（図・範囲・題名）は新しいものをそのまま出す。
+      const snapshot = result.snapshot
+        ? {
+            ...result.snapshot,
+            findings: this.#carry.findings ? [...this.#carry.findings] : null,
+            checksRun: [...this.#carry.checksRun],
+          }
+        : result.snapshot;
       this.#emit({
-        snapshot: result.snapshot,
+        snapshot,
         failure: result.failure,
         partial: result.partial,
         unavailable: null,
@@ -344,7 +351,7 @@ export class LensSession {
         candidate: chosen,
         candidateCount: candidates.length,
         auditAt,
-        staleCount: this.#staleIds.size,
+        staleCount: this.#carry.staleIds.size,
       });
       // 見る木が決まった／変わったら、その木を監視し直す。
       if (this.#watchedRoot !== chosen.docsRoot) {
