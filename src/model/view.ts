@@ -59,8 +59,10 @@ export interface ViewStrings {
   readonly footPremises: string;
   /** `帰結にも前提にも繋がらない {0} 文書は出していない` */
   readonly footHidden: string;
-  /** `画面に出していない所見が {0} 件` */
+  /** `起点に繋がらない {0} 文書に所見が付いている` */
   readonly footElsewhere: string;
+  /** `この画面の問いに属さない所見が {0} 件（どの文書にも紐づかない）` */
+  readonly footUnattached: string;
   /** 起点自身に所見が付いているときの前置き */
   readonly originFindingsNote: string;
   /** `上流 docs-audit（{1} 検査）を {0} に実行` */
@@ -254,8 +256,16 @@ export function buildView(
   if (consequence.unreached > 0) {
     footnotes.push(fill(strings.footHidden, String(consequence.unreached)));
   }
-  if (consequence.findingsElsewhere > 0) {
-    footnotes.push(fill(strings.footElsewhere, String(consequence.findingsElsewhere)));
+  // 行き先が在るものは、行き先を出す（ADR-019）。
+  if (consequence.findingsElsewhereAt.length > 0) {
+    footnotes.push(
+      fill(strings.footElsewhere, String(consequence.findingsElsewhereAt.length)),
+    );
+  }
+  // 行き先が無いものは、無いと言う。「出していない」とだけ書くと、
+  // 読み手は「探せばどこかで出る」と読む。出ない。
+  if (consequence.findingsUnattached > 0) {
+    footnotes.push(fill(strings.footUnattached, String(consequence.findingsUnattached)));
   }
   if (cycles.length > 0) {
     footnotes.push(fill(strings.cycleNote, String(cycles.length)));
@@ -280,6 +290,8 @@ export function buildView(
     waves,
     cycles,
     footnotes,
+    // 押せる行き先。押すとその文書が開き、開けば起点になる（ADR-019）。
+    findingsAt: [...consequence.findingsElsewhereAt],
     // 画面に実際に出た文字列と辞書を突き合わせる。
     // **出す語の一覧を実装が持たない**（ADR-018）。
     terms: termsIn(

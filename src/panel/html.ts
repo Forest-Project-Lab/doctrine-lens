@@ -241,6 +241,14 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 }
 .foot p { margin: 0 0 4px; }
 .foot .legend { margin: 8px 0 0; display: flex; gap: 12px; flex-wrap: wrap; }
+.foot .at { margin: 4px 0 0; display: flex; gap: 12px; flex-wrap: wrap; }
+.foot .at button {
+  padding: 0; border: none; background: none; cursor: pointer;
+  font-family: var(--vscode-editor-font-family); font-size: 12px;
+  color: var(--vscode-textLink-foreground);
+}
+.foot .at button:hover { text-decoration: underline; }
+.foot .at button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
 .foot .terms { margin: 8px 0 0; }
 .foot .terms dt { font-weight: 600; margin: 8px 0 0; }
 .foot .terms dd { margin: 0; }

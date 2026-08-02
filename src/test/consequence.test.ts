@@ -264,7 +264,7 @@ test("006-9b. 起点の外の所見の件数を脚注に出す（黙って捨て
     ...NO_CONTEXT,
     findings: [finding("よそ", "info", "よその話")],
   });
-  assert.equal(c.findingsElsewhere, 1);
+  assert.deepEqual([...c.findingsElsewhereAt], ["よそ"], "行き先を挙げていない");
 });
 
 // --- 記号 ------------------------------------------------------------------
@@ -403,7 +403,8 @@ test("006-17. 「外」は「画面のどこにも出ていない」である（
     findings: [finding("P", "error", "行に出る"), finding("よそ", "info", "出ない")],
   });
   assert.equal(c.waves[0]?.rows[0]?.findings.length, 1, "行に出ている");
-  assert.equal(c.findingsElsewhere, 1, "行に出ている所見を「外」に数えている");
+  // 行に出ている所見は「外」に数えない。外なのは「よそ」の一件だけ。
+  assert.deepEqual([...c.findingsElsewhereAt], ["よそ"], "行に出ている所見を「外」に数えている");
 });
 
 test("006-18. 記号に負けた事実も数える（排他は行の規律であって数の規律ではない）", () => {
@@ -480,6 +481,47 @@ test("006-24. 所見の六項がそのまま届く（severity や path を捨て
   assert.deepEqual([...(got?.refs ?? [])], ["X"]);
 });
 
+
+test("006-25. 出ていない所見を、行き先の在るものと無いものに分ける", () => {
+  const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [
+      finding("よそ", "error", "起点に繋がらない文書の所見"),
+      // 上流の一部の検査は doc_id を空で挙げる。どの起点でも明細に出ない。
+      { ...finding("", "advisory", "どの文書にも紐づかない"), refs: [] },
+    ],
+  });
+  assert.deepEqual([...c.findingsElsewhereAt], ["よそ"], "行き先を挙げていない");
+  assert.equal(c.findingsUnattached, 1, "属さないものを数えていない");
+});
+
+test("006-25b. 行き先が押せる形で画面へ届く", () => {
+  const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [finding("よそ", "error", "所見")],
+  });
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.deepEqual([...view.findingsAt], ["よそ"], "行き先が画面へ届いていない");
+  assert.ok(view.footnotes.some((f) => f.includes("行ける 1")), `脚注: ${view.footnotes}`);
+});
+
+test("006-25c. refs だけで紐づく所見も「行き先が在る」側に入れる", () => {
+  const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
+  const f = { ...finding("", "warn", "refs で指す"), refs: ["よそ"] };
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
+  assert.deepEqual([...c.findingsElsewhereAt], ["よそ"]);
+  assert.equal(c.findingsUnattached, 0, "refs を見ていない");
+});
+
+test("006-25d. 属さない所見が無ければ、その脚注を出さない", () => {
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.ok(!view.footnotes.some((f) => f.includes("属さない")), "説明だけが浮く");
+  assert.deepEqual([...view.findingsAt], []);
+});
+
 // --- 道具 ------------------------------------------------------------------
 
 const CONTEXT = {
@@ -510,7 +552,8 @@ function strings(): Parameters<typeof buildView>[2] {
     noOriginNoFile: "起点が無い",
     footPremises: "前提 {0}",
     footHidden: "隠した {0}",
-    footElsewhere: "外に {0}",
+    footElsewhere: "行ける {0} 文書",
+    footUnattached: "属さない {0} 件",
     originFindingsNote: "起点自身が壊れている:",
     footAudit: "監査 {0}／{1} 検査",
     footAuditNever: "監査まだ",

@@ -106,6 +106,13 @@ export interface ConsequenceView {
   readonly cycles: readonly CycleView[];
   /** 脚注の各行。畳んだ件数・上流の名前と時刻。 */
   readonly footnotes: readonly string[];
+  /**
+   * 画面に出ていない所見が付いている文書の id。**押せる行き先**（ADR-019）。
+   *
+   * 押すとその文書が開き、開けば起点になる。件数だけを出して
+   * 読み手に手が無い状態を「隠していない」と呼ばない。
+   */
+  readonly findingsAt: readonly string[];
   /** 記号の語彙（`×壊れている` など）。 */
   readonly legend: readonly string[];
   /**

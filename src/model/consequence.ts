@@ -159,8 +159,21 @@ export interface Consequence {
   readonly premiseCount: number;
   /** 帰結にも前提にも繋がらない文書の数。畳んだことを必ず言う（SPEC-006 制約）。 */
   readonly unreached: number;
-  /** **画面のどこにも出ていない**所見の数。「起点以外」ではない。 */
-  readonly findingsElsewhere: number;
+  /**
+   * 画面に出ていない所見のうち、**どの文書にも紐づかない**ものの数。
+   *
+   * 上流の一部の検査は `doc_id` を空で挙げる。それらは**どの起点を開いても
+   * 明細に出ない**——この画面の問いの外に在る。行き先を作れないので、
+   * 作れるふりをせず「属さない」と言う（ADR-019）。
+   */
+  readonly findingsUnattached: number;
+  /**
+   * 画面に出ていない所見が付いている文書の id。
+   *
+   * **行き先である。** 押せばその文書が開き、開けば起点になる。
+   * 件数だけを出して読み手に手が無い状態を「隠していない」と呼ばない（ADR-019）。
+   */
+  readonly findingsElsewhereAt: readonly string[];
 }
 
 /** 組み立てに要る、グラフの外から来る値。 */
@@ -343,6 +356,22 @@ function cyclePath(group: readonly string[], neighbours: Neighbours): string[] {
   return [...group, start];
 }
 
+/**
+ * その所見が紐づいている文書の id。
+ *
+ * 上流は `doc_id` と `refs` の二つの持ち方をする。どちらも空なら、
+ * その所見は**どの文書にも属さない**（上流の一部の検査がそう挙げる）。
+ * **検査名で判じない**——上流が返した値だけを見る（REQ-003・ADR-019）。
+ */
+function attachedTo(finding: AuditFinding): string[] {
+  const out = new Set<string>();
+  if (typeof finding.doc_id === "string" && finding.doc_id) out.add(finding.doc_id);
+  for (const ref of Array.isArray(finding.refs) ? finding.refs : []) {
+    if (typeof ref === "string" && ref) out.add(ref);
+  }
+  return [...out];
+}
+
 /** その文書に付いている所見。上流の文をそのまま運ぶ。 */
 function findingsFor(id: string, findings: readonly AuditFinding[]): AuditFinding[] {
   return findings.filter((f) => f.doc_id === id || (f.refs ?? []).includes(id));
@@ -401,7 +430,10 @@ export function buildConsequence(
       summary: emptySummary(),
       premiseCount: 0,
       unreached: all.size,
-      findingsElsewhere: context.findings.length,
+      findingsUnattached: context.findings.filter((f) => !attachedTo(f).length).length,
+      findingsElsewhereAt: [
+        ...new Set(context.findings.flatMap((f) => attachedTo(f))),
+      ].sort(),
     };
   }
 
@@ -545,6 +577,9 @@ export function buildConsequence(
     ...cycles.flatMap((c) => c.findings),
   ]);
 
+  // 画面に出ていない所見。ここから行き先を引く。
+  const hidden = context.findings.filter((f) => !shown.has(f));
+
   const bySymbol: Record<Symbol, number> = {
     broken: 0,
     missing: 0,
@@ -578,7 +613,12 @@ export function buildConsequence(
     premiseCount: premises.size,
     unreached: Math.max(0, all.size - rows.length - inCycle.size - 1 - premises.size),
     // 「外」は「画面のどこにも出ていない」である。「起点以外」ではない。
-    findingsElsewhere: context.findings.filter((f) => !shown.has(f)).length,
+    // そのうえで、**行き先が在るものと無いものを分ける**（ADR-019）。
+    // 属するかどうかは `doc_id`（と `refs`）で判じる。検査名を実装が持たない。
+    findingsUnattached: hidden.filter((f) => !attachedTo(f).length).length,
+    findingsElsewhereAt: [
+      ...new Set(hidden.flatMap((f) => attachedTo(f))),
+    ].sort(),
   };
 }
 
