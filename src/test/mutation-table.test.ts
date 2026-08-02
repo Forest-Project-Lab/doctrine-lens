@@ -64,6 +64,82 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
   );
 });
 
+test("仕様の受入がすべて受入基準の節に在り、番号が飛ばない", () => {
+  // **受入は「受入基準」の節に在る。** 別の節へ紛れ込むと、そこが受入だと
+  // 誰も読まない。実測で、`SPEC-006` の受入 26 件のうち 12 件が
+  // 「## 実装の指紋」の節の本文として置かれ、末尾の sha256 と同居していた。
+  //
+  // 番号の飛びも見る。飛んでいたら、消えたのか書き忘れたのかが読めない。
+  for (const file of specFiles()) {
+    const text = readFileSync(file, "utf8");
+    if (!text.includes("## 受入基準")) continue;
+    const name = file.slice(PROJECT.length + 1);
+
+    const outside: string[] = [];
+    let section = "";
+    for (const line of text.split("\n")) {
+      if (line.startsWith("## ")) section = line.slice(3).trim();
+      const m = /^(\d+)\. /.exec(line);
+      if (m && section !== "受入基準" && /^(実装の指紋|覆わないもの)$/.test(section)) {
+        outside.push(`${name}: ${section} の下に「${m[1]}.」`);
+      }
+    }
+    assert.deepEqual(outside, [], "受入が受入基準の節の外に在る");
+
+    const body = ((text.split("## 受入基準")[1] ?? "").split("\n## ")[0] ?? "") as string;
+    const numbers = [...body.matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]));
+    assert.ok(numbers.length > 0, `${name}: 受入を読み取れていない`);
+    const expected = numbers.map((_, i) => i + 1);
+    assert.deepEqual(numbers, expected, `${name}: 受入の番号が 1 から連番でない`);
+  }
+});
+
+/** 統治木の仕様（`SPEC-*.md`）を集める。 */
+function specFiles(): string[] {
+  const dir = join(PROJECT, "doctrine_docs", "lens", "spec");
+  return readdirSync(dir)
+    .filter((n) => n.startsWith("SPEC-") && n.endsWith(".md"))
+    .map((n) => join(dir, n));
+}
+
+test("仕様の受入がすべて、番号つきの試験か「画面側」の宣言で受け持たれている", () => {
+  // **番号を飾りにしない。** 実測で、`SPEC-006` の受入 15〜22 に対し試験は
+  // 16・17・19・15・20・21・25 とばらばらだった。誰も突き合わせていないので
+  // ずれても気づかない。受入 21（語の定義）には番号つきの試験が一件も無く、
+  // 仕様に番号の無い主題が四つ番号を占めていた（`CHANGE-011`）。
+  //
+  // 単体試験で見られない受入（編集器・実物の画面・CSS）は `TEST-006` が
+  // 「画面側」と宣言する。**宣言も試験も無い受入を、ここで落とす。**
+  const spec = readFileSync(
+    join(PROJECT, "doctrine_docs", "lens", "spec", "SPEC-006-consequence-list.md"),
+    "utf8",
+  );
+  const body = ((spec.split("## 受入基準")[1] ?? "").split("\n## ")[0] ?? "") as string;
+  const numbers = [...body.matchAll(/^(\d+)\. /gm)].map((m) => Number(m[1]));
+  assert.ok(numbers.length > 20, `受入を読み取れていない（${numbers.length} 件）`);
+
+  const acceptance = readFileSync(
+    join(PROJECT, "doctrine_docs", "lens", "test", "TEST-006-consequence-acceptance.md"),
+    "utf8",
+  );
+  const declared = new Set(
+    [...acceptance.matchAll(/^\| (\d+) \| 画面側/gm)].map((m) => Number(m[1])),
+  );
+
+  const tested = new Set<number>();
+  for (const file of testSources(join(PROJECT, "src", "test"))) {
+    for (const m of readFileSync(file, "utf8").matchAll(/^test\(\s*"006-(\d+)[a-z]?\. /gm)) {
+      tested.add(Number(m[1]));
+    }
+  }
+
+  const orphans = numbers.filter((n) => !tested.has(n) && !declared.has(n));
+  assert.deepEqual(orphans, [], "試験も「画面側」の宣言も無い受入が在る");
+
+  const strays = [...tested].filter((n) => !numbers.includes(n)).sort((a, b) => a - b);
+  assert.deepEqual(strays, [], "仕様に無い受入番号を名乗る試験が在る");
+});
+
 test("試験の名が重複していない（潰しの報告が、どれが捕まえたかを名で言う）", () => {
   // `tools/mutate-verdict.mjs` の `namesOfFailed` は `not ok N - <名>` から
   // **名前だけ**を取る。同じ名の試験が二つ在ると、報告のどちらを指しているかが

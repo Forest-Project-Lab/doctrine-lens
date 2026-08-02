@@ -3,7 +3,7 @@ id: CHANGE-010
 title: 「現行だ」と言うのをやめる
 type: CHANGE
 domain: lens
-status: proposed
+status: accepted
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02

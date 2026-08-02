@@ -459,7 +459,7 @@ test("深い鎖でも呼び出し段が尽きない（再帰で書くと落ち�
 
 // --- ADR-017: 画面が確かめていないことを言わない -----------------------------
 
-test("006-15. 強連結成分の全員が数えられる（一巡に載らない要素が消えない）", () => {
+test("006-18. 強連結成分の全員が数えられる（一巡に載らない要素が消えない）", () => {
   // A↔B, B↔C。A から書き下せる一巡は A→B→A で、C は経路に載らない。
   // 経路から件数を数えていたので、C は行にも循環にも出ず「届かない」に化けていた。
   const graph = graphOf(["O", "A", "B", "C"], ["O>A", "A>B", "B>A", "B>C", "C>B"]);
@@ -470,14 +470,14 @@ test("006-15. 強連結成分の全員が数えられる（一巡に載らない
   assert.equal(c.unreached, 0, "届くものを「届かない」と数えない");
 });
 
-test("006-15b. 件数が負にならない（辺だけが指す死んだ参照）", () => {
+test("006-18b. 件数が負にならない（辺だけが指す死んだ参照）", () => {
   const graph = graphOf(["O", "A"], ["O>A", "A>幽霊", "幽霊>A"]);
   const c = buildConsequence(graph, "O", NO_CONTEXT);
   assert.ok(c.unreached >= 0, `件数が負である: ${c.unreached}`);
   assert.equal(c.unreached, 0);
 });
 
-test("006-16. 起点自身の所見が画面に届く（壊れていても 0 と言わない）", () => {
+test("006-15. 起点自身の所見が画面に届く（壊れていても 0 と言わない）", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -491,7 +491,7 @@ test("006-16. 起点自身の所見が画面に届く（壊れていても 0 と
   assert.equal(view.origin?.findings[0]?.severity, "error");
 });
 
-test("006-17. 「外」は「画面のどこにも出ていない」である（起点以外ではない）", () => {
+test("006-16. 「外」は「画面のどこにも出ていない」である（起点以外ではない）", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -502,7 +502,7 @@ test("006-17. 「外」は「画面のどこにも出ていない」である（
   assert.deepEqual([...c.findingsElsewhereAt], ["よそ"], "行に出ている所見を「外」に数えている");
 });
 
-test("006-18. 記号に負けた事実も数える（排他は行の規律であって数の規律ではない）", () => {
+test("006-17b. 記号に負けた事実も数える（排他は行の規律であって数の規律ではない）", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -514,14 +514,14 @@ test("006-18. 記号に負けた事実も数える（排他は行の規律であ
   assert.equal(c.summary.facts.noRange, 1, "範囲が無い事実が数から消えている");
 });
 
-test("006-19. 記号ごとの件数の和が、直すことになる文書の数に一致する", () => {
+test("006-17. 記号ごとの件数の和が、直すことになる文書の数に一致する", () => {
   const graph = graphOf(["O", "A", "B", "C"], ["O>A", "O>B", "O~C"]);
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: [range("A")] });
   const sum = Object.values(c.summary.bySymbol).reduce((a, b) => a + b, 0);
   assert.equal(sum, c.summary.documents, `和が合わない: ${JSON.stringify(c.summary.bySymbol)}`);
 });
 
-test("006-20. 起点が前提にしているものを「繋がらない」に混ぜない", () => {
+test("006-19. 起点が前提にしているものを「繋がらない」に混ぜない", () => {
   // O は A に依存し、B は O に依存する。C はどちらにも繋がらない。
   const graph = graphOf(["O", "A", "B", "C"], ["A>O", "O>B"]);
   const c = buildConsequence(graph, "O", NO_CONTEXT);
@@ -534,7 +534,7 @@ test("006-20. 起点が前提にしているものを「繋がらない」に混
 });
 
 
-test("006-21. 範囲を取れなかったことと、範囲が無いことを区別する", () => {
+test("006-20. 範囲を取れなかったことと、範囲が無いことを区別する", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   // 取れなかった（null）。「直す場所が無い」と断定してはならない。
   const unknown = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: null });
@@ -546,7 +546,7 @@ test("006-21. 範囲を取れなかったことと、範囲が無いことを区
   assert.equal(known.waves[0]?.rows[0]?.symbol, "nowhere");
 });
 
-test("006-22. 迂回路だけを名乗って、存在する直の辺を無いことにしない", () => {
+test("006-27. 迂回路だけを名乗って、存在する直の辺を無いことにしない", () => {
   // P は O を直に depends_on に持ち、かつ M を経由してもいる（最長距離で第 2 波）。
   const graph = graphOf(["O", "M", "P"], ["O>M", "O>P", "M>P"]);
   const c = buildConsequence(graph, "O", NO_CONTEXT);
@@ -559,13 +559,13 @@ test("006-22. 迂回路だけを名乗って、存在する直の辺を無いこ
   assert.ok(shown.includes("直にも持つ"), `直の辺を名乗っていない: ${shown}`);
 });
 
-test("空白だけの題名は id へ落とす（受入 5）", () => {
+test("006-5c. 空白だけの題名は id へ落とす", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const meta: DocMetaIndex = new Map([["P", { title: "   ", updated: "", supersededBy: "" }]]);
   assert.equal(buildView(c, meta, strings(), CONTEXT).waves[0]?.rows[0]?.title, "P");
 });
 
-test("所見の六項がそのまま届く。severity や path を捨てない（受入 9）", () => {
+test("006-9c. 所見の六項がそのまま届く（severity や path を捨てない）", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const f = { ...finding("P", "error", "壊れている"), check: "dead_link", path: "a/b.md", refs: ["X"] };
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
@@ -577,7 +577,7 @@ test("所見の六項がそのまま届く。severity や path を捨てない�
 });
 
 
-test("出ていない所見を、行き先の在るものと無いものに分ける（受入 22）", () => {
+test("006-22. 出ていない所見を、行き先の在るものと無いものに分ける", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -591,7 +591,7 @@ test("出ていない所見を、行き先の在るものと無いものに分�
   assert.equal(c.findingsUnattached, 1, "属さないものを数えていない");
 });
 
-test("行き先が押せる形で画面へ届く（受入 22）", () => {
+test("006-22b. 行き先が押せる形で画面へ届く", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -602,7 +602,7 @@ test("行き先が押せる形で画面へ届く（受入 22）", () => {
   assert.ok(view.footnotes.some((f) => f.includes("行ける 1")), `脚注: ${view.footnotes}`);
 });
 
-test("refs だけで紐づく所見も「行き先が在る」側に入れる（受入 22）", () => {
+test("006-22c. refs だけで紐づく所見も「行き先が在る」側に入れる", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const f = { ...finding("", "warn", "refs で指す"), refs: ["よそ"] };
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
@@ -610,7 +610,7 @@ test("refs だけで紐づく所見も「行き先が在る」側に入れる（
   assert.equal(c.findingsUnattached, 0, "refs を見ていない");
 });
 
-test("属さない所見が無ければ、その脚注を出さない（受入 22）", () => {
+test("006-22d. 属さない所見が無ければ、その脚注を出さない", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const view = buildView(c, new Map(), strings(), CONTEXT);
   assert.ok(!view.footnotes.some((f) => f.includes("属さない")), "説明だけが浮く");
