@@ -59,6 +59,13 @@ export type Reason =
 /** 明細の一行。 */
 export interface Row {
   readonly id: string;
+  /**
+   * 上流が返した status を素通しする。
+   *
+   * 非現行が現行と交互に混ざるので、行が自分で言う必要がある（ADR-014）。
+   * 語彙をこちらが持たない——値をそのまま運ぶだけである（REQ-003）。
+   */
+  readonly status: string;
   readonly symbol: Symbol;
   readonly reason: Reason;
   /** この行を片づけると確定に向かう件数。同じ波の中の並び順に使う。 */
@@ -395,8 +402,10 @@ export function buildConsequence(
     if (!hit || at === undefined) continue;
     const own = findingsFor(id, context.findings);
     const ranges = rangesById.get(id) ?? [];
+    const node = all.get(id) as GraphNode;
     rows.push({
       id,
+      status: typeof node.status === "string" ? node.status : "",
       symbol: symbolFor({
         findings: own,
         isReverseOrphan: context.reverseOrphans.has(id),

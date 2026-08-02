@@ -246,10 +246,16 @@ const MUTATIONS = [
     to: '"if False:",',
   },
   {
-    label: "所見を追跡の検査だけに絞る（34 検査のうち 23 を捨てる）",
+    label: "所見を追跡の検査だけに絞る（上流の判断を橋の上で捨てる）",
     file: "src/doctrine/audit.ts",
-    from: "  return ok(outcome.value.findings);",
-    to: '  return ok(outcome.value.findings.filter((f) => f.check.startsWith("trace")));',
+    from: "  return ok({ findings: outcome.value.findings, checksRun });",
+    to: '  return ok({ findings: outcome.value.findings.filter((f) => f.check.startsWith("trace")), checksRun });',
+  },
+  {
+    label: "走らせた検査の一覧を捨てる（脚注が数を持てなくなる）",
+    file: "src/doctrine/audit.ts",
+    from: "  return ok({ findings: outcome.value.findings, checksRun });",
+    to: "  return ok({ findings: outcome.value.findings, checksRun: [] });",
   },
   {
     label: "所見を doc_id だけで引く（refs で結ばれた文書が × を失う）",

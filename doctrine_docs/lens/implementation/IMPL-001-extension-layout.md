@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-29
+updated: 2026-07-30
 sources: []
 depends_on: [SPEC-001, SPEC-004, SPEC-005, SPEC-006]
 llm_context: task
@@ -52,7 +52,7 @@ llm_context: task
 | 登録簿の取得 | `src/doctrine/registry.ts` | `_registry` をその場で読む |
 | グラフの取得 | `src/doctrine/graph.ts` | 三つの取得を束ね、結果を保つ |
 | 範囲の取得 | `src/doctrine/trace.ts` | `trace-index.py` を呼び、統治外の宣言を当てて絞る |
-| 所見の取得 | `src/doctrine/audit.ts` | `docs-audit.py` を呼び、追跡の所見を取り出す。監査した木が表示中の木と同じかも検める |
+| 所見の取得 | `src/doctrine/audit.ts` | `docs-audit.py` を呼び、所見と、上流が走らせた検査の一覧を取り出す。監査した木が表示中の木と同じかも検める |
 | 上流の値の型 | `src/doctrine/model.ts` | 上流が返す値の形と、成否を表す `Outcome` |
 | 追跡の突き合わせ | `src/model/trace.ts` | 範囲を文書ごとに束ね、帯の行と種類を決め、覆いを整える |
 | 画面の器 | `src/panel/lensPanel.ts` | webview の生成、通信、再取得の束ね |

@@ -88,6 +88,13 @@ const state = async () => ({
   ),
   // 本体へ送った合図。押しても何も起きない状態を残さないことを見る。
   sent: await page.evaluate(() => (window.__sent ?? []).map((m) => m.kind)),
+  // 差し込みが埋まらなかった跡。実際に `undefined checks` が画面に出たまま
+  // 「誤り 0・食い違い 0」と報告された。文字列の差し込みは型で守れないので、
+  // 出来上がった字面を見るしかない。
+  placeholders: await page.evaluate(() => {
+    const text = document.body.innerText;
+    return [...new Set([...text.matchAll(/undefined|NaN|\[object [A-Za-z]+\]|\{\d\}/g)].map((m) => m[0]))];
+  }),
   // 横に溢れていないか。面そのものと、中の子を両方見る。
   overflow: await page.evaluate(() => {
     const out = [];
@@ -130,6 +137,7 @@ const MARKS = new Set(["×", "+", "?", "!", "~"]);
 // --- 一枚目。ふつうの幅で明細を読む。 ---------------------------------------
 
 const first = await record("明細（720px）", "01-list", {
+  placeholders: [],
   waves: some(),
   rows: some(),
   footnotes: some(),
@@ -191,6 +199,7 @@ await record("取り直しを押した", "05-refresh", {
 for (const width of [480, 280]) {
   await page.setViewportSize({ width, height: 900 });
   await record(`幅 ${width}px`, `06-width-${width}`, {
+    placeholders: [],
     rows: some(),
     overflow: [],
     svg: 0,
@@ -211,14 +220,14 @@ await page.evaluate(() => {
     "*",
   );
 });
-await record("長い通知（280px）", "07-notice", { overflow: [] });
+await record("長い通知（280px）", "07-notice", { overflow: [], placeholders: [] });
 
 await browser.close();
 
 for (const step of steps) {
   console.log(
     `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
-      `記号 ${step.marks.join("")}・svg ${step.svg}`,
+      `記号 ${step.marks.join("")}・svg ${step.svg}・差し込みの跡 ${step.placeholders.length}`,
   );
 }
 if (errors.length > 0) {

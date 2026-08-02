@@ -22,6 +22,8 @@ export interface Snapshot {
   ranges: TraceRange[] | null;
   /** 所見が取れなかったときは `null`。判定の表示だけを止める。 */
   findings: AuditFinding[] | null;
+  /** 上流が実際に走らせた検査の名。取れなければ空。数を実装が持たない（ADR-014）。 */
+  checksRun: string[];
   /** 上流が挙げた逆孤児（対応する仕様や試験が無いもの）の id。 */
   reverseOrphans: string[];
   /** 文書の題名など。取れなければ空の表。主文が id へ落ちる。 */
@@ -114,7 +116,8 @@ export async function fetchSnapshot(
       registry: registryOutcome.ok ? registryOutcome.value : null,
       ranges: rangesOutcome.ok ? rangesOutcome.value : null,
       // 監査を飛ばした回は null を返す。呼び手が前回の判定を保つ（ADR-008）。
-      findings: findingsOutcome?.ok ? findingsOutcome.value : null,
+      findings: findingsOutcome?.ok ? findingsOutcome.value.findings : null,
+      checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : [],
       reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],
       docMeta: metaOutcome.ok ? metaOutcome.value : new Map(),
       docsRoot,

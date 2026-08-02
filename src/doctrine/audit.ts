@@ -1,7 +1,8 @@
 // doctrine:begin SPEC-004
 // 監査の橋渡し — 判定を上流から受け取る。
 //
-// 上流が走らせる 34 種の検査の所見を**すべて**受け取る。何が異常かはこちらで判じない。
+// 上流が走らせた検査の所見を**すべて**受け取る。何が異常かはこちらで判じない。
+// 走らせた検査の数もこちらでは持たない。上流が返す一覧の長さである（ADR-014）。
 // 指紋の突き合わせも、循環の可否も、期限の切れも、上流が済ませてある（ADR-005・ADR-012）。
 import { dirname, join, resolve } from "node:path";
 
@@ -28,7 +29,20 @@ export interface AuditReport {
   findings: AuditFinding[];
   /** 上流が実際に監査した統治木の絶対経路。 */
   root?: unknown;
+  /** 上流が実際に走らせた検査の名の一覧。 */
+  checks_run?: unknown;
   [extra: string]: unknown;
+}
+
+/**
+ * 監査の結果。所見と、上流が実際に走らせた検査の一覧。
+ *
+ * 検査の数を実装が持たない（ADR-014）。定数で持つと、上流が検査を増やしたときに
+ * 追随しない側が正しいことになる（REQ-003）。長さは呼び手が数える。
+ */
+export interface AuditResult {
+  readonly findings: AuditFinding[];
+  readonly checksRun: string[];
 }
 
 /** 追跡に関わる検査名の前置き。上流の検査名の付け方に従う。 */
@@ -90,7 +104,7 @@ export function canAudit(projectDir: string, docsRoot: string): boolean {
  * `--fail-on never` で呼ぶ。所見が在ることは失敗ではない。
  * 判定を出せない構成では走らせず、その旨を返す（`canAudit` を見よ）。
  *
- * 以前はここで `trace` で始まる検査だけに絞っていた。上流は 34 種を毎回走らせ、
+ * 以前はここで `trace` で始まる検査だけに絞っていた。上流は全種を毎回走らせ、
  * 「これは異常だ・なぜか・どれくらい重いか」という**判定**を返しているのに、
  * その 11 種以外を橋の上で捨てていた。捨てれば、画面は事実しか言えなくなり、
  * 判断が読み手に押し付けられる（ADR-012）。絞りはここでは掛けない。
@@ -101,9 +115,9 @@ export async function fetchFindings(
   docsRoot: string,
   pluginRoot: string,
   options: RunOptions,
-): Promise<Outcome<AuditFinding[]>> {
+): Promise<Outcome<AuditResult>> {
   if (!canAudit(projectDir, docsRoot)) {
-    return fail<AuditFinding[]>(
+    return fail<AuditResult>(
       "absent",
       "the doctrine tree is not directly under the workspace folder",
     );
@@ -119,7 +133,7 @@ export async function fetchFindings(
   );
   if (!outcome.ok) return outcome;
   if (!Array.isArray(outcome.value?.findings)) {
-    return fail<AuditFinding[]>("bad-json", 'the value has no "findings"');
+    return fail<AuditResult>("bad-json", 'the value has no "findings"');
   }
   // 上流が実際に監査した木を突き合わせる。
   //
@@ -128,11 +142,15 @@ export async function fetchFindings(
   // 表示している木と食い違い、しかもそれは画面のどこにも出ない。
   const audited = outcome.value.root;
   if (typeof audited === "string" && forCompare(resolve(audited)) !== forCompare(resolve(docsRoot))) {
-    return fail<AuditFinding[]>(
+    return fail<AuditResult>(
       "absent",
       `the audit resolved a different tree (${audited})`,
     );
   }
-  return ok(outcome.value.findings);
+  // 走らせた検査の一覧。上流が返さなければ空にする。数を補わない
+  //（補うと「数えた」ことになり、ADR-014 が禁じた「数の代わりに置く」になる）。
+  const raw = outcome.value.checks_run;
+  const checksRun = Array.isArray(raw) ? raw.filter((c): c is string => typeof c === "string") : [];
+  return ok({ findings: outcome.value.findings, checksRun });
 }
 // doctrine:end SPEC-004

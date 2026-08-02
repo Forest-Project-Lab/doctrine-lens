@@ -21,6 +21,10 @@ export interface RangeLink {
 
 /** 明細の一行。すべて訳し終えた文字列である。 */
 export interface RowView {
+  /** 上流が返した status。空なら出さない。語彙は上流のもの（REQ-003）。 */
+  readonly status: string;
+  /** 後継の id を告げる一文。無ければ空。 */
+  readonly succeeds: string;
   readonly id: string;
   readonly symbol: RowSymbol;
   /** 主文。題名が取れていれば題名、取れていなければ id。 */

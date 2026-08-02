@@ -5,7 +5,7 @@ type: OVERVIEW
 domain: _system
 status: current
 owner: render-projection
-updated: 2026-07-29
+updated: 2026-08-02
 llm_context: always
 sources: []
 ---
@@ -37,14 +37,17 @@ sources: []
 | ADR-011 | ADR | lens | 起動条件に onStartupFinished を足す |
 | ADR-012 | ADR | lens | 地図を捨て、起点からの帰結を一枚の明細で出す |
 | ADR-013 | ADR | lens | 意匠の値の正本を DESIGN.md に置き、実装は値を持たない |
+| ADR-014 | ADR | lens | 数の代わりに言葉を置かない。門は木の健康に依らない |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
 | CHANGE-004 | CHANGE | lens | 地図をやめ、帰結の明細にする |
+| CHANGE-005 | CHANGE | lens | 数を言い切らず数え、行に status と後継を出す |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
 | IMPACT-004 | IMPACT | lens | 帰結の明細へ置き換えることの影響 |
+| IMPACT-005 | IMPACT | lens | 数を数え、行に status と後継を出すことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

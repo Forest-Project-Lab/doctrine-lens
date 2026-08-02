@@ -187,13 +187,13 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 .row.nowhere .mark, .row.review .mark { color: var(--vscode-descriptionForeground); }
 .row .head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
 .row .title { font-weight: 600; }
-.row .behind { font-size: 11px; color: var(--vscode-descriptionForeground); }
+.row .behind, .row .status { font-size: 11px; color: var(--vscode-descriptionForeground); }
 .row .id {
   font-family: var(--vscode-editor-font-family); font-size: 12px;
   color: var(--vscode-descriptionForeground);
 }
 .row .behind { margin-left: auto; }
-.row .reason { color: var(--vscode-descriptionForeground); }
+.row .reason, .row .succeeds { color: var(--vscode-descriptionForeground); }
 .row .finding { color: var(--vscode-charts-red); }
 .row .range {
   display: block; padding: 0; margin: 0; border: none; background: none;

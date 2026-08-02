@@ -195,7 +195,7 @@ export class LensPanel {
       const { id, openFile } = this.#originId();
       const auditAt = state.auditAt ? formatTime(state.auditAt) : "";
       // 鍵は「答えを変えうるもの」だけで組む。取得は同一性で見る（中身は不変である）。
-      const key = JSON.stringify([id, openFile, auditAt]);
+      const key = JSON.stringify([id, openFile, auditAt, snapshot.checksRun.length]);
       if (this.#last?.key === key && this.#lastSnapshot === snapshot) {
         this.#post(this.#last.view);
       } else {
@@ -210,6 +210,7 @@ export class LensPanel {
             openFile,
             auditAt,
             titlesMissing: snapshot.docMeta.size === 0,
+            checksRun: snapshot.checksRun.length,
           }),
         };
         this.#last = { key, view: message };

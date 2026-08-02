@@ -56,10 +56,13 @@ function drawRow(row: RowView): HTMLElement {
   const head = document.createElement("div");
   head.className = "head";
   head.append(text("span", "title", row.title), text("span", "id", row.id));
+  // status は上流の語をそのまま出す。訳さない（REQ-003）。
+  if (row.status) head.append(text("span", "status", row.status));
   if (row.behind > 0) head.append(text("span", "behind", String(row.behind)));
   body.append(head);
 
   body.append(text("div", "reason", row.reason));
+  if (row.succeeds) body.append(text("div", "succeeds", row.succeeds));
   // 上流の所見の文はそのまま出す。書き直さない（SPEC-006 制約）。
   for (const finding of row.findings) body.append(text("div", "finding", finding));
 

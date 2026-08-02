@@ -179,6 +179,8 @@ const view = buildView(
   {
     openFile: ranges[0]?.path ?? "src/extension.ts",
     auditAt: audit.generated_at ? formatTime(new Date(audit.generated_at)) : "",
+    // 上流が走らせた検査の数。数えた数であって、代弁の語ではない（ADR-014）。
+    checksRun: Array.isArray(audit.checks_run) ? audit.checks_run.length : 0,
     titlesMissing: Object.keys(titleReport).length === 0,
   },
 );
