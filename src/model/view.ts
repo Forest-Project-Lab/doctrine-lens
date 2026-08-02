@@ -31,6 +31,10 @@ export interface ViewStrings {
   readonly summarySymbols: string;
   /** 事実ごとの件数。記号に負けたものも数える。`壊れている {0} ・ 足りない {1} ・ 範囲が無い {2}` */
   readonly summaryFacts: string;
+  /** 現行でない行の本数。判じられた回だけ出る。`非現行 {0}` */
+  readonly summaryFactNotCurrent: string;
+  /** 事実の行の末尾に付ける注記。記号の排他と数の違いを言う */
+  readonly summaryFactsNote: string;
   /** `循環 {0} 本（{1} 文書）` */
   readonly summaryCycles: string;
   /** `第 {0} 波` */
@@ -162,8 +166,10 @@ function rowView(row: Row, originId: string, meta: DocMetaIndex, strings: ViewSt
   const successor = meta.get(row.id)?.supersededBy ?? "";
   return {
     id: row.id,
-    // 上流が返した値をそのまま運ぶ。語彙をこちらが持たない（REQ-003）。
-    status: row.status,
+    // **既定は語らない**（ADR-021）。上流が現行と呼ぶ status は出さない。
+    // 判じられなかった回（`null`）は出す——隠す根拠が無いのに隠さない（ADR-017）。
+    // 値そのものは上流のものを一字も変えずに運ぶ（REQ-003）。
+    status: row.notCurrent === false ? "" : row.status,
     succeeds: successor ? fill(strings.rowSucceeds, successor) : "",
     symbol: row.symbol as Symbol,
     title: titleOf(row.id, meta),
@@ -236,12 +242,19 @@ export function buildView(
       String(s.bySymbol.review),
     ),
     // 事実ごと。記号に負けたものも数える。互いに排他ではない。
-    fill(
-      strings.summaryFacts,
-      String(s.facts.broken),
-      String(s.facts.missing),
-      String(s.facts.noRange),
-    ),
+    // 非現行は記号を争わない。行から消した語を、この数が支える（ADR-021 決定 2）。
+    // 判じられなかった回は数を出さない。0 と書くと「一つも無い」ことになる。
+    [
+      fill(
+        strings.summaryFacts,
+        String(s.facts.broken),
+        String(s.facts.missing),
+        String(s.facts.noRange),
+      ),
+      ...(s.facts.notCurrent === null
+        ? []
+        : [fill(strings.summaryFactNotCurrent, String(s.facts.notCurrent))]),
+    ].join(" · ") + strings.summaryFactsNote,
     // 循環は文書の内数ではないので、本数と文書数を分けて言う。
     fill(strings.summaryCycles, String(s.cycles), String(s.inCycle)),
   ].join("\n");

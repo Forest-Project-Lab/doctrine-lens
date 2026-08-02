@@ -203,8 +203,12 @@ export class LensPanel {
         const consequence = buildConsequence(snapshot.graph, id, {
           findings: snapshot.findings ?? [],
           // 取れなかったときは null のまま渡す。空配列に潰すと「無い」と断定する。
-        ranges: snapshot.ranges,
+          ranges: snapshot.ranges,
           reverseOrphans: new Set(snapshot.reverseOrphans),
+          // 登録簿が取れなければ null のまま渡す。空集合に潰すと全行が非現行に化ける。
+          currentStatuses: snapshot.registry
+            ? new Set(snapshot.registry.currentStatuses)
+            : null,
         });
         const message = {
           kind: "view" as const,

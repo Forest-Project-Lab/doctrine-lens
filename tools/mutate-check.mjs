@@ -133,6 +133,41 @@ const MUTATIONS = [
     to: '      "doctrineLens.open",',
   },
   {
+    label: "取れなかった現行の集合を、空集合に潰す（全行が非現行に化ける）",
+    file: "src/panel/lensPanel.ts",
+    from: `          currentStatuses: snapshot.registry
+            ? new Set(snapshot.registry.currentStatuses)
+            : null,`,
+    to: "          currentStatuses: new Set(snapshot.registry?.currentStatuses ?? []),",
+  },
+  {
+    label: "判じられない回にも status を隠す（取れなかったが全部現行に化ける）",
+    file: "src/model/view.ts",
+    from: 'status: row.notCurrent === false ? "" : row.status,',
+    to: 'status: row.notCurrent === true ? row.status : "",',
+  },
+  {
+    label: "現行の行にも status を出し続ける（消し忘れ）",
+    file: "src/model/view.ts",
+    from: 'status: row.notCurrent === false ? "" : row.status,',
+    to: "status: row.status,",
+  },
+  {
+    label: "判じられない回に非現行を 0 と数える（測っていないものを良い知らせにする）",
+    file: "src/model/consequence.ts",
+    from: `        notCurrent:
+          context.currentStatuses === null
+            ? null
+            : rows.filter((r) => r.notCurrent === true).length,`,
+    to: "        notCurrent: rows.filter((r) => r.notCurrent === true).length,",
+  },
+  {
+    label: "現行の判定を反転（現行だけが語り出す）",
+    file: "src/model/consequence.ts",
+    from: "  return typeof status === \"string\" ? !currentStatuses.has(status) : true;",
+    to: "  return typeof status === \"string\" ? currentStatuses.has(status) : true;",
+  },
+  {
     label: "部分失敗の詳細を捨てる・登録簿（設定の誤りが一時的失敗に見える）",
     file: "src/doctrine/graph.ts",
     from: 'partial.push({ what: "registry", reason: registryOutcome.reason, detail: registryOutcome.detail });',

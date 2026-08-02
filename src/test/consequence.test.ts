@@ -14,6 +14,7 @@ import type { TraceRange } from "../doctrine/trace.js";
 import { buildConsequence, symbolFor, weightOf, type Symbol } from "../model/consequence.js";
 import { buildView } from "../model/view.js";
 import type { DocMetaIndex } from "../doctrine/model.js";
+import { REGISTRY } from "./fixture.js";
 
 // --- 見本 ------------------------------------------------------------------
 
@@ -56,6 +57,8 @@ const NO_CONTEXT = {
   findings: [],
   ranges: [] as TraceRange[] | null,
   reverseOrphans: new Set<string>(),
+  // 何も取れていない状態。現行かどうかも判じられない（status は全部出る）。
+  currentStatuses: null as ReadonlySet<string> | null,
 };
 
 /** 行を id の順に平らへ均す。波の番号を添える。 */
@@ -188,6 +191,95 @@ test("006-14. 行が status を出し、後継が在れば併記する", () => {
   const view = buildView(c, meta, strings(), CONTEXT);
   assert.equal(view.waves[0]?.rows[0]?.status, "deprecated");
   assert.equal(view.waves[0]?.rows[0]?.succeeds, "後継 SPEC-006");
+});
+
+test("006-23. 現行は語らず、外れたものだけ語る。語彙は上流から来る", () => {
+  const graph = graphOf(["O", "現行のもの", "古い"], ["O>現行のもの", "O>古い"]);
+  const nodes = graph.nodes as { id: string; status: string }[];
+  // 見本の status も語彙も、上流の登録簿が返した値を使う（試験は門の対象外）。
+  const 現行 = REGISTRY.currentStatuses[0] as string;
+  const 非現行 = REGISTRY.allStatuses.find((s) => !REGISTRY.currentStatuses.includes(s)) as string;
+  nodes.forEach((n) => {
+    if (n.id === "現行のもの") n.status = 現行;
+    if (n.id === "古い") n.status = 非現行;
+  });
+
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    currentStatuses: new Set(REGISTRY.currentStatuses),
+  });
+  const rows = c.waves.flatMap((w) => w.rows);
+  const 現行行 = rows.find((r) => r.id === "現行のもの");
+  const 非現行行 = rows.find((r) => r.id === "古い");
+
+  // 模型は事実を両方持つ。素通しの値は消さない。
+  assert.equal(現行行?.notCurrent, false);
+  assert.equal(現行行?.status, 現行, "模型は上流の値を捨てない");
+  assert.equal(非現行行?.notCurrent, true);
+
+  // 画面へ渡る段で、既定だけが黙る。
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const 見え = new Map(view.waves.flatMap((w) => w.rows).map((r) => [r.id, r.status]));
+  assert.equal(見え.get("現行のもの"), "", "現行の行が語っている");
+  assert.equal(見え.get("古い"), 非現行, "非現行の行が黙っている");
+});
+
+test("006-24. 要約の非現行の数が、status の出ている行の本数に一致する", () => {
+  const graph = graphOf(["O", "A", "B", "C"], ["O>A", "O>B", "O>C"]);
+  const 現行 = REGISTRY.currentStatuses[0] as string;
+  const 非現行 = REGISTRY.allStatuses.find((s) => !REGISTRY.currentStatuses.includes(s)) as string;
+  (graph.nodes as { id: string; status: string }[]).forEach((n) => {
+    n.status = n.id === "A" ? 現行 : 非現行;
+  });
+
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    currentStatuses: new Set(REGISTRY.currentStatuses),
+  });
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const 語る行 = view.waves.flatMap((w) => w.rows).filter((r) => r.status !== "").length;
+
+  assert.equal(c.summary.facts.notCurrent, 2, "B と C の 2 件");
+  assert.equal(語る行, 2, "画面で語っている行と数が食い違う");
+  assert.ok(view.summary.includes("非現行 2"), `要約: ${view.summary}`);
+});
+
+test("006-25. 判じられない回は隠さない。全行に出し、数は出さない", () => {
+  const graph = graphOf(["O", "A", "B"], ["O>A", "O>B"]);
+  const 現行 = REGISTRY.currentStatuses[0] as string;
+  (graph.nodes as { id: string; status: string }[]).forEach((n) => {
+    n.status = 現行;
+  });
+
+  // 登録簿が取れなかった回。空集合ではなく null を渡す。
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: null });
+  const rows = c.waves.flatMap((w) => w.rows);
+  assert.ok(
+    rows.every((r) => r.notCurrent === null),
+    "取れなかったことを false に潰している（全部現行だと言ったことになる）",
+  );
+
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.ok(
+    view.waves.flatMap((w) => w.rows).every((r) => r.status === 現行),
+    "隠す根拠が無いのに隠している",
+  );
+  assert.equal(c.summary.facts.notCurrent, null);
+  assert.ok(!view.summary.includes("非現行"), `要約: ${view.summary}`);
+});
+
+test("006-25b. 空集合を渡されても、全行が非現行に化けない見張り", () => {
+  // `null` と `new Set()` を取り違えると、全行が非現行として語り出す。
+  // 呼ぶ側の規律であることを、ここで明文にしておく（ADR-017 の形）。
+  const graph = graphOf(["O", "A"], ["O>A"]);
+  const 現行 = REGISTRY.currentStatuses[0] as string;
+  (graph.nodes as { id: string; status: string }[]).forEach((n) => {
+    n.status = 現行;
+  });
+  const 空 = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: new Set() });
+  assert.equal(空.summary.facts.notCurrent, 1, "空集合は『どれも現行でない』を意味する");
+  const 未取得 = buildConsequence(graph, "O", { ...NO_CONTEXT, currentStatuses: null });
+  assert.equal(未取得.summary.facts.notCurrent, null, "取れなかったことは数にならない");
 });
 
 test("006-14b. 後継が無ければ何も出さない（空の札を置かない）", () => {
@@ -329,11 +421,14 @@ test("良い状態を空白で表さず、数で言う", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, ranges: [range("P")] });
   assert.deepEqual(c.summary.bySymbol, { broken: 0, missing: 0, nowhere: 0, fix: 1, review: 0 });
-  assert.deepEqual(c.summary.facts, { broken: 0, missing: 0, noRange: 0 });
+  // 現行かどうかは判じられていない。0 と書くと「一つも無い」ことになる（ADR-021）。
+  assert.deepEqual(c.summary.facts, { broken: 0, missing: 0, noRange: 0, notCurrent: null });
   assert.equal(c.summary.documents, 1);
   assert.equal(c.summary.codeRanges, 1);
   const view = buildView(c, new Map(), strings(), CONTEXT);
   assert.ok(view.summary.includes("壊れている 0"), `要約: ${view.summary}`);
+  // 判じられない回は、数そのものを出さない。
+  assert.ok(!view.summary.includes("非現行"), `要約: ${view.summary}`);
 });
 
 test("誰も依存していない文書は、空の一覧ではなく 0 として出る", () => {
@@ -538,6 +633,8 @@ function strings(): Parameters<typeof buildView>[2] {
     summaryCounts: "{0} 文書 / コード {1}",
     summarySymbols: "× {0} / + {1} / ? {2} / ! {3} / ~ {4}",
     summaryFacts: "壊れている {0} / 足りない {1} / 範囲無し {2}",
+    summaryFactNotCurrent: "非現行 {0}",
+    summaryFactsNote: "（注記）",
     summaryCycles: "循環 {0} 本（{1} 文書）",
     waveHeading: "第 {0} 波",
     waveCount: "{0} 文書",

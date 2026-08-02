@@ -46,12 +46,15 @@ export interface Graph {
 export interface Registry {
   /** 型コードを登録順に並べたもの。レーンの列の並びに使う。 */
     types: string[];
-  /** 現行を示す status の値。「現行のみ」の絞りに使う。 */
+  /**
+   * 現行を示す status の値。行が「現行だ」と言わずに済ませるのに使う（ADR-021）。
+   *
+   * **中身をこちらが書かない。** 上流の `_registry` が正本であり、
+   * 「他の切片はこれを使え。素の比較を書くな」と明記している（REQ-003）。
+   */
   currentStatuses: string[];
-  /** status の語彙の全体。絞りの選択肢に使う。 */
+  /** status の語彙の全体。門が「実装が語彙を持たないこと」を検めるのに使う。 */
   allStatuses: string[];
-  /** 投影の型。地図の上で区別して示す。 */
-  projectionTypes: string[];
 }
 
 /** 取得の失敗を、投げずに値として返すための形。 */

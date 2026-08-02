@@ -88,6 +88,28 @@ Cycles have no order, so they are not given one. They drop out of the waves and
 are written down as a line of text — `A → B → A` — with upstream's `dep_cycle`
 message attached.
 
+### It does not narrate the default
+
+Rows used to print `current` next to every id. Measured across all 67 documents
+in this repository's own tree — 256 rows in total — **208 of them (81.2%) said
+`current`.** Four rows on screen, four identical words, nothing distinguished.
+
+Now only the 18.8% that are *not* current say so, and they are the only rows on
+the screen carrying a status word at all. Two rows that used to wrap to a second
+line at 280px now fit on one.
+
+Removing a word cannot silently mean "everything is fine", so the summary
+carries the count: `already broken 0 · missing 0 · no code range 2 · not
+current 4`. **The number says how many; the rows say which.** You can check one
+against the other, and a build gate does exactly that on the real screen.
+
+Which statuses count as "current" is not written down here. Upstream's registry
+says `CURRENT_STATUSES = {"current", "accepted"}` and adds *"other slices MUST
+use this, never a bare `== "current"`"* — so this extension asks, and compares
+against the answer. If upstream cannot be read, nothing is hidden: every row
+shows its status and the count is omitted. **Not knowing is never rendered as
+good news.**
+
 ### It is designed for 280px
 
 ![The same list in a 280px side panel](media/narrow.png)
@@ -240,22 +262,25 @@ No type list, no status vocabulary, no location table, no fingerprint comparison
 It runs the upstream CLI and renders the JSON (ADR-001).
 
 ```
-dep-graph.py --classify-edges --json  → all nodes and edges
+dep-graph.py --classify-edges --json  → nodes (with titles), edges, mirrored pairs
 dep-graph.py --reverse-orphans        → what is missing
 read _registry in place               → type order, which statuses mean "current"
-read _frontmatter in place            → titles and updated dates*
+read _termcheck in place              → which glossary words are approved
 trace-index.py --format json          → document ↔ code ranges
-docs-audit.py --json                  → all 34 checks, unfiltered
+docs-audit.py --json                  → every check upstream ran, unfiltered
 ```
 
-\* A stopgap. `dep-graph --json` doesn't return `title` yet
-([doctrine#149](https://github.com/Forest-Project-Lab/doctrine/issues/149));
-when it does, that layer goes away. Two other findings from this rewrite are
-filed upstream too:
+Three findings from this rewrite were filed upstream and answered in 0.8.0:
+[#149](https://github.com/Forest-Project-Lab/doctrine/issues/149) (nodes withheld
+`title` — upstream dropped the whitelist entirely),
 [#150](https://github.com/Forest-Project-Lab/doctrine/issues/150) (trace-index
-ignores `.gitignore`) and
+ignored `.gitignore`) and
 [#151](https://github.com/Forest-Project-Lab/doctrine/issues/151) (one relation
-returned as two edges).
+returned as two edges). **The local stopgaps were deleted the same day**
+(`CHANGE-009`, `ADR-020`) — 137 lines gone, one fewer walk of the tree.
+
+The number of checks is never written down here either: the footer says
+"N checks" using the length of `checks_run` that upstream returned.
 
 Even the vocabulary is read from upstream at runtime, so a new document type
 appears without changing this extension. `npm test` enforces this literally: if

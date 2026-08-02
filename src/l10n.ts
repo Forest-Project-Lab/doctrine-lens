@@ -111,9 +111,11 @@ export function viewStrings(): ViewStrings {
     summaryCounts: t("{0} documents to fix · {1} code ranges", "{0}", "{1}"),
     summarySymbols: t("× {0} · + {1} · ? {2} · ! {3} · ~ {4}", "{0}", "{1}", "{2}", "{3}", "{4}"),
     summaryFacts: t(
-      "already broken {0} · missing {1} · no code range {2} (a row shows only its heaviest)",
+      "already broken {0} · missing {1} · no code range {2}",
       "{0}", "{1}", "{2}",
     ),
+    summaryFactNotCurrent: t("not current {0}", "{0}"),
+    summaryFactsNote: t(" (a row shows only its heaviest symbol)"),
     summaryCycles: t("{0} cycles ({1} documents)", "{0}", "{1}"),
     waveHeading: t("Wave {0}", "{0}"),
     waveCount: t("{0} documents", "{0}"),

@@ -74,6 +74,16 @@ export interface Row {
    * 語彙をこちらが持たない——値をそのまま運ぶだけである（REQ-003）。
    */
   readonly status: string;
+  /**
+   * 上流の登録簿が、この行の status を現行と呼ばないか。
+   *
+   * **`null` は「判じられなかった」である**（登録簿が取れなかった回）。
+   * `false` に潰してはならない——潰すと「全部現行だ」と言ったことになり、
+   * 取れなかったことが良い知らせに化ける（ADR-017・ADR-021 決定 3）。
+   *
+   * 判じるのは上流であり、現行を示す語をこちらが持たない（REQ-003）。
+   */
+  readonly notCurrent: boolean | null;
   readonly symbol: Symbol;
   readonly reason: Reason;
   /** この行を片づけると確定に向かう件数。同じ波の中の並び順に使う。 */
@@ -125,6 +135,15 @@ export interface Summary {
     readonly broken: number;
     readonly missing: number;
     readonly noRange: number;
+    /**
+     * 現行でない行の本数。**行から消した語を、数が支える**（ADR-021 決定 2）。
+     *
+     * 行に status が出るのは現行でないときだけなので、この数は
+     * 「status が出ている行の本数」に一致する。読み手が突き合わせられる。
+     *
+     * **判じられなかった回は `null`。** 0 と書くと「一つも無い」ことになる。
+     */
+    readonly notCurrent: number | null;
   };
   /** 循環の本数。文書の数ではない。 */
   readonly cycles: number;
@@ -190,12 +209,24 @@ export interface ConsequenceContext {
   readonly ranges: readonly TraceRange[] | null;
   /** 上流 `--reverse-orphans` が挙げた id。 */
   readonly reverseOrphans: ReadonlySet<string>;
+  /**
+   * 上流の登録簿が「現行」と呼ぶ status の集合。
+   *
+   * **取れなかったときは `null` を渡すこと。** 空集合を渡すと「どれも現行でない」に
+   * なり、全行が非現行に化ける。取れなかったことと、現行が無いことは別である
+   * （`ranges` と同じ規律・ADR-017）。
+   *
+   * **この集合の中身をこちらが書かない**（REQ-003）。上流の `_registry` が正本であり、
+   * 「他の切片はこれを使え、素の比較を書くな」と明記している。
+   */
+  readonly currentStatuses: ReadonlySet<string> | null;
 }
 
 const EMPTY_CONTEXT: ConsequenceContext = {
   findings: [],
   ranges: [],
   reverseOrphans: new Set(),
+  currentStatuses: null,
 };
 
 /** 起点からの向きつき隣接。値は「その相手へ渡る辺の種類」。 */
@@ -409,6 +440,24 @@ export function symbolFor(input: {
   return input.kind === "impacted" ? "review" : "fix";
 }
 
+/**
+ * その status を上流が現行と呼ばないか。
+ *
+ * **現行を示す語をこの実装が持たない**（REQ-003）。上流の登録簿が返した集合と
+ * 突き合わせるだけである。上流はこの規則について「他の切片はこれを使え。
+ * 素の比較を書くな」と明記している。
+ *
+ * 集合が `null`（取れなかった）なら `null` を返す。`false` を返すと
+ * 「現行である」と断定したことになり、取れなかったことが良い知らせに化ける。
+ */
+function judgeNotCurrent(
+  status: unknown,
+  currentStatuses: ReadonlySet<string> | null,
+): boolean | null {
+  if (currentStatuses === null) return null;
+  return typeof status === "string" ? !currentStatuses.has(status) : true;
+}
+
 /** 記号の重さを返す。並び替えと排他の判定に使う。 */
 export function weightOf(symbol: Symbol): number {
   return WEIGHT[symbol];
@@ -520,6 +569,8 @@ export function buildConsequence(
       id,
       alsoDirect: directNeighbours.has(id),
       status: typeof node.status === "string" ? node.status : "",
+      // 現行かどうかは上流が判じる。取れていなければ null のまま運ぶ。
+      notCurrent: judgeNotCurrent(node.status, context.currentStatuses),
       symbol: symbolFor({
         findings: own,
         isReverseOrphan: context.reverseOrphans.has(id),
@@ -613,6 +664,11 @@ export function buildConsequence(
         broken: rows.filter((r) => hasHeavyFinding(r.findings)).length,
         missing: rows.filter((r) => context.reverseOrphans.has(r.id)).length,
         noRange: rows.filter((r) => r.ranges.length === 0).length,
+        // 判じられない回は数を出さない。0 と書くと「一つも無い」ことになる。
+        notCurrent:
+          context.currentStatuses === null
+            ? null
+            : rows.filter((r) => r.notCurrent === true).length,
       },
       cycles: cycles.length,
       inCycle: inCycle.size,
@@ -648,7 +704,7 @@ function emptySummary(): Summary {
     documents: 0,
     codeRanges: 0,
     bySymbol: { broken: 0, missing: 0, nowhere: 0, fix: 0, review: 0 },
-    facts: { broken: 0, missing: 0, noRange: 0 },
+    facts: { broken: 0, missing: 0, noRange: 0, notCurrent: null },
     cycles: 0,
     inCycle: 0,
   };

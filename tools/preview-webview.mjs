@@ -44,17 +44,8 @@ const graph = run([
   join(pluginRoot, "scripts/dep-graph.py"),
   "--root", join(projectRoot, "doctrine_docs"), "--classify-edges", "--json",
 ]);
-const registry = run([
-  "-c",
-  [
-    "import json,sys",
-    "sys.path.insert(0, sys.argv[1])",
-    "import _registry as r",
-    'json.dump({"types": list(r.TYPES), "currentStatuses": sorted(r.CURRENT_STATUSES),'
-    + ' "allStatuses": list(r.ALL_STATUSES), "projectionTypes": list(r.PROJECTION_TYPES)}, sys.stdout)',
-  ].join("\n"),
-  join(pluginRoot, "scripts"),
-]);
+// 登録簿は**本体と同じ取得**を使う。ここに問い合わせを書き写すと、
+// 上流が項を増やしたとき写しの側だけが古びる（REQ-003・ADR-020）。
 
 // コード範囲と、指紋の食い違いの判定。判定は監査から取る（ADR-005）。
 const traceIndex = run([
@@ -179,7 +170,8 @@ const modelBundle = join(outDir, "model.mjs");
 writeFileSync(
   join(outDir, "model-entry.ts"),
   'export { buildConsequence } from "../src/model/consequence.js";\n' +
-    'export { buildView, formatTime } from "../src/model/view.js";\n',
+    'export { buildView, formatTime } from "../src/model/view.js";\n' +
+    'export { fetchRegistry } from "../src/doctrine/registry.js";\n',
   "utf8",
 );
 execFileSync(
@@ -188,7 +180,18 @@ execFileSync(
    "--platform=node", `--outfile=${modelBundle}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
-const { buildConsequence, buildView, formatTime } = await import(pathToFileURL(modelBundle).href);
+const { buildConsequence, buildView, formatTime, fetchRegistry } = await import(
+  pathToFileURL(modelBundle).href
+);
+
+const registryOutcome = await fetchRegistry(pluginRoot, {
+  pythonPath: "python3", timeoutMs: 60000, cwd: projectRoot,
+});
+if (!registryOutcome.ok) {
+  console.error(`登録簿が取れない: ${registryOutcome.detail}`);
+  process.exit(1);
+}
+const registry = registryOutcome.value;
 
 // 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。実際に範囲を持つ文書を選ぶ。
 const ORIGIN = process.env["PREVIEW_ORIGIN"] || ranges[0]?.id || graph.nodes[0]?.id || null;
@@ -196,6 +199,8 @@ const consequence = buildConsequence(graph, ORIGIN, {
   findings: audit.findings ?? [],
   ranges,
   reverseOrphans,
+  // 現行の集合は上流が正本。取れなければ null（隠す根拠が無いので隠さない）。
+  currentStatuses: new Set(registry.currentStatuses),
 });
 const view = buildView(
   consequence,

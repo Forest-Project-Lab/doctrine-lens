@@ -30,7 +30,6 @@ const PROBE = [
   '  "types": list(r.TYPES),',
   '  "currentStatuses": sorted(r.CURRENT_STATUSES),',
   '  "allStatuses": list(r.ALL_STATUSES),',
-  '  "projectionTypes": list(r.PROJECTION_TYPES),',
   "}, sys.stdout)",
 ].join("\n");
 

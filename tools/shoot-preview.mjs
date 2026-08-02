@@ -83,6 +83,16 @@ const state = async () => ({
   legend: await page.locator(".foot .legend span").count(),
   terms: await page.locator(".foot .terms dt").count(),
   svg: await page.locator("svg").count(),
+  // 語っている行の本数と、要約が言う本数。**画面の上で突き合わせる**（ADR-021 決定 2）。
+  // 行から語を消したので、数だけが「隠していない」ことの証になる。
+  // 数と行が食い違えば、消しすぎているか、数え違えている。
+  statusRows: await page.locator(".row .status").count(),
+  notCurrent: await page.evaluate(() => {
+    const line = [...(document.querySelector(".origin .summary")?.innerText ?? "").split("\n")]
+      .find((l) => /\d/.test(l) && /current/.test(l));
+    const m = line ? line.match(/not current (\d+)/) : null;
+    return m ? Number(m[1]) : null;
+  }),
   // 記号は左端の固定幅の溝に出る。字を集めれば、五つの語彙の外が入っていないか見える。
   marks: await page.evaluate(() =>
     [...new Set([...document.querySelectorAll(".row .mark")].map((n) => n.textContent))].sort(),
@@ -137,6 +147,12 @@ const MARKS = new Set(["×", "+", "?", "!", "~"]);
 
 // --- 一枚目。ふつうの幅で明細を読む。 ---------------------------------------
 
+// 語る行と数が一致すること。**片方だけを見ると、両方零でも通ってしまう。**
+const statusAgrees = (now) =>
+  now.notCurrent === null
+    ? now.statusRows > 0        // 判じられていない回は全行が語る
+    : now.notCurrent === now.statusRows;
+
 const first = await record("明細（720px）", "01-list", {
   placeholders: [],
   waves: some(),
@@ -164,6 +180,15 @@ if (!first.waveHeading || first.waveHeading.length < 4) {
 // 要約は「良い状態」も数で言う。
 if (!first.summary || !/\d/.test(first.summary)) {
   failures.push(`要約に数が出ていない: ${JSON.stringify(first.summary)}`);
+}
+// 行から消した語を、数が支えていること（ADR-021 決定 2）。
+// 実物の木では登録簿が取れるので、数は必ず出る。出ないなら判定が届いていない。
+if (first.notCurrent === null) {
+  failures.push(`要約に非現行の数が出ていない: ${JSON.stringify(first.summary)}`);
+} else if (!statusAgrees(first)) {
+  failures.push(
+    `語る行 ${first.statusRows} 本と要約の非現行 ${first.notCurrent} が食い違う`,
+  );
 }
 
 // --- 行を押す。文書が開く合図が本体へ届くこと。 -----------------------------
@@ -229,7 +254,7 @@ await browser.close();
 for (const step of steps) {
   console.log(
     `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
-      `記号 ${step.marks.join("")}・語 ${step.terms}・svg ${step.svg}・` +
+      `記号 ${step.marks.join("")}・語 ${step.terms}・非現行 ${step.notCurrent}/${step.statusRows}・svg ${step.svg}・` +
       `差し込みの跡 ${step.placeholders.length}`,
   );
 }
