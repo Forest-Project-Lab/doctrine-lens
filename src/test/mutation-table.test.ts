@@ -28,10 +28,13 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
   // 実測で 55 行のうち 2 行が読まれず、その 2 行は字面が古びても誰も咎めなかった
   // （二度腐って、二度とも走行の途中で「対象不明」として出た）。
   // **読み飛ばしを、数の一致で塞ぐ。** 読めない行が在れば、ここで落ちる。
-  const declared = [...tool.matchAll(/^ {4}label: "/gm)].length;
+  // **数え方を引用符の種類に依らせない。** `label: "…"` だけを数えると、
+  // 単引用符や逆引用符で書いた行が「宣言」と「読めた」の両方から同時に落ち、
+  // 数は一致したままその行だけ検められない（門の穴になる）。
+  const declared = [...tool.matchAll(/^ {4}label: /gm)].length;
   const rows = [
     ...tool.matchAll(
-      /label: "([^"]+)",\s*\n\s*file: "([^"]+)",\s*\n\s*from: ([\s\S]+?),\s*\n\s*to: /g,
+      /label: (?:"[^"]*"|'[^']*'|`[^`]*`),\s*\n\s*file: "([^"]+)",\s*\n\s*from: ([\s\S]+?),\s*\n\s*to: /g,
     ),
   ];
   assert.ok(declared >= 20, `表を読み取れていない（${declared} 件）`);
@@ -42,7 +45,8 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
   );
 
   const missing: string[] = [];
-  for (const [, label, file, literal] of rows) {
+  for (const [whole, file, literal] of rows) {
+    const label = (whole as string).slice(0, 60);
     const from = parseLiteral(literal as string);
     const source = readFileSync(join(PROJECT, file as string), "utf8");
     if (!source.includes(from)) missing.push(`${label} (${file})`);

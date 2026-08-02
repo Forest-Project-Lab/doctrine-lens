@@ -104,11 +104,16 @@ message attached.
 
 ### It does not narrate the default
 
-Rows used to print `current` next to every id. Measured across all 67 documents
-in this repository's own tree — 256 rows in total — **208 of them (81.2%) said
-`current`.** Four rows on screen, four identical words, nothing distinguished.
+Rows used to print `current` next to every id. Measured on this repository's own
+tree at `497e13b` — 70 documents, each used as an origin in turn, 273 rows in
+total — **225 of them (82.4%) said `current`.** Four rows on screen, four
+identical words, nothing distinguished.
 
-Now only the 18.8% that are *not* current say so, and they are the only rows on
+The count carries the commit it was taken at, because the tree grows: writing
+this one change added four governance documents and moved the number 67 → 70.
+**A measurement without its basis goes stale in silence.**
+
+Now only the 17.6% that are *not* current say so, and they are the only rows on
 the screen carrying a status word at all. Two rows that used to wrap to a second
 line at 280px now fit on one.
 
@@ -495,11 +500,11 @@ Playwright, Claude Code).
 
 ### 既定は語りません
 
-以前は id の隣に必ず `current` が出ていました。この木の 67 文書すべてを順に起点に
-置いて測ると、**出た 256 行のうち 208 行（81.2%）が `current`** でした。
+以前は id の隣に必ず `current` が出ていました。この木の 70 文書すべてを順に起点に
+置いて測ると、**出た 273 行のうち 225 行（82.4%）が `current`** でした。
 画面に四行、四行とも同じ語。何も区別していません。
 
-いまは**現行でない 18.8% だけ**が語ります。その行は、画面で唯一 status を持つ行です。
+いまは**現行でない 17.6% だけ**が語ります。その行は、画面で唯一 status を持つ行です。
 280px で二行に折り返していた行が、一行に収まるようになりました。
 
 語を消すことが「問題なし」を黙って意味してはいけないので、要約が数で支えます。

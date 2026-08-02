@@ -193,15 +193,42 @@ if (!registryOutcome.ok) {
 }
 const registry = registryOutcome.value;
 
-// 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。実際に範囲を持つ文書を選ぶ。
-const ORIGIN = process.env["PREVIEW_ORIGIN"] || ranges[0]?.id || graph.nodes[0]?.id || null;
-const consequence = buildConsequence(graph, ORIGIN, {
+// 起点は「印が囲む範囲の中にカーソルが在る」状態を模す。
+//
+// **画面を実際に試す起点を選ぶ。** 以前は `ranges[0]` を無条件に採っていたので、
+// 非現行の行が一つも出ない起点になり、**「語る行の本数と要約の数が一致する」門が
+// 毎回 0 === 0 で自動的に通っていた**（行の status 欄を丸ごと消しても緑のまま）。
+// 門が発火しない起点で撮ることを、黙って許さない（ADR-017）。
+//
+// 選び方は決め打ちで、同じ木からは必ず同じ起点が出る。
+// 記号の種類が多い順 → 行が少ない順 → id の順。
+const context = {
   findings: audit.findings ?? [],
   ranges,
   reverseOrphans,
   // 登録簿は素通し。取れなかったかどうかの扱いは模型が持つ。
   registry,
-});
+};
+
+const chooseOrigin = () => {
+  const scored = [];
+  for (const node of graph.nodes) {
+    const c = buildConsequence(graph, node.id, context);
+    const rows = c.waves.flatMap((w) => w.rows);
+    // 門を試せない起点は候補にしない。非現行の行と、コード範囲と、
+    // 記号の種類——この三つが無いと、それぞれの門が空振りする。
+    if (rows.length === 0) continue;
+    if (!c.summary.facts.notCurrent) continue;
+    if (c.summary.codeRanges === 0) continue;
+    scored.push({ id: node.id, kinds: new Set(rows.map((r) => r.symbol)).size, rows: rows.length });
+  }
+  scored.sort((a, b) => b.kinds - a.kinds || a.rows - b.rows || a.id.localeCompare(b.id));
+  return scored[0]?.id ?? null;
+};
+
+const ORIGIN =
+  process.env["PREVIEW_ORIGIN"] || chooseOrigin() || ranges[0]?.id || graph.nodes[0]?.id || null;
+const consequence = buildConsequence(graph, ORIGIN, context);
 const view = buildView(
   consequence,
   new Map(Object.entries(titleReport)),

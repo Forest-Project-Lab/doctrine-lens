@@ -148,10 +148,8 @@ const MARKS = new Set(["×", "+", "?", "!", "~"]);
 // --- 一枚目。ふつうの幅で明細を読む。 ---------------------------------------
 
 // 語る行と数が一致すること。**片方だけを見ると、両方零でも通ってしまう。**
-const statusAgrees = (now) =>
-  now.notCurrent === null
-    ? now.statusRows > 0        // 判じられていない回は全行が語る
-    : now.notCurrent === now.statusRows;
+// `null`（判じられなかった）の場合は呼ぶ前に弾いてある。ここは数の一致だけを見る。
+const statusAgrees = (now) => now.notCurrent === now.statusRows;
 
 const first = await record("明細（720px）", "01-list", {
   placeholders: [],
@@ -185,6 +183,13 @@ if (!first.summary || !/\d/.test(first.summary)) {
 // 実物の木では登録簿が取れるので、数は必ず出る。出ないなら判定が届いていない。
 if (first.notCurrent === null) {
   failures.push(`要約に非現行の数が出ていない: ${JSON.stringify(first.summary)}`);
+} else if (first.notCurrent === 0 && first.statusRows === 0) {
+  // **門が発火していないことを、黙って通さない。** 両方零だと 0 === 0 で
+  // 自動的に一致してしまい、行の status 欄を丸ごと消しても緑のままになる。
+  // 起点の選び方（preview-webview.mjs）が非現行を含む起点を採る。
+  failures.push(
+    "非現行の行が一つも出ない起点で撮ったので、この門は不変条件を一度も試していない",
+  );
 } else if (!statusAgrees(first)) {
   failures.push(
     `語る行 ${first.statusRows} 本と要約の非現行 ${first.notCurrent} が食い違う`,
