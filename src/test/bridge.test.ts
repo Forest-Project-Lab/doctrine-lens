@@ -230,11 +230,16 @@ test("006-26. 上流から取って使わない値を、登録簿の写しに残
   // 数えないのは三箇所だけ。項の宣言（`model.ts`）、問い合わせ（`registry.ts`）、
   // 偽の登録簿（`fixture.ts`）である。**偽物は使い手ではない**——
   // 見本にだけ載っている項は、誰も読まないまま毎回の取得で運ばれ続ける。
+  //
+  // **注釈は使い手ではない。** 落とさずに数えると、この試験の注釈が
+  // `types` と `allStatuses` と `currentStatuses` を名指しているせいで、
+  // 実装が一つも読んでいなくても「使っている」と読める。
+  // 実際そうなっていた（独立の走査が挙げた）。**門が自分の注釈で通っていた。**
   const 出所 = new Set(["doctrine/model.ts", "doctrine/registry.ts", "test/fixture.ts"]);
   const 使い手 = sourceFiles(join(PROJECT, "src")).filter(
     (f) => ![...出所].some((s) => f.endsWith(s)),
   );
-  const 字面 = 使い手.map((f) => readFileSync(f, "utf8")).join("\n");
+  const 字面 = 使い手.map((f) => stripComments(readFileSync(f, "utf8"))).join("\n");
 
   const 孤児 = Object.keys(outcome.value).filter((項) => !字面.includes(項));
   assert.deepEqual(孤児, [], "取っておいて誰も使っていない項が在る");

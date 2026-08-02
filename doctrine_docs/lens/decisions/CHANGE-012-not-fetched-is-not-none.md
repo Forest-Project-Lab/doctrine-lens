@@ -1,0 +1,95 @@
+---
+id: CHANGE-012
+title: 「取れなかった」を「無い」と言っている箇所が、まだ六つ在る
+type: CHANGE
+domain: lens
+status: proposed
+owner: doctrine-lens-maintainer
+created: 2026-08-02
+updated: 2026-08-02
+sources: []
+impacts: [SPEC-004, SPEC-005, SPEC-006]
+llm_context: task
+---
+
+# 「取れなかった」を「無い」と言っている箇所が、まだ六つ在る
+
+## 何が起きているか
+
+`ADR-017` は「画面は確かめたことだけを言う」と決め、`ADR-021` 決定 4 は
+「危うい変換を、試験の届く層でやる」と決めた。
+
+**決めたのに、同じ形の変換が六箇所そのまま残っている。**
+
+門とは独立に走査をかけたところ（`CHANGE-010` の一周の最後）、四つの観点のうち
+二つが**同じ系統**を挙げた。反証を三視点で当てても落ちなかった。
+
+| 重さ | 場所 | 何を「無い」に化けさせるか |
+|---|---|---|
+| 高 | `src/model/consequence.ts` `facts.noRange`・`summary.codeRanges` | 範囲が取れなかった回に「範囲が無い N」「コード 0 か所」と**数で断定する** |
+| 高 | `src/doctrine/graph.ts` `reverseOrphans` | 逆孤児の取得が失敗した回を `[]` へ潰す。記号 `+` が**永久に出ない** |
+| 中 | `src/model/cadence.ts` `AuditCarry.staleIds` | 一度も監査を取れていない回に「食い違い無し」と帯が言う |
+| 中 | `src/panel/lensPanel.ts` `findings: snapshot.findings ?? []` | 所見の未取得を空へ潰す。**しかも試験の届かない層で** |
+| 中 | `src/panel/lensPanel.ts` 起点の解決 | 範囲が取れなかった回に「起点が無い。印を持つファイルを開け」と案内する（開いている） |
+| 低 | `src/doctrine/registry.ts` | 上流の JSON の形を検めない。他の四つ（グラフ・範囲・所見・逆孤児）は検めている |
+
+### いちばん効くもの — 記号は直っているのに、数が直っていない
+
+`ADR-017` は記号の側をこう直した。
+
+```ts
+rangeCount: rangesKnown ? ranges.length : null,   // 取れていなければ ? を当てない
+```
+
+**同じ組み立ての中で、数の側は `rangesKnown` を見ていない。**
+
+```ts
+codeRanges: rows.reduce((n, r) => n + r.ranges.length, 0),   // 0 と断定
+noRange: rows.filter((r) => r.ranges.length === 0).length,    // 全行が「範囲が無い」
+```
+
+結果、範囲の取得だけが落ちた回に、画面は「コード 0 か所・範囲が無い 11」と**測った事実として**
+出す。同じ木で範囲は実在し、11 行のうち 3 行に 9 件が結ばれている。
+
+そのうえ脚注が**誤った理由**まで添える——「行には最も重い記号だけが出るので、
+記号ごとの数と事実ごとの数は食い違う」。食い違いの理由は排他ではなく、未取得である。
+
+### 逆孤児だけが、隣の三行と違う
+
+```ts
+registry: registryOutcome.ok ? registryOutcome.value : null,      // null を保つ
+ranges: rangesOutcome.ok ? rangesOutcome.value : null,            // null を保つ
+findings: auditOutcome.ok ? auditOutcome.value.findings : null,   // null を保つ
+reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],      // ← ここだけ潰す
+```
+
+`+`（足りない）は `--reverse-orphans` からしか出ない。取得が落ちれば
+**記号 `+` は永久に出ず、要約は「足りない 0」と言い切る。**
+
+## この変更でやること
+
+1. 六箇所を、`null` を保つ形へ揃える。
+2. 「取れなかった」を数の位置に出すときの決まりを一つ決める
+   （`ADR-021` 決定 4 を数へ広げる）。数が出せないなら、その数を出さない。
+3. `src/panel/` に残っている変換を、模型（試験の届く層）へ移す。
+4. 潰しの表に、六つとも行を足す。**移す前は表に足しても捕まらない**ことを、
+   `CHANGE-010` が実測している。
+
+## なぜ `CHANGE-010` に混ぜないか
+
+`CHANGE-010` の主題は「既定を語らない」であり、これは別の欠陥である。
+**一周に主題を二つ入れると、どちらの影響も測れなくなる**（`CHANGE-011` と同じ判断）。
+
+## 要求元
+
+`REQ-001`——順に辿るための数が嘘なら、順そのものが信じられない。
+`ADR-017`「画面は確かめたことだけを言う」。`ADR-021` 決定 4。
+
+## 影響の初期見積
+
+| 区分 | 見積 |
+|---|---|
+| 書き直す文書 | `SPEC-005`（部分失敗）・`SPEC-006`（要約とエラー時挙動）・`SPEC-004` |
+| 新しく作る文書 | 影響の記録と、数へ広げる決定 |
+| 触る実装 | `consequence.ts`・`graph.ts`・`cadence.ts`・`lensPanel.ts`・`registry.ts`・`view.ts` |
+| 触る門 | 潰しの表に六行・単体試験・写しの門 |
