@@ -559,13 +559,13 @@ test("006-22. 迂回路だけを名乗って、存在する直の辺を無いこ
   assert.ok(shown.includes("直にも持つ"), `直の辺を名乗っていない: ${shown}`);
 });
 
-test("006-23. 空白だけの題名は id へ落とす", () => {
+test("空白だけの題名は id へ落とす（受入 5）", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const meta: DocMetaIndex = new Map([["P", { title: "   ", updated: "", supersededBy: "" }]]);
   assert.equal(buildView(c, meta, strings(), CONTEXT).waves[0]?.rows[0]?.title, "P");
 });
 
-test("006-24. 所見の六項がそのまま届く（severity や path を捨てない）", () => {
+test("所見の六項がそのまま届く。severity や path を捨てない（受入 9）", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const f = { ...finding("P", "error", "壊れている"), check: "dead_link", path: "a/b.md", refs: ["X"] };
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
@@ -577,7 +577,7 @@ test("006-24. 所見の六項がそのまま届く（severity や path を捨て
 });
 
 
-test("006-25. 出ていない所見を、行き先の在るものと無いものに分ける", () => {
+test("出ていない所見を、行き先の在るものと無いものに分ける（受入 22）", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -591,7 +591,7 @@ test("006-25. 出ていない所見を、行き先の在るものと無いもの
   assert.equal(c.findingsUnattached, 1, "属さないものを数えていない");
 });
 
-test("006-25b. 行き先が押せる形で画面へ届く", () => {
+test("行き先が押せる形で画面へ届く（受入 22）", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const c = buildConsequence(graph, "O", {
     ...NO_CONTEXT,
@@ -602,7 +602,7 @@ test("006-25b. 行き先が押せる形で画面へ届く", () => {
   assert.ok(view.footnotes.some((f) => f.includes("行ける 1")), `脚注: ${view.footnotes}`);
 });
 
-test("006-25c. refs だけで紐づく所見も「行き先が在る」側に入れる", () => {
+test("refs だけで紐づく所見も「行き先が在る」側に入れる（受入 22）", () => {
   const graph = graphOf(["O", "P", "よそ"], ["O>P"]);
   const f = { ...finding("", "warn", "refs で指す"), refs: ["よそ"] };
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
@@ -610,7 +610,7 @@ test("006-25c. refs だけで紐づく所見も「行き先が在る」側に入
   assert.equal(c.findingsUnattached, 0, "refs を見ていない");
 });
 
-test("006-25d. 属さない所見が無ければ、その脚注を出さない", () => {
+test("属さない所見が無ければ、その脚注を出さない（受入 22）", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const view = buildView(c, new Map(), strings(), CONTEXT);
   assert.ok(!view.footnotes.some((f) => f.includes("属さない")), "説明だけが浮く");

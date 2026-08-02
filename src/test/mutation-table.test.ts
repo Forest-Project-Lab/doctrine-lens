@@ -11,7 +11,7 @@
 // だから道具はこのファイルを除いて回す。`npm test` と CI は全件を回すので、
 // 潰したまま残る事故の検知は落ちない。
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
 
@@ -59,6 +59,36 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
     "前回の突然変異が途中で止まっている。npm run mutate を一度回すと元へ戻る。",
   );
 });
+
+test("試験の名が重複していない（潰しの報告が、どれが捕まえたかを名で言う）", () => {
+  // `tools/mutate-verdict.mjs` の `namesOfFailed` は `not ok N - <名>` から
+  // **名前だけ**を取る。同じ名の試験が二つ在ると、報告のどちらを指しているかが
+  // 読めなくなる。node:test は同名を黙って許すので、ここで止める。
+  //
+  // 実測でそうなった——受入の番号を仕様に足したとき、既に別の主題が同じ番号を
+  // 使っており、`006-23`・`006-24`・`006-25`・`006-25b` が二つずつ在った。
+  // 潰しの報告は「006-25 が捕まえた」と刷るが、どちらの 006-25 かは分からない。
+  const names: string[] = [];
+  for (const file of testSources(join(PROJECT, "src", "test"))) {
+    const text = readFileSync(file, "utf8");
+    for (const m of text.matchAll(/^test\(\s*"((?:[^"\\]|\\.)*)"/gm)) {
+      names.push((m[1] as string).replace(/\\"/g, '"'));
+    }
+  }
+  assert.ok(names.length > 50, `試験名を読み取れていない（${names.length} 件）`);
+
+  const seen = new Map<string, number>();
+  for (const name of names) seen.set(name, (seen.get(name) ?? 0) + 1);
+  const duplicated = [...seen.entries()].filter(([, n]) => n > 1).map(([name, n]) => `${name} ×${n}`);
+  assert.deepEqual(duplicated, [], "同じ名の試験が在る");
+});
+
+/** `src/test` 直下の `*.test.ts` を集める。 */
+function testSources(dir: string): string[] {
+  return readdirSync(dir)
+    .filter((name) => name.endsWith(".test.ts"))
+    .map((name) => join(dir, name));
+}
 
 /**
  * 表に書いてある文字列リテラル（`'…'`・`"…"`・`` `…` ``）を、値へ解く。
