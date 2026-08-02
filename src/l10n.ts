@@ -136,7 +136,14 @@ export function viewStrings(): ViewStrings {
       "{0}",
     ),
     footHidden: t("{0} documents reach the origin in neither direction and are not listed", "{0}"),
-    footElsewhere: t("{0} findings are not shown anywhere on this screen", "{0}"),
+    footElsewhere: t(
+      "{0} documents that do not reach the origin carry findings — open one to see them",
+      "{0}",
+    ),
+    footUnattached: t(
+      "{0} findings are outside this screen's question (they belong to no document)",
+      "{0}",
+    ),
     originFindingsNote: t("Upstream says this document itself is broken:"),
     footAudit: t("Upstream docs-audit ran {1} checks at {0}", "{0}", "{1}"),
     footAuditNever: t("Upstream docs-audit has not run yet"),

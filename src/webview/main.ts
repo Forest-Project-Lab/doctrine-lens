@@ -171,6 +171,19 @@ function draw(view: ConsequenceView): void {
   const foot = document.createElement("footer");
   foot.className = "foot";
   for (const line of view.footnotes) foot.append(text("p", "", line));
+  // 行き先。押すとその文書が開き、開けば起点になる（ADR-019）。
+  if (view.findingsAt.length > 0) {
+    const at = document.createElement("p");
+    at.className = "at";
+    for (const id of view.findingsAt) {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.textContent = id;
+      link.addEventListener("click", () => send({ kind: "openDocument", id }));
+      at.append(link);
+    }
+    foot.append(at);
+  }
   // 画面に出た語の定義。木の用語辞書から引いたもの（ADR-018）。
   if (view.terms.length > 0) {
     const words = document.createElement("dl");

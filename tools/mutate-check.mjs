@@ -297,8 +297,8 @@ const MUTATIONS = [
   {
     label: "「外」を「起点以外」へ戻す（画面に出ている所見を外と数える）",
     file: "src/model/consequence.ts",
-    from: "findingsElsewhere: context.findings.filter((f) => !shown.has(f)).length,",
-    to: "findingsElsewhere: context.findings.filter((f) => f.doc_id !== origin.id).length,",
+    from: "const hidden = context.findings.filter((f) => !shown.has(f));",
+    to: "const hidden = context.findings.filter((f) => f.doc_id !== origin.id);",
   },
   {
     label: "前提を「繋がらない」へ混ぜる（辿る向きの違いを影響なしと読ませる）",
@@ -347,6 +347,24 @@ const MUTATIONS = [
     file: "src/doctrine/glossary.ts",
     from: "const words = [...glossary.keys()].sort((a, b) => b.length - a.length);",
     to: "const words = [...glossary.keys()];",
+  },
+  {
+    label: "出ていない所見の行き先を捨てる（件数だけ出して手が無い）",
+    file: "src/model/consequence.ts",
+    from: "      ...new Set(hidden.flatMap((f) => attachedTo(f))),\n    ].sort(),",
+    to: "    ].sort(),",
+  },
+  {
+    label: "属さない所見を「行き先が在る」側へ混ぜる（探しても見つからない）",
+    file: "src/model/consequence.ts",
+    from: "    findingsUnattached: hidden.filter((f) => !attachedTo(f).length).length,",
+    to: "    findingsUnattached: 0,",
+  },
+  {
+    label: "refs で紐づく所見を見落とす（行き先が在るのに無いと言う）",
+    file: "src/model/consequence.ts",
+    from: "  for (const ref of Array.isArray(finding.refs) ? finding.refs : []) {\n    if (typeof ref === \"string\" && ref) out.add(ref);\n  }",
+    to: "",
   },
 ];
 
