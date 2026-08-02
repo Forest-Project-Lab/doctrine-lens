@@ -81,6 +81,7 @@ const state = async () => ({
   ranges: await page.locator(".row .range").count(),
   footnotes: await page.locator(".foot p").count(),
   legend: await page.locator(".foot .legend span").count(),
+  terms: await page.locator(".foot .terms dt").count(),
   svg: await page.locator("svg").count(),
   // 記号は左端の固定幅の溝に出る。字を集めれば、五つの語彙の外が入っていないか見える。
   marks: await page.evaluate(() =>
@@ -142,6 +143,7 @@ const first = await record("明細（720px）", "01-list", {
   rows: some(),
   footnotes: some(),
   legend: 5,
+  terms: (v) => v > 0,
   svg: 0,
   overflow: [],
   marks: (v) => v.length > 0 && v.every((m) => MARKS.has(m)),
@@ -227,7 +229,8 @@ await browser.close();
 for (const step of steps) {
   console.log(
     `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
-      `記号 ${step.marks.join("")}・svg ${step.svg}・差し込みの跡 ${step.placeholders.length}`,
+      `記号 ${step.marks.join("")}・語 ${step.terms}・svg ${step.svg}・` +
+      `差し込みの跡 ${step.placeholders.length}`,
   );
 }
 if (errors.length > 0) {

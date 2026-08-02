@@ -149,6 +149,31 @@ if (Object.keys(titleReport).length === 0) {
   throw new Error("題名が一件も取れない。空の表で写しを撮ると、id だけの画面を確かめたことになる。");
 }
 
+// 木の用語辞書。本体と同じ関数を通す（ADR-018）。
+const glossaryBundle = join(outDir, "glossary.mjs");
+writeFileSync(
+  join(outDir, "glossary-entry.ts"),
+  'export { fetchGlossary } from "../src/doctrine/glossary.js";\n',
+  "utf8",
+);
+execFileSync(
+  "npx",
+  ["esbuild", join(outDir, "glossary-entry.ts"), "--bundle", "--format=esm",
+   "--platform=node", `--outfile=${glossaryBundle}`, "--log-level=warning"],
+  { cwd: projectRoot, stdio: "inherit" },
+);
+const { fetchGlossary } = await import(pathToFileURL(glossaryBundle).href);
+const glossaryOutcome = await fetchGlossary(
+  graph,
+  join(projectRoot, "doctrine_docs"),
+  pluginRoot,
+  { pythonPath: "python3", timeoutMs: 30000, cwd: projectRoot },
+);
+if (!glossaryOutcome.ok) {
+  throw new Error(`用語辞書を取れない（${glossaryOutcome.reason}: ${glossaryOutcome.detail}）。`);
+}
+const glossary = glossaryOutcome.value;
+
 // 明細は本体側で組む（ADR-012）。写しでも同じ関数を通す。写さない。
 const modelBundle = join(outDir, "model.mjs");
 writeFileSync(
@@ -181,6 +206,8 @@ const view = buildView(
     auditAt: audit.generated_at ? formatTime(new Date(audit.generated_at)) : "",
     // 上流が走らせた検査の数。数えた数であって、代弁の語ではない（ADR-014）。
     checksRun: Array.isArray(audit.checks_run) ? audit.checks_run.length : 0,
+    // 木の用語辞書。本体と同じ道筋で取る（ADR-018）。写さない。
+    glossary,
     titlesMissing: Object.keys(titleReport).length === 0,
   },
 );
@@ -264,5 +291,6 @@ await build(webviewOptions(join(outDir, "webview.js")));
 console.log(
   `${join(outDir, "index.html")} を書いた（起点 ${ORIGIN}・` +
     `波 ${view.waves.length}・行 ${view.waves.reduce((n, w) => n + w.rows.length, 0)}・` +
-    `循環 ${view.cycles.length}・題名 ${Object.keys(titleReport).length}）。`,
+    `循環 ${view.cycles.length}・題名 ${Object.keys(titleReport).length}・` +
+    `承認語 ${glossary.size}）。`,
 );

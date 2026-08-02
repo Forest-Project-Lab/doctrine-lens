@@ -487,6 +487,7 @@ const CONTEXT = {
   auditAt: "2026-07-29 09:14",
   titlesMissing: false,
   checksRun: 34,
+  glossary: new Map<string, string>(),
 };
 
 /** 差し込みの位置だけを見る、短い見本の文言。訳の中身は l10n.test.ts が見る。 */

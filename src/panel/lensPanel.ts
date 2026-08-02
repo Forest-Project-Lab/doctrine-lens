@@ -31,6 +31,7 @@ function partialName(what: string): string {
   if (what === "ranges") return messages.partialRanges();
   if (what === "orphans") return messages.partialOrphans();
   if (what === "titles") return messages.partialTitles();
+  if (what === "glossary") return messages.partialGlossary();
   return messages.partialFindings();
 }
 
@@ -195,7 +196,7 @@ export class LensPanel {
       const { id, openFile } = this.#originId();
       const auditAt = state.auditAt ? formatTime(state.auditAt) : "";
       // 鍵は「答えを変えうるもの」だけで組む。取得は同一性で見る（中身は不変である）。
-      const key = JSON.stringify([id, openFile, auditAt, snapshot.checksRun.length]);
+      const key = JSON.stringify([id, openFile, auditAt, snapshot.checksRun.length, snapshot.glossary.size]);
       if (this.#last?.key === key && this.#lastSnapshot === snapshot) {
         this.#post(this.#last.view);
       } else {
@@ -216,6 +217,7 @@ export class LensPanel {
               (n) => !snapshot.docMeta.get(n.id)?.title?.trim(),
             ),
             checksRun: snapshot.checksRun.length,
+            glossary: snapshot.glossary,
           }),
         };
         this.#last = { key, view: message };

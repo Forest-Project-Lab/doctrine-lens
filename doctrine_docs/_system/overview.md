@@ -43,18 +43,21 @@ sources: []
 | ADR-015 | ADR | lens | 潰しの合否は試験の終了符号で決め、出力の照合は補助に降ろす |
 | ADR-016 | ADR | lens | 潰しは利用者の作業木ではなく、捨てられる隔離木で当てる |
 | ADR-017 | ADR | lens | 画面は確かめたことだけを言う。自分の門が緑であることを証拠にしない |
+| ADR-018 | ADR | lens | 語の意味は木の辞書から引く。実装が語彙を持たない |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
 | CHANGE-004 | CHANGE | lens | 地図をやめ、帰結の明細にする |
 | CHANGE-005 | CHANGE | lens | 数を言い切らず数え、行に status と後継を出す |
 | CHANGE-006 | CHANGE | lens | どちらの向きに辿ったかを言う。捨てた事実を数える |
+| CHANGE-007 | CHANGE | lens | 画面の語を、木が持つ正本へ結ぶ |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
 | IMPACT-004 | IMPACT | lens | 帰結の明細へ置き換えることの影響 |
 | IMPACT-005 | IMPACT | lens | 数を数え、行に status と後継を出すことの影響 |
 | IMPACT-006 | IMPACT | lens | 画面が確かめたことだけを言うようにすることの影響 |
+| IMPACT-007 | IMPACT | lens | 画面の語を木の正本へ結ぶことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

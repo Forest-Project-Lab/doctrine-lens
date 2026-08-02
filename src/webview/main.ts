@@ -171,6 +171,15 @@ function draw(view: ConsequenceView): void {
   const foot = document.createElement("footer");
   foot.className = "foot";
   for (const line of view.footnotes) foot.append(text("p", "", line));
+  // 画面に出た語の定義。木の用語辞書から引いたもの（ADR-018）。
+  if (view.terms.length > 0) {
+    const words = document.createElement("dl");
+    words.className = "terms";
+    for (const term of view.terms) {
+      words.append(text("dt", "", term.word), text("dd", "", term.meaning));
+    }
+    foot.append(words);
+  }
   const legend = document.createElement("div");
   legend.className = "legend";
   for (const item of view.legend) legend.append(text("span", "", item));

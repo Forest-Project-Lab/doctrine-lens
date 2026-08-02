@@ -330,6 +330,24 @@ const MUTATIONS = [
     from: "    findings: round.findings,",
     to: "    findings: previous.findings,",
   },
+  {
+    label: "承認語の判定を自前でやる（カルクの表まで語として拾う）",
+    file: "src/doctrine/glossary.ts",
+    from: "    if (!meaning || !approved.has(word)) continue;",
+    to: "    if (!meaning) continue;",
+  },
+  {
+    label: "辞書の場所を canonical_for ではなく決め打ちにする",
+    file: "src/doctrine/glossary.ts",
+    from: 'if (claims.some((c) => c === "glossary")) return node.path;',
+    to: 'if (node.path.endsWith("glossary.md")) return node.path;',
+  },
+  {
+    label: "長い語を先に見るのをやめる（逆孤児の中の孤児を二重に拾う）",
+    file: "src/doctrine/glossary.ts",
+    from: "const words = [...glossary.keys()].sort((a, b) => b.length - a.length);",
+    to: "const words = [...glossary.keys()];",
+  },
 ];
 
 // 潰す先。**利用者の作業木ではない**（ADR-015）。走り出しに隔離木を作って差し替える。
@@ -497,7 +515,17 @@ const unguarded = [];
 const invalid = [];
 for (const { label, file, from, to } of MUTATIONS) {
   const path = join(workRoot, file);
-  const original = readFileSync(path, "utf8");
+  // 隔離木は commit と追跡下の差分から作る。**未追跡の新しいファイルは入らない。**
+  // 素の readFileSync だと ENOENT で走行ごと落ち、それまでの判定も読めなくなる。
+  // 表の行として不正と報せ、残りを走らせきる。
+  let original;
+  try {
+    original = readFileSync(path, "utf8");
+  } catch {
+    console.log(`?? ${label} — ${file} が隔離木に無い。未追跡なら先に git add すること。`);
+    invalid.push(`${label}（隔離木に無い: ${file}）`);
+    continue;
+  }
   if (!original.includes(from)) {
     console.log(`?? ${label} — 対象の行が見つからない（${file}）。表が古い。`);
     invalid.push(`${label}（対象不明）`);
