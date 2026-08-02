@@ -22,10 +22,24 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
   // 全件が緑になることがある（潰しの多くは一つの試験しか赤くしない）。
   // 表の `from` がすべて実在することを、ここで毎回検める。表が古いことも同時に分かる。
   const tool = readFileSync(join(PROJECT, "tools", "mutate-check.mjs"), "utf8");
+
+  // **読めた数が、表の行数と一致することを先に検める。**
+  // 以前はここが `from: (.+)` で、複数行のテンプレートリテラルを黙って読み飛ばしていた。
+  // 実測で 55 行のうち 2 行が読まれず、その 2 行は字面が古びても誰も咎めなかった
+  // （二度腐って、二度とも走行の途中で「対象不明」として出た）。
+  // **読み飛ばしを、数の一致で塞ぐ。** 読めない行が在れば、ここで落ちる。
+  const declared = [...tool.matchAll(/^ {4}label: "/gm)].length;
   const rows = [
-    ...tool.matchAll(/label: "([^"]+)",\s*\n\s*file: "([^"]+)",\s*\n\s*from: (.+),\s*\n\s*to: /g),
+    ...tool.matchAll(
+      /label: "([^"]+)",\s*\n\s*file: "([^"]+)",\s*\n\s*from: ([\s\S]+?),\s*\n\s*to: /g,
+    ),
   ];
-  assert.ok(rows.length >= 20, `表を読み取れていない（${rows.length} 件）`);
+  assert.ok(declared >= 20, `表を読み取れていない（${declared} 件）`);
+  assert.equal(
+    rows.length,
+    declared,
+    `表の ${declared} 行のうち ${rows.length} 行しか読めていない（読み飛ばした行は検められない）`,
+  );
 
   const missing: string[] = [];
   for (const [, label, file, literal] of rows) {
@@ -46,7 +60,12 @@ test("突然変異の表が実在の行を指し、潰したままの行が残�
   );
 });
 
-/** 表に書いてある文字列リテラル（`'…'` か `"…"`）を、値へ解く。 */
+/**
+ * 表に書いてある文字列リテラル（`'…'`・`"…"`・`` `…` ``）を、値へ解く。
+ *
+ * 逆引用符（テンプレートリテラル）は複数行を跨ぐ。表の `from` は実際の
+ * ソースの数行をそのまま書き写すので、この形が要る。
+ */
 function parseLiteral(literal: string): string {
   const text = literal.trim();
   const quote = text[0] as string;

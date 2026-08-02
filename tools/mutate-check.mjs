@@ -156,9 +156,7 @@ const MUTATIONS = [
     label: "判じられない回に非現行を 0 と数える（測っていないものを良い知らせにする）",
     file: "src/model/consequence.ts",
     from: `        notCurrent:
-          context.currentStatuses === null
-            ? null
-            : rows.filter((r) => r.notCurrent === true).length,`,
+          currentStatuses === null ? null : rows.filter((r) => r.notCurrent === true).length,`,
     to: "        notCurrent: rows.filter((r) => r.notCurrent === true).length,",
   },
   {
