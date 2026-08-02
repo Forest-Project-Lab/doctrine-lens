@@ -151,7 +151,7 @@ test("上流が別の木を監査したら、その判定を使わない", async
     fakeAudit(pluginRoot, docsRoot);
     const same = await fetchFindings(dir, docsRoot, pluginRoot, options(dir));
     assert.ok(same.ok, "同じ木なら判定を使う");
-    assert.equal(same.value.length, 1);
+    assert.equal(same.value.findings.length, 1);
 
     fakeAudit(pluginRoot, other);
     const different = await fetchFindings(dir, docsRoot, pluginRoot, options(dir));

@@ -3,7 +3,9 @@
 // 1・11・12（画面の側）は preview と design.test.ts が受け持つ。
 // ここは判断の側だけを見る。編集器を起こさずに確かめられる範囲である。
 import assert from "node:assert/strict";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { test } from "node:test";
 
 import type { AuditFinding } from "../doctrine/audit.js";
@@ -156,6 +158,38 @@ test("006-2d. 右端の数が一つも無いときは、その説明を出さな
   const graph = graphOf(["O", "A"], ["O>A"]);
   const view = buildView(buildConsequence(graph, "O", NO_CONTEXT), new Map(), strings(), CONTEXT);
   assert.ok(!view.footnotes.some((f) => f.includes("右端の数")), "説明だけが浮く");
+});
+
+test("006-13. 脚注の検査の数が、渡された数そのものである（代弁の語を置かない）", () => {
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  const view = buildView(c, new Map(), strings(), { ...CONTEXT, checksRun: 34 });
+  assert.ok(view.footnotes.some((f) => f.includes("34 検査")), `脚注: ${view.footnotes}`);
+  // 上流が増やしたら追随する。実装が数を持っていればここで固まる。
+  const more = buildView(c, new Map(), strings(), { ...CONTEXT, checksRun: 41 });
+  assert.ok(more.footnotes.some((f) => f.includes("41 検査")), `脚注: ${more.footnotes}`);
+});
+
+test("006-14. 行が status を出し、後継が在れば併記する", () => {
+  const graph = graphOf(["O", "古い"], ["O>古い"]);
+  // 上流が返した status を素通しする。語彙をこちらが持たない。
+  (graph.nodes as { id: string; status: string }[]).forEach((n) => {
+    if (n.id === "古い") n.status = "deprecated";
+  });
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  assert.equal(c.waves[0]?.rows[0]?.status, "deprecated", "模型が status を運んでいない");
+
+  const meta: DocMetaIndex = new Map([
+    ["古い", { title: "退役した仕様", updated: "", supersededBy: "SPEC-006" }],
+  ]);
+  const view = buildView(c, meta, strings(), CONTEXT);
+  assert.equal(view.waves[0]?.rows[0]?.status, "deprecated");
+  assert.equal(view.waves[0]?.rows[0]?.succeeds, "後継 SPEC-006");
+});
+
+test("006-14b. 後継が無ければ何も出さない（空の札を置かない）", () => {
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.equal(view.waves[0]?.rows[0]?.succeeds, "");
 });
 
 test("006-6. 出していないものの件数が脚注に出る", () => {
@@ -329,7 +363,12 @@ test("深い鎖でも呼び出し段が尽きない（再帰で書くと落ち�
 
 // --- 道具 ------------------------------------------------------------------
 
-const CONTEXT = { openFile: "src/a.ts", auditAt: "2026-07-29 09:14", titlesMissing: false };
+const CONTEXT = {
+  openFile: "src/a.ts",
+  auditAt: "2026-07-29 09:14",
+  titlesMissing: false,
+  checksRun: 34,
+};
 
 /** 差し込みの位置だけを見る、短い見本の文言。訳の中身は l10n.test.ts が見る。 */
 function strings(): Parameters<typeof buildView>[2] {
@@ -348,10 +387,11 @@ function strings(): Parameters<typeof buildView>[2] {
     noOriginNoFile: "起点が無い",
     footHidden: "隠した {0}",
     footElsewhere: "外に {0}",
-    footAudit: "監査 {0}",
+    footAudit: "監査 {0}／{1} 検査",
     footAuditNever: "監査まだ",
     footNoTitles: "題名が無い",
     footBehind: "右端の数は片づけると確定に向かう件数",
+    rowSucceeds: "後継 {0}",
     cycleNote: "循環 {0}",
     legendBroken: "×",
     legendMissing: "+",
@@ -363,10 +403,70 @@ function strings(): Parameters<typeof buildView>[2] {
 
 // --- 上流の判定を捨てない ---------------------------------------------------
 
-test("上流の 34 検査すべてが橋を渡る（追跡の検査だけに絞らない）", async (t) => {
+test("橋が所見を検査名で絞らない（木の健康状態に依らずに検める）", async () => {
   // 旧実装は check が "trace" で始まるものだけを通していた。34 のうち 11 である。
   // 判断の層を橋の上で捨てていたので、画面は事実しか言えず、判断は読み手に残った。
-  // 利用者の「依存されているから何？」は、その帰結である。
+  //
+  // **この試験は統治木を一切読まない。** 前は実樹の監査を走らせて
+  // 「追跡以外の所見が一件来たか」を見ていたが、それは二つの意味で誤りだった。
+  //   ・34 という数を検めていない（33 を絞っても通る）
+  //   ・木の健康状態に依っている（木が緑になると、橋が正しいまま赤くなる）
+  // 偽のプラグインに混在の報告を返させ、橋の性質だけを見る（ADR-014）。
+  const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-audit-"));
+  try {
+    const scripts = join(dir, "plugin", "scripts");
+    mkdirSync(scripts, { recursive: true });
+    mkdirSync(join(dir, "doctrine_docs"), { recursive: true });
+
+    // 追跡と追跡以外を混ぜた報告。上流が返す形に揃える。
+    const report = {
+      schema: "docs-audit/1",
+      root: join(dir, "doctrine_docs"),
+      checks_run: ["dead_link", "dep_cycle", "trace_stale", "guard_liveness_gap", "orphan"],
+      findings: [
+        { check: "dead_link", severity: "error", doc_id: "A", path: "", message: "死んだ参照", refs: [] },
+        { check: "trace_stale", severity: "warn", doc_id: "B", path: "", message: "指紋が違う", refs: [] },
+        { check: "guard_liveness_gap", severity: "advisory", doc_id: "", path: "", message: "配線", refs: [] },
+        { check: "dep_cycle", severity: "error", doc_id: "C", path: "", message: "循環", refs: [] },
+      ],
+    };
+    writeFileSync(
+      join(scripts, "docs-audit.py"),
+      `import json,sys\njson.dump(${JSON.stringify(report)}, sys.stdout)`,
+      "utf8",
+    );
+
+    const { fetchFindings } = await import("../doctrine/audit.js");
+    const outcome = await fetchFindings(dir, join(dir, "doctrine_docs"), join(dir, "plugin"), {
+      pythonPath: "python3",
+      timeoutMs: 20000,
+      cwd: dir,
+    });
+    assert.ok(outcome.ok, `取れなかった: ${outcome.ok ? "" : outcome.detail}`);
+
+    assert.deepEqual(
+      outcome.value.findings.map((f) => f.check).sort(),
+      ["dead_link", "dep_cycle", "guard_liveness_gap", "trace_stale"],
+      "橋が検査名で絞っている（追跡以外が落ちている）",
+    );
+    assert.deepEqual(
+      [...outcome.value.checksRun].sort(),
+      ["dead_link", "dep_cycle", "guard_liveness_gap", "orphan", "trace_stale"],
+      "走らせた検査の一覧が届いていない",
+    );
+    // 所見が出ていない検査（orphan）も一覧には在る。ここが「数を数える」根拠である。
+    assert.ok(
+      outcome.value.checksRun.length > outcome.value.findings.length,
+      "所見の数と検査の数を混同している",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("走らせた検査の数が、上流の検査の一覧と一致する（数を実装が持たない）", async (t) => {
+  // 上流が検査を増やしたら、こちらが何もしなくても数が追随することを見る。
+  // 期待値を実行時に上流から読む。定数で 34 と書いたらこの試験の意味が消える。
   const { locatePluginRoot, locateDocsRoot } = await import("../doctrine/locate.js");
   const { fetchFindings } = await import("../doctrine/audit.js");
   const project = resolve(__dirname, "..", "..");
@@ -374,16 +474,29 @@ test("上流の 34 検査すべてが橋を渡る（追跡の検査だけに絞�
   const docsRoot = locateDocsRoot(project);
   if (!pluginRoot || !docsRoot) return t.skip("doctrine プラグインか統治木が無い");
 
+  // 上流の検査の一覧を、上流の原文から読む。
+  const source = readFileSync(join(pluginRoot, "scripts", "docs-audit.py"), "utf8");
+  const block = source.slice(source.indexOf("AUDIT_CHECKS = ("));
+  const literal = block.slice(0, block.indexOf(")"));
+  const upstream = [...literal.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]);
+  assert.ok(upstream.length > 20, `上流の検査の一覧を読めない（${upstream.length} 件）`);
+
   const outcome = await fetchFindings(project, docsRoot, pluginRoot, {
     pythonPath: "python3",
     timeoutMs: 60000,
     cwd: project,
   });
   assert.ok(outcome.ok, `監査に失敗した: ${outcome.ok ? "" : outcome.detail}`);
-  const checks = new Set(outcome.value.map((f) => f.check));
-  const nonTrace = [...checks].filter((c) => !c.startsWith("trace"));
-  assert.ok(
-    nonTrace.length > 0,
-    `追跡以外の所見が一つも来ていない（来た検査: ${[...checks].join(", ") || "無し"}）`,
+  assert.deepEqual(
+    [...outcome.value.checksRun].sort(),
+    [...upstream].sort(),
+    "上流が走らせた検査と、橋が伝えた一覧が食い違う",
   );
+
+  // 実装が数を定数で持っていないことを字面で見る（ADR-014 の却下案 1）。
+  for (const rel of ["src/doctrine/audit.ts", "src/model/view.ts", "src/l10n.ts"]) {
+    const text = readFileSync(join(project, rel), "utf8");
+    const hits = [...text.matchAll(/\b34\b/g)].map((m) => m[0]);
+    assert.deepEqual(hits, [], `${rel} が検査の数を字面で持っている`);
+  }
 });

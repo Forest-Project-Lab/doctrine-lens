@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-29
-updated: 2026-07-29
+updated: 2026-07-30
 sources: []
 depends_on: [SPEC-006]
 llm_context: task
@@ -32,6 +32,10 @@ SPEC-006 の受入基準の十二項に一対一で対応させる。
 | 画面に `<svg>` が一つも無い | 実物の画面を開き、`document.querySelectorAll("svg").length` を見る | 画面 |
 | 幅 280px でどの操作要素も外へ出ない | 実物の画面を 280px に狭め、各要素の矩形が可視域に収まることを測る | 画面 |
 | `DESIGN.md` の段に無い値が CSS に無い | 器の CSS を走査し、余白・角丸・書体・太さが表の値だけであることを見る | 不要 |
+
+| 脚注の検査の数 | 上流の `checks_run` の長さと画面の数が一致する。実装に定数が無いことを字面で見る |
+| 行の status と後継 | 非現行の行に status が出て、`superseded_by` が在れば後継の id が併記される |
+| status に色を当てない | `.row .status` に `--vscode-charts-` が当たっていないことを CSS の字面で見る |
 
 ## 退行観点
 

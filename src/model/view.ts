@@ -50,7 +50,7 @@ export interface ViewStrings {
   readonly footHidden: string;
   /** `起点の外に所見 {0} 件` */
   readonly footElsewhere: string;
-  /** `上流 docs-audit を {0} に実行` */
+  /** `上流 docs-audit（{1} 検査）を {0} に実行` */
   readonly footAudit: string;
   /** 監査をまだ取っていないとき */
   readonly footAuditNever: string;
@@ -58,6 +58,8 @@ export interface ViewStrings {
   readonly footNoTitles: string;
   /** 行の右端の数が何かを言う一文 */
   readonly footBehind: string;
+  /** `後継 {0}` */
+  readonly rowSucceeds: string;
   /** 波が決まらない旨。`{0}` は件数 */
   readonly cycleNote: string;
   /** 記号の語彙。順に 壊れている・足りない・場所が要る・直す・見直す */
@@ -116,8 +118,12 @@ function rangeLinks(row: Row, strings: ViewStrings): RangeLink[] {
 }
 
 function rowView(row: Row, originId: string, meta: DocMetaIndex, strings: ViewStrings): RowView {
+  const successor = meta.get(row.id)?.supersededBy ?? "";
   return {
     id: row.id,
+    // 上流が返した値をそのまま運ぶ。語彙をこちらが持たない（REQ-003）。
+    status: row.status,
+    succeeds: successor ? fill(strings.rowSucceeds, successor) : "",
     symbol: row.symbol as Symbol,
     title: titleOf(row.id, meta),
     reason: reasonText(row.reason, originId, strings),
@@ -138,7 +144,13 @@ export function buildView(
   consequence: Consequence,
   meta: DocMetaIndex,
   strings: ViewStrings,
-  context: { readonly openFile: string; readonly auditAt: string; readonly titlesMissing: boolean },
+  context: {
+    readonly openFile: string;
+    readonly auditAt: string;
+    readonly titlesMissing: boolean;
+    /** 上流が実際に走らせた検査の数。数えた数であって、代弁の語ではない（ADR-014）。 */
+    readonly checksRun: number;
+  },
 ): ConsequenceView {
   const origin: OriginView | null = consequence.origin
     ? {
@@ -195,7 +207,11 @@ export function buildView(
     footnotes.push(strings.footBehind);
   }
   if (context.titlesMissing) footnotes.push(strings.footNoTitles);
-  footnotes.push(context.auditAt ? fill(strings.footAudit, context.auditAt) : strings.footAuditNever);
+  footnotes.push(
+    context.auditAt
+      ? fill(strings.footAudit, context.auditAt, String(context.checksRun))
+      : strings.footAuditNever,
+  );
 
   return {
     origin,

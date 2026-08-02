@@ -187,6 +187,13 @@ test("彩度のある色が、記号の一文字にだけ載っている", () =>
   assert.deepEqual(offenders, [], `彩度を文字色以外へ使っている: ${offenders.join(" / ")}`);
 });
 
+test("status に彩度のある色を当てていない（非現行は異常ではない）", () => {
+  // 色を当てると「非現行＝悪い」という嘘をつく。`!` と `~` と同じ理由（ADR-014）。
+  const rule = /\.row[^{]*\.status[^}]*\}/.exec(STYLE)?.[0] ?? "";
+  assert.ok(rule, ".row .status の規則が無い");
+  assert.ok(!/--vscode-charts-/.test(rule), `status に判定の色を当てている: ${rule}`);
+});
+
 test("! と ~ の記号に彩度のある色を当てていない", () => {
   for (const symbol of ["fix", "review"]) {
     const rule = new RegExp(`\\.row\\.${symbol}\\b[^}]*--vscode-charts-`);

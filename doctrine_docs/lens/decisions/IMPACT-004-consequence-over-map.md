@@ -102,7 +102,7 @@ CHANGE-004 の影響を、上流 `dep-graph.py` の前向き・逆向きの両�
 `src/doctrine/{cli,locate,model,registry,trace}.ts`、`src/codelens/*`、
 `src/model/{cadence,status,paths,workspace}.ts`、`src/session.ts` の取得の骨格。
 
-## 影響する試験
+## 影響するテスト
 
 | 試験 | どうなるか |
 |---|---|
@@ -122,7 +122,7 @@ CHANGE-004 の影響を、上流 `dep-graph.py` の前向き・逆向きの両�
 `ICD-001` が定める上流との接点は変わらない（読む項が増えるだけ）。
 したがって `R7`（ドメイン跨ぎは ICD を通す）に触れる変更は無い。
 
-## 工数の見積
+## 工数見積
 
 | 段 | 見積 |
 |---|---|
