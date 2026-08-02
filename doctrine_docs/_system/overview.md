@@ -47,6 +47,7 @@ sources: []
 | ADR-019 | ADR | lens | 数を出したら行き先も出す。行き先が無いなら、無いと言う |
 | ADR-020 | ADR | lens | 上流が答えたら、継ぎをその場で捨てる |
 | ADR-021 | ADR | lens | 既定は語らない。語らない分を数で支える |
+| ADR-022 | ADR | lens | 番号は飾りではない。突き合わせを門にする |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -56,6 +57,8 @@ sources: []
 | CHANGE-007 | CHANGE | lens | 画面の語を、木が持つ正本へ結ぶ |
 | CHANGE-008 | CHANGE | lens | 出していない所見に、行き先を与える |
 | CHANGE-009 | CHANGE | lens | 上流が答えたので、継ぎを捨てる |
+| CHANGE-010 | CHANGE | lens | 「現行だ」と言うのをやめる |
+| CHANGE-011 | CHANGE | lens | 受入の番号が、仕様と試験でずれている |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -66,6 +69,7 @@ sources: []
 | IMPACT-008 | IMPACT | lens | 出していない所見に行き先を与えることの影響 |
 | IMPACT-009 | IMPACT | lens | 継ぎを捨てることの影響 |
 | IMPACT-010 | IMPACT | lens | 「現行だ」と言うのをやめることの影響 |
+| IMPACT-011 | IMPACT | lens | 受入の番号を揃えることの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

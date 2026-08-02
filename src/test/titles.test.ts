@@ -50,7 +50,7 @@ test("上流の節点が題名を持つ（継ぎを捨ててよい根拠）", as
 
 // --- 用語辞書（ADR-018）---------------------------------------------------
 
-test("辞書の場所を canonical_for から引く（ファイル名を実装が持たない）", async () => {
+test("006-21. 辞書の場所を canonical_for から引く（ファイル名を実装が持たない）", async () => {
   const { glossaryPath } = await import("../doctrine/glossary.js");
   const graph = {
     nodes: [
@@ -62,13 +62,13 @@ test("辞書の場所を canonical_for から引く（ファイル名を実装�
   assert.equal(glossaryPath(graph), "_system/用語.md", "canonical_for から引けていない");
 });
 
-test("辞書を主張する文書が無ければ、失敗として返る（既定の場所を勝手に見ない）", async () => {
+test("006-21b. 辞書を主張する文書が無ければ、失敗として返る（既定の場所を勝手に見ない）", async () => {
   const { glossaryPath } = await import("../doctrine/glossary.js");
   const graph = { nodes: [{ id: "A", path: "x/a.md", canonical_for: [] }], edges: [] } as never;
   assert.equal(glossaryPath(graph), null);
 });
 
-test("どれが承認語かを実装が判じない（上流が言った語だけ意味を拾う）", async () => {
+test("006-21c. どれが承認語かを実装が判じない（上流が言った語だけ意味を拾う）", async () => {
   // この木の辞書には表が二つ在り、字面はどちらも三列である。見分ける規則は
   // 上流の _termcheck が持っている。こちらが同じ規則を書けば二重定義になる。
   const { meaningsFor } = await import("../doctrine/glossary.js");
@@ -85,7 +85,7 @@ test("どれが承認語かを実装が判じない（上流が言った語だ�
   assert.deepEqual(got, [{ word: "起点", meaning: "たどり始める文書" }]);
 });
 
-test("画面に出た語だけを拾う。長い語を先に見る", async () => {
+test("006-21d. 画面に出た語だけを拾う。長い語を先に見る", async () => {
   const { termsIn } = await import("../doctrine/glossary.js");
   const glossary = new Map([
     ["孤児", "依存されない文書"],
@@ -100,7 +100,7 @@ test("画面に出た語だけを拾う。長い語を先に見る", async () =>
   assert.deepEqual(both.map((t) => t.word), ["孤児", "逆孤児"]);
 });
 
-test("この木の辞書が上流越しに読め、カルクの表が混ざらない", async (t) => {
+test("006-21e. この木の辞書が上流越しに読め、カルクの表が混ざらない", async (t) => {
   const pluginRoot = pluginRootOrSkip();
   if (!pluginRoot) return t.skip("doctrine プラグインが無い");
   const { fetchGlossary } = await import("../doctrine/glossary.js");
