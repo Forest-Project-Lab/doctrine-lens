@@ -54,6 +54,7 @@ sources: []
 | ADR-025 | ADR | lens | 自分で作った語を、辞書へ足す |
 | ADR-026 | ADR | lens | 目的の正本も、木の中に置く |
 | ADR-027 | ADR | lens | 等幅は一段。ADR-013 の「二段」を置き換える |
+| ADR-028 | ADR | lens | 辞書は素の部分一致で照合される |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -75,6 +76,8 @@ sources: []
 | CHANGE-020 | CHANGE | lens | 決定を変えても、直すものが出てこない |
 | CHANGE-021 | CHANGE | lens | 借りてきた道具 1445 行が、一度も使われていない |
 | CHANGE-022 | CHANGE | lens | 部品の表が名指す実装 7 ファイルを、誰も見張っていない |
+| CHANGE-023 | CHANGE | lens | 上流に在る門を、どの経路にも結んでいなかった |
+| CHANGE-024 | CHANGE | lens | 門が示した逃げ道を、門が塞いでいた |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -96,6 +99,8 @@ sources: []
 | IMPACT-020 | IMPACT | lens | 決定に行き先を書くことの影響 |
 | IMPACT-021 | IMPACT | lens | 借りてきた道具を消すことの影響 |
 | IMPACT-022 | IMPACT | lens | 部品の表に指紋を持たせることの影響 |
+| IMPACT-023 | IMPACT | lens | 結んでいなかった門の影響 |
+| IMPACT-024 | IMPACT | lens | 塞がれていた逃げ道の影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

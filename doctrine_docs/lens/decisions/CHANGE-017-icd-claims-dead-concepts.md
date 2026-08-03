@@ -3,7 +3,7 @@ id: CHANGE-017
 title: 生きている ICD が、捨てた概念の正本を名乗っている
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-03
 updated: 2026-08-03
@@ -75,14 +75,14 @@ ICD-001 の辺: 3 本  SPEC-001-depends_on->ICD-001  SPEC-004-depends_on->ICD-00
 
 > `status: current` かつ `canonical_for` が `[depth-levels, lens-dials, upstream-json-contracts]` で、
 > 前の二つは `ADR-012`・`NONGOAL-001` が捨てた概念である。
-> **生きている文書が退役した事実の正本を名乗っている。**
+> **生きている文書が非現行になった事実の正本を名乗っている。**
 
 **分類しようとして初めて、分類できないことが見えた。**
 
-## この変更でやること
+## 変更内容
 
 1. `ICD-001` から `depth-levels` と `lens-dials` の名乗りを外す。
-2. 本文の退役した記述（公開する用語・深度の段・ダイヤル・地図の描画）を、
+2. 本文の古びた記述（公開する用語・深度の段・ダイヤル・地図の描画）を、
    **いまの実体に書き直す。**
 3. `upstream-json-contracts` は残す。**現役であり、支援層の契約である。**
 4. `_system/icd-index.md`（投影）が追随することを確かめる。
@@ -101,7 +101,7 @@ ICD-001 の辺: 3 本  SPEC-001-depends_on->ICD-001  SPEC-004-depends_on->ICD-00
   180 日で既に咎める。**上流へ出す前に、この木で直して効くかを確かめる**——
   この一周でそれをやる。効いたうえでなお足りなければ、そのとき測って出す。
 
-## 要求元
+## 理由（要求元）
 
 `REQ-003`「統治の規則を二重定義しない」の裏側——**捨てた規則を正本として残さない。**
 

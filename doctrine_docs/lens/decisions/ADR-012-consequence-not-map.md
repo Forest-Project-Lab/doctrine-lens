@@ -86,7 +86,7 @@ Hickey の基準では、柔軟にするために選択肢を足すのは easy �
    |---|---|---|
    | `×` | 既に壊れている | `docs-audit` の severity=error/warn |
    | `+` | 足りない | `dep-graph --reverse-orphans` |
-   | `?` | 直す場所が無い | 波及先だが結ばれたコード範囲が零件 |
+   | `?` | 直す場所が無い | 帰結だが結ばれたコード範囲が零件 |
    | `!` | 直す | `--dependents 起点 --transitive` に載る |
    | `~` | 見直す | `--impacts 起点` にだけ載る |
 

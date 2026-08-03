@@ -12,6 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 既定は深さ 1。それだと `docs:measured` が刻印の commit を展開できず、
+          # 「刻印を添えよ」と言う門が刻印を読めないまま落ちる（CHANGE-024）。
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -63,6 +67,12 @@ jobs:
 
       - name: 統治木の全件監査
         run: npm run docs:check   # 手元と同じ命令。プラグインの引き方も一つにする
+
+      # 文書一件ごとの規則（禁止同義語・必須節・許可 status）。監査は文書の
+      # 間の関係を見るが、一件の中は見ない。上流に在ったこの門を、私は
+      # どこにも結んでいなかった（CHANGE-023）。
+      - name: 統治木の全件点検
+        run: npm run docs:lint
 
       # 文書が挙げる実測を、その場で測り直して突き合わせる（3 秒）。
       # 手元で `npm run check` の出力を絞って読んでいたせいで、この段が

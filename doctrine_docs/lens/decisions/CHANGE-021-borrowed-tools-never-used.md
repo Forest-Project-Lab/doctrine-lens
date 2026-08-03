@@ -3,7 +3,7 @@ id: CHANGE-021
 title: 借りてきた道具 1445 行が、一度も使われていない
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-03
 updated: 2026-08-03
@@ -64,7 +64,7 @@ No docs/targets/ directory yet — create one and add <name>.json batch files.
 
 同じではない。だが行き着く先は同じ——**読む人が「これは何だ」と問う。**
 
-## この変更でやること
+## 変更内容
 
 1. **消す。** `tools/doc-manager/` の 7 ファイルと、`package.json` の四つの命令
    （`docs:aggregate`・`docs:fetch`・`docs:extract`・`docs:diff`・`docs:refresh`）。
@@ -93,7 +93,7 @@ $ git checkout 40dd24fbbe0475f2e1ea7a8f86059ee76542b9d0 -- tools/doc-manager/
 **消す前に、どのコミットから取れるかを書いた。** 書かないと、
 次に要ると思った人が履歴を掘ることになる。
 
-## 要求元
+## 理由（要求元）
 
 `REQ-002`「一つの画面は一つの問いだけに答える」の裏側——
 **木も、答える問いを持たないものを抱えない。**

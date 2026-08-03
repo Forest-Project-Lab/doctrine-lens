@@ -3,7 +3,7 @@ id: CHANGE-013
 title: 発火していない門が、まだ三つ在る
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -36,7 +36,7 @@ llm_context: task
 | `src/test/paths.test.ts` symlink の封じ込め | 主張が `if (found !== null)` の中にしか無く、この環境では `locateDocsRoot` が `null` を返すので**本体が一度も走らない。** 零件の主張で通っている |
 | `src/test/cadence.test.ts` 見本 | `findings: staleIds.size >= 0 ? [] : null` は `Set.size` が負にならないので**常に真**。両方の場合を踏んでいるように読めて、片方しか作らない |
 
-## この変更でやること
+## 変更内容
 
 1. 三つを塞ぐ。**塞いだあと、故意に壊して赤くなることを両方向で確かめる。**
 2. 「門が発火していないこと」を、門が自分で言える形にする。
@@ -52,7 +52,7 @@ llm_context: task
 零件の主張・常に真の条件・両側が零の一致——この三つは字面で探せる。
 門にできるかを検討する。
 
-## 要求元
+## 理由（要求元）
 
 `ADR-017` 決定 2。`REQ-001`——門が守っていないものは、辿れても正しいとは限らない。
 

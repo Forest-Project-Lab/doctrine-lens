@@ -3,7 +3,7 @@ id: CHANGE-010
 title: 「現行だ」と言うのをやめる
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -144,7 +144,7 @@ CURRENT_STATUSES = frozenset({"current", "accepted"})
 雛形の指示文を持ったままだった。** 直したうえで上流へ報告した（`doctrine#182`）。
 36 検査すべてが、この値を素通しする。
 
-## 理由
+## 理由（要求元）
 
 `DESIGN.md` 9-4 は「説明を足したくなったら、まず消すものを探す」と書いている。
 **探したら見つかった。** 足す案は四つとも実測で死に、消す案だけが残った。

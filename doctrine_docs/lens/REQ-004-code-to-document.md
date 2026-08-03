@@ -7,7 +7,7 @@ status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
 updated: 2026-08-03
-sources: [doctrine spec §3.8, doctrine 側 ADR 054]
+sources: [doctrine spec §3.8, 上流 ADR 054]
 impacts: [SPEC-005]
 llm_context: task
 ---
@@ -39,6 +39,6 @@ TEST-005
 
 ## 出所
 
-上流 doctrine が定めた追跡の終点（doctrine 側 ADR 054）は「注釈の対が囲むコードのテキストの範囲」である。
+上流 doctrine が定めた追跡の終点（上流 ADR 054）は「注釈の対が囲むコードのテキストの範囲」である。
 その範囲は編集器の中に在り、明細の中には無い。範囲を編集器の側で示さなければ、
 上流が用意した追跡の終点に読み手が到達できない。

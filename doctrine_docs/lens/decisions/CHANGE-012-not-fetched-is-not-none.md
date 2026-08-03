@@ -3,7 +3,7 @@ id: CHANGE-012
 title: 「取れなかった」を「無い」と言っている箇所が、まだ六つ在る
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -66,7 +66,7 @@ reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],      // ← ここ�
 `+`（足りない）は `--reverse-orphans` からしか出ない。取得が落ちれば
 **記号 `+` は永久に出ず、要約は「足りない 0」と言い切る。**
 
-## この変更でやること
+## 変更内容
 
 1. 六箇所を、`null` を保つ形へ揃える。
 2. 「取れなかった」を数の位置に出すときの決まりを一つ決める
@@ -80,7 +80,7 @@ reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],      // ← ここ�
 `CHANGE-010` の主題は「既定を語らない」であり、これは別の欠陥である。
 **一周に主題を二つ入れると、どちらの影響も測れなくなる**（`CHANGE-011` と同じ判断）。
 
-## 要求元
+## 理由（要求元）
 
 `REQ-001`——順に辿るための数が嘘なら、順そのものが信じられない。
 `ADR-017`「画面は確かめたことだけを言う」。`ADR-021` 決定 4。
