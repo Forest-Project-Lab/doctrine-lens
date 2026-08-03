@@ -28,6 +28,11 @@ llm_context: task
 返る `ranges` の各項は、文書の id・ファイルのパス・始まりの行・終わりの行・範囲の指紋を持つ。
 行の番号は 1 から数える。
 
+この問い合わせの入口は、上流 ICD 002 が `trace-index-api` として宣言している
+（v0.10.0、commit `8cd29bd`。書式の詳細な正本は上流 SPEC 026）。宣言によれば
+`ranges` の各項はちょうど五項 `{id, path, begin_line, end_line, fingerprint}` であり、
+`root` には名前だけが載る。この橋が写す形はその宣言と同じである。
+
 ### 所見の取得
 
 入力は作業フォルダの絶対パス。出力は上流が出す `docs-audit/1` の JSON を写した値。

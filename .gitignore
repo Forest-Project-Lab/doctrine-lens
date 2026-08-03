@@ -38,3 +38,6 @@ docs/
 coverage/
 .npmrc
 .mutate-restore.json
+
+# 規範資料の抽出物はコミットしない（再配布条件を確認するまで。ADR-029）
+Reference_material/

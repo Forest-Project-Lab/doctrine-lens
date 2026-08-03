@@ -55,6 +55,7 @@ sources: []
 | ADR-026 | ADR | lens | 目的の正本も、木の中に置く |
 | ADR-027 | ADR | lens | 等幅は一段。ADR-013 の「二段」を置き換える |
 | ADR-028 | ADR | lens | 辞書は素の部分一致で照合される |
+| ADR-029 | ADR | lens | 書き込みを持つ画面は Lens ではない — 構想には製品を変えずに応える |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -83,6 +84,7 @@ sources: []
 | CHANGE-027 | CHANGE | lens | 門が、その門が捕まえるはずの唯一のファイルを見ていなかった |
 | CHANGE-028 | CHANGE | lens | 単体試験が一度も届いていない層に、欠陥が住んでいた |
 | CHANGE-029 | CHANGE | lens | 走査が挙げた残りを、一件ずつ測ってから直した |
+| CHANGE-030 | CHANGE | lens | 地図の問いが戻ってきた — 製品を変えずに応えた |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -111,6 +113,7 @@ sources: []
 | IMPACT-027 | IMPACT | lens | 見えていなかった一件の影響 |
 | IMPACT-028 | IMPACT | lens | 門の届かない層の影響 |
 | IMPACT-029 | IMPACT | lens | 測ってから直した十二件の影響 |
+| IMPACT-030 | IMPACT | lens | 構想に応えた影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |
