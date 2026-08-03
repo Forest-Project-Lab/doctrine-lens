@@ -121,10 +121,46 @@ const MUTATIONS = [
     to: "  return true;\n  if (a.length !== b.length) return false;",
   },
   {
+    label: "一度も監査していない回の食い違いを空集合にする（食い違い無しと言う）",
+    file: "src/model/cadence.ts",
+    from: "  staleIds: null,",
+    to: "  staleIds: new Set(),",
+  },
+  {
+    label: "一度も監査していない回の検査名を空配列にする（0 検査を走らせたと言う）",
+    file: "src/model/cadence.ts",
+    from: "  checksRun: null,\n};",
+    to: "  checksRun: [],\n};",
+  },
+  {
+    label: "取れていない食い違いの件数を 0 と断定する",
+    file: "src/model/status.ts",
+    from: "    stale: input.staleCount === null ? null : input.staleCount > 0 ? input.staleCount : 0,",
+    to: "    stale: (input.staleCount ?? 0) > 0 ? (input.staleCount ?? 0) : 0,",
+  },
+  {
+    label: "登録簿の形を検めない（項を欠いた値が空集合に化ける）",
+    file: "src/doctrine/registry.ts",
+    from: '    if (!Array.isArray(raw) || !raw.every((v) => typeof v === "string")) {',
+    to: "    if (false) {",
+  },
+  {
+    label: "範囲が取れていない回に「起点が無い」と案内する",
+    file: "src/model/view.ts",
+    from: `    emptyReason: !context.openFile
+      ? strings.noOriginNoFile
+      : consequence.rangesKnown
+        ? fill(strings.noOrigin, context.openFile)
+        : fill(strings.noOriginRangesUnknown, context.openFile),`,
+    to: `    emptyReason: context.openFile
+      ? fill(strings.noOrigin, context.openFile)
+      : strings.noOriginNoFile,`,
+  },
+  {
     label: "帯の食い違いの件数の条件を反転（永久に出ない）",
     file: "src/model/status.ts",
-    from: "    stale: input.staleCount > 0 ? input.staleCount : 0,",
-    to: "    stale: input.staleCount < 0 ? input.staleCount : 0,",
+    from: "    stale: input.staleCount === null ? null : input.staleCount > 0 ? input.staleCount : 0,",
+    to: "    stale: input.staleCount === null ? null : input.staleCount < 0 ? input.staleCount : 0,",
   },
   {
     label: "木が二つでも切り替えにしない（ADR-006 の到達手立てが消える）",
@@ -250,10 +286,68 @@ const MUTATIONS = [
     to: '? { kind: "impacted", by: origin.id }',
   },
   {
+    label: "所見が取れていない回に × を当てる（取れなかったを壊れているに化けさせる）",
+    file: "src/model/consequence.ts",
+    from: '  if (input.findings !== null && hasHeavyFinding(input.findings)) return "broken";',
+    to: '  if (hasHeavyFinding(input.findings ?? [])) return "broken";',
+  },
+  {
+    label: "逆孤児が取れていない回に + を当てる",
+    file: "src/model/consequence.ts",
+    from: '  if (input.isReverseOrphan === true) return "missing";',
+    to: '  if (input.isReverseOrphan !== false) return "missing";',
+  },
+  {
+    label: "範囲が取れていない回に「コード 0 か所」と断定する",
+    file: "src/model/consequence.ts",
+    from: "      codeRanges: rangesKnown ? rows.reduce((n, r) => n + r.ranges.length, 0) : null,",
+    to: "      codeRanges: rows.reduce((n, r) => n + r.ranges.length, 0),",
+  },
+  {
+    label: "範囲が取れていない回に「範囲が無い N」と断定する",
+    file: "src/model/consequence.ts",
+    from: "        noRange: rangesKnown ? rows.filter((r) => r.ranges.length === 0).length : null,",
+    to: "        noRange: rows.filter((r) => r.ranges.length === 0).length,",
+  },
+  {
+    label: "所見が取れていない回に「壊れている 0」と断定する",
+    file: "src/model/consequence.ts",
+    from: `        broken:
+          context.findings === null ? null : rows.filter((r) => hasHeavyFinding(r.findings)).length,`,
+    to: "        broken: rows.filter((r) => hasHeavyFinding(r.findings)).length,",
+  },
+  {
+    label: "逆孤児が取れていない回に「足りない 0」と断定する",
+    file: "src/model/consequence.ts",
+    from: `        missing:
+          context.reverseOrphans === null
+            ? null
+            : rows.filter((r) => (context.reverseOrphans as ReadonlySet<string>).has(r.id)).length,`,
+    to: "        missing: rows.filter((r) => context.reverseOrphans?.has(r.id) === true).length,",
+  },
+  {
+    label: "上流の逆孤児の未取得を空配列へ潰す（+ が永久に出ない）",
+    file: "src/doctrine/graph.ts",
+    from: "      reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : null,",
+    to: "      reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],",
+  },
+  {
+    label: "上流の検査名の未取得を空配列へ潰す（0 検査を走らせたと言う）",
+    file: "src/doctrine/graph.ts",
+    from: "      checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : null,",
+    to: "      checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : [],",
+  },
+  {
+    label: "取れていない事実を記号と比べる（誤った理由の脚注が出る）",
+    file: "src/model/view.ts",
+    from: "    (s.facts.broken !== null && s.facts.broken !== s.bySymbol.broken) ||",
+    to: "    s.facts.broken !== s.bySymbol.broken ||",
+  },
+  {
     label: "記号の排他を崩す（+ より ? を先に当てる）",
     file: "src/model/consequence.ts",
-    from: '  if (input.isReverseOrphan) return "missing";\n  // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。\n  if (input.rangeCount === 0) return "nowhere";',
-    to: '  if (input.rangeCount === 0) return "nowhere";\n  if (input.isReverseOrphan) return "missing";',
+    from: '  if (input.isReverseOrphan === true) return "missing";\n  // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。\n  if (input.rangeCount === 0) return "nowhere";',
+    to: '  if (input.rangeCount === 0) return "nowhere";\n  if (input.isReverseOrphan === true) return "missing";',
   },
   {
     label: "重さの語彙を上流から奪う（info まで壊れていることにする）",
@@ -312,8 +406,8 @@ const MUTATIONS = [
   {
     label: "「外」を「起点以外」へ戻す（画面に出ている所見を外と数える）",
     file: "src/model/consequence.ts",
-    from: "const hidden = context.findings.filter((f) => !shown.has(f));",
-    to: "const hidden = context.findings.filter((f) => f.doc_id !== origin.id);",
+    from: "const hidden = (context.findings ?? []).filter((f) => !shown.has(f));",
+    to: "const hidden = (context.findings ?? []).filter((f) => f.doc_id !== origin.id);",
   },
   {
     label: "前提を「繋がらない」へ混ぜる（辿る向きの違いを影響なしと読ませる）",

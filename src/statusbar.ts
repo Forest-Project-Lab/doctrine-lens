@@ -66,7 +66,7 @@ export class LensStatusBar {
 
     const label = state.candidate?.label ?? "";
     const parts = [messages.statusReady(plan.docs, label)];
-    if (plan.stale > 0) parts.push(messages.statusStale(plan.stale));
+    if (plan.stale !== null && plan.stale > 0) parts.push(messages.statusStale(plan.stale));
 
     this.#item.text = `$(telescope) ${parts.join(" · ")}`;
     this.#item.tooltip = tooltipFor(state);

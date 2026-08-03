@@ -15,7 +15,8 @@ export interface StatusPlan {
   /** 文書の数。`ready` のときだけ意味を持つ。 */
   readonly docs: number;
   /** 指紋が食い違っている文書の数。0 なら出さない。 */
-  readonly stale: number;
+  /** 食い違いの件数。**取れていなければ `null`。** 0 と断定しない。 */
+  readonly stale: number | null;
   /** 押したときに走る命令。無ければ `null`。 */
   readonly command: string | null;
   /** 警告の色を当てるか。 */
@@ -27,20 +28,21 @@ export interface StatusInput {
   readonly unavailable: boolean;
   readonly failed: boolean;
   readonly docs: number;
-  readonly staleCount: number;
+  /** 食い違いの件数。**取れていなければ `null`。** */
+  readonly staleCount: number | null;
   /** 統治木を持つ作業フォルダの数。二つ以上なら押すと切り替えになる（ADR-006）。 */
   readonly candidateCount: number;
 }
 
 export function planStatus(input: StatusInput): StatusPlan {
   if (input.unavailable) {
-    return { kind: "unavailable", docs: 0, stale: 0, command: null, warn: false };
+    return { kind: "unavailable", docs: 0, stale: null, command: null, warn: false };
   }
   if (input.failed) {
     return {
       kind: "failed",
       docs: 0,
-      stale: 0,
+      stale: null,
       command: "doctrineLens.refresh",
       warn: true,
     };
@@ -50,7 +52,8 @@ export function planStatus(input: StatusInput): StatusPlan {
     docs: input.docs,
     // 数は session が保つ値から取る。`snapshot.findings` は速い拍で null になるため、
     // そこから数えると保存のたびに 0 へ落ちる（ADR-008・実際に起きた欠陥）。
-    stale: input.staleCount > 0 ? input.staleCount : 0,
+    // 取れていなければ数を出さない。0 と書くと「食い違い無し」になる（ADR-023）。
+    stale: input.staleCount === null ? null : input.staleCount > 0 ? input.staleCount : 0,
     command:
       input.candidateCount > 1 ? "doctrineLens.selectWorkspaceFolder" : "doctrineLens.open",
     warn: false,

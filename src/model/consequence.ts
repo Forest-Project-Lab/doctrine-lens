@@ -127,14 +127,18 @@ export interface Cycle {
  */
 export interface Summary {
   readonly documents: number;
-  readonly codeRanges: number;
+  /** コード範囲の総数。**取れていなければ `null`。** 0 と断定しない。 */
+  readonly codeRanges: number | null;
   /** 記号ごとの件数。五つの和が `documents` に一致する。 */
   readonly bySymbol: Readonly<Record<Symbol, number>>;
   /** 事実ごとの件数。記号に負けたものも数える。互いに排他ではない。 */
   readonly facts: {
-    readonly broken: number;
-    readonly missing: number;
-    readonly noRange: number;
+    /** 既に壊れている件数。**所見が取れていなければ `null`。** */
+    readonly broken: number | null;
+    /** 足りない件数。**逆孤児が取れていなければ `null`。** */
+    readonly missing: number | null;
+    /** 範囲が無い件数。**範囲が取れていなければ `null`。** */
+    readonly noRange: number | null;
     /**
      * 現行でない行の本数。**行から消した語を、数が支える**（ADR-021 決定 2）。
      *
@@ -197,8 +201,14 @@ export interface Consequence {
 
 /** 組み立てに要る、グラフの外から来る値。 */
 export interface ConsequenceContext {
-  /** 上流が返した所見。34 検査すべて。 */
-  readonly findings: readonly AuditFinding[];
+  /**
+   * 上流が返した所見。検査名で絞らない。
+   *
+   * **取れなかったときは `null` を渡すこと。** 空配列を渡すと「所見が一件も無い」に
+   * なり、`×`（既に壊れている）が永久に出ず、要約が「壊れている 0」と言い切る
+   * （`ranges` と同じ規律・ADR-017・ADR-023）。
+   */
+  readonly findings: readonly AuditFinding[] | null;
   /**
    * 上流が返したコード範囲。
    *
@@ -207,8 +217,13 @@ export interface ConsequenceContext {
    * 実測でそうなった（ADR-017）。
    */
   readonly ranges: readonly TraceRange[] | null;
-  /** 上流 `--reverse-orphans` が挙げた id。 */
-  readonly reverseOrphans: ReadonlySet<string>;
+  /**
+   * 上流 `--reverse-orphans` が挙げた id。
+   *
+   * **取れなかったときは `null` を渡すこと。** 空集合を渡すと「足りないものが無い」に
+   * なり、`+` が永久に出ない（ADR-023）。
+   */
+  readonly reverseOrphans: ReadonlySet<string> | null;
   /**
    * 上流の登録簿。取れなかったときは `null`。
    *
@@ -227,9 +242,9 @@ export interface ConsequenceContext {
 }
 
 const EMPTY_CONTEXT: ConsequenceContext = {
-  findings: [],
-  ranges: [],
-  reverseOrphans: new Set(),
+  findings: null,
+  ranges: null,
+  reverseOrphans: null,
   registry: null,
 };
 
@@ -416,7 +431,10 @@ function attachedTo(finding: AuditFinding): string[] {
 }
 
 /** その文書に付いている所見。上流の文をそのまま運ぶ。 */
-function findingsFor(id: string, findings: readonly AuditFinding[]): AuditFinding[] {
+function findingsFor(id: string, findings: readonly AuditFinding[] | null): AuditFinding[] {
+  // 取れていなければ空で返す。**行に出す所見は無い**が、`×` も当たらない
+  // （記号の判定は `null` を別に見る）。数は `null` として出さない。
+  if (findings === null) return [];
   return findings.filter((f) => f.doc_id === id || (f.refs ?? []).includes(id));
 }
 
@@ -431,14 +449,17 @@ function hasHeavyFinding(findings: readonly AuditFinding[]): boolean {
  * 各記号はちょうど一つの事実から出る。二つの事実を一つの記号に畳まない。
  */
 export function symbolFor(input: {
-  readonly findings: readonly AuditFinding[];
-  readonly isReverseOrphan: boolean;
+  /** その文書に付いた所見。**取れていなければ `null`。** */
+  readonly findings: readonly AuditFinding[] | null;
+  /** 逆孤児か。**取れていなければ `null`。** */
+  readonly isReverseOrphan: boolean | null;
   /** 結ばれた範囲の数。**取れていなければ `null`。** */
   readonly rangeCount: number | null;
   readonly kind: Reason["kind"];
 }): Symbol {
-  if (hasHeavyFinding(input.findings)) return "broken";
-  if (input.isReverseOrphan) return "missing";
+  // `null`（取れていない）ときは当てない。知らないことを断定しない（ADR-023）。
+  if (input.findings !== null && hasHeavyFinding(input.findings)) return "broken";
+  if (input.isReverseOrphan === true) return "missing";
   // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。
   if (input.rangeCount === 0) return "nowhere";
   return input.kind === "impacted" ? "review" : "fix";
@@ -495,9 +516,9 @@ export function buildConsequence(
       summary: emptySummary(),
       premiseCount: 0,
       unreached: all.size,
-      findingsUnattached: context.findings.filter((f) => !attachedTo(f).length).length,
+      findingsUnattached: (context.findings ?? []).filter((f) => !attachedTo(f).length).length,
       findingsElsewhereAt: [
-        ...new Set(context.findings.flatMap((f) => attachedTo(f))),
+        ...new Set((context.findings ?? []).flatMap((f) => attachedTo(f))),
       ].sort(),
     };
   }
@@ -581,7 +602,7 @@ export function buildConsequence(
       notCurrent: judgeNotCurrent(node.status, currentStatuses),
       symbol: symbolFor({
         findings: own,
-        isReverseOrphan: context.reverseOrphans.has(id),
+        isReverseOrphan: context.reverseOrphans ? context.reverseOrphans.has(id) : null,
         rangeCount: rangesKnown ? ranges.length : null,
         kind: hit.kind,
       }),
@@ -623,7 +644,7 @@ export function buildConsequence(
   const originRanges = rangesById.get(origin.id) ?? [];
   const originSymbol = symbolFor({
     findings: originFindings,
-    isReverseOrphan: context.reverseOrphans.has(origin.id),
+    isReverseOrphan: context.reverseOrphans ? context.reverseOrphans.has(origin.id) : null,
     rangeCount: rangesKnown ? originRanges.length : null,
     kind: "depends-directly",
   });
@@ -645,7 +666,7 @@ export function buildConsequence(
   ]);
 
   // 画面に出ていない所見。ここから行き先を引く。
-  const hidden = context.findings.filter((f) => !shown.has(f));
+  const hidden = (context.findings ?? []).filter((f) => !shown.has(f));
 
   const bySymbol: Record<Symbol, number> = {
     broken: 0,
@@ -665,14 +686,19 @@ export function buildConsequence(
     rangesKnown,
     summary: {
       documents: rows.length,
-      codeRanges: rows.reduce((n, r) => n + r.ranges.length, 0),
+      // **取れていない数は出さない。** 0 と書くと「一つも無い」ことになる（ADR-023）。
+      codeRanges: rangesKnown ? rows.reduce((n, r) => n + r.ranges.length, 0) : null,
       bySymbol,
       // 記号に負けた事実も数える。排他は行の規律であって数の規律ではない。
+      // どの数も、その事実の出所が取れていなければ `null` になる。
       facts: {
-        broken: rows.filter((r) => hasHeavyFinding(r.findings)).length,
-        missing: rows.filter((r) => context.reverseOrphans.has(r.id)).length,
-        noRange: rows.filter((r) => r.ranges.length === 0).length,
-        // 判じられない回は数を出さない。0 と書くと「一つも無い」ことになる。
+        broken:
+          context.findings === null ? null : rows.filter((r) => hasHeavyFinding(r.findings)).length,
+        missing:
+          context.reverseOrphans === null
+            ? null
+            : rows.filter((r) => (context.reverseOrphans as ReadonlySet<string>).has(r.id)).length,
+        noRange: rangesKnown ? rows.filter((r) => r.ranges.length === 0).length : null,
         notCurrent:
           currentStatuses === null ? null : rows.filter((r) => r.notCurrent === true).length,
       },
@@ -708,9 +734,9 @@ function reversed(neighbours: Neighbours): Neighbours {
 function emptySummary(): Summary {
   return {
     documents: 0,
-    codeRanges: 0,
+    codeRanges: null,
     bySymbol: { broken: 0, missing: 0, nowhere: 0, fix: 0, review: 0 },
-    facts: { broken: 0, missing: 0, noRange: 0, notCurrent: null },
+    facts: { broken: null, missing: null, noRange: null, notCurrent: null },
     cycles: 0,
     inCycle: 0,
   };

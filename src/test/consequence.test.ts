@@ -546,6 +546,105 @@ test("006-20. 範囲を取れなかったことと、範囲が無いことを区
   assert.equal(known.waves[0]?.rows[0]?.symbol, "nowhere");
 });
 
+test("006-28. 取れていない事実の数を、要約が 0 と断定しない", () => {
+  const graph = graphOf(["O", "P", "Q"], ["O>P", "O>Q"]);
+  const 取れた = { ...NO_CONTEXT, findings: [], ranges: [range("P")], reverseOrphans: new Set<string>() };
+
+  // 全部取れていれば、数はすべて出る（0 も数で言う。ADR-014）。
+  const 全部 = buildConsequence(graph, "O", 取れた);
+  assert.equal(全部.summary.codeRanges, 1);
+  assert.equal(全部.summary.facts.broken, 0);
+  assert.equal(全部.summary.facts.missing, 0);
+  assert.equal(全部.summary.facts.noRange, 1);
+
+  // 取れていない事実は `null`。**0 と書くと「一つも無い」ことになる。**
+  const 範囲なし = buildConsequence(graph, "O", { ...取れた, ranges: null });
+  assert.equal(範囲なし.summary.codeRanges, null, "コード範囲を 0 と断定している");
+  assert.equal(範囲なし.summary.facts.noRange, null, "「範囲が無い」を数で断定している");
+
+  const 所見なし = buildConsequence(graph, "O", { ...取れた, findings: null });
+  assert.equal(所見なし.summary.facts.broken, null, "「壊れている 0」と断定している");
+
+  const 逆孤児なし = buildConsequence(graph, "O", { ...取れた, reverseOrphans: null });
+  assert.equal(逆孤児なし.summary.facts.missing, null, "「足りない 0」と断定している");
+});
+
+test("006-28b. 取れていない数は、画面のその場に出ない", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const 取れた = { ...NO_CONTEXT, findings: [], ranges: [range("P")], reverseOrphans: new Set<string>() };
+
+  const 全部 = buildView(buildConsequence(graph, "O", 取れた), new Map(), strings(), CONTEXT);
+  assert.ok(全部.summary.includes("コード"), `要約: ${全部.summary}`);
+  assert.ok(全部.summary.includes("壊れている 0"), `要約: ${全部.summary}`);
+
+  const 何も無い = buildView(
+    buildConsequence(graph, "O", { ...取れた, ranges: null, findings: null, reverseOrphans: null }),
+    new Map(),
+    strings(),
+    CONTEXT,
+  );
+  assert.ok(!何も無い.summary.includes("コード"), `取れていないコード範囲を出している: ${何も無い.summary}`);
+  assert.ok(!何も無い.summary.includes("壊れている"), `取れていない所見を出している: ${何も無い.summary}`);
+  assert.ok(!何も無い.summary.includes("足りない"), `取れていない逆孤児を出している: ${何も無い.summary}`);
+  assert.ok(!何も無い.summary.includes("範囲無し"), `取れていない範囲を出している: ${何も無い.summary}`);
+  // 文書の数は取れている。消えてはならない。
+  assert.ok(何も無い.summary.includes("1 文書"), `要約: ${何も無い.summary}`);
+});
+
+test("006-28c. 取れていない事実を記号と比べて、誤った理由の脚注を出さない", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const view = buildView(
+    buildConsequence(graph, "O", { ...NO_CONTEXT, findings: null, ranges: null, reverseOrphans: null }),
+    new Map(),
+    strings(),
+    CONTEXT,
+  );
+  // 記号は 0、事実は null。`null !== 0` を食い違いと読むと、
+  // 「記号は最も重い一つしか出ないから」という誤った理由が付く。
+  assert.ok(
+    !view.footnotes.some((f) => f.includes("最も重い")),
+    `取れていないことを、排他のせいにしている: ${view.footnotes}`,
+  );
+});
+
+test("006-29. 検査の一覧が取れない回に「0 検査を走らせた」と言わない", () => {
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  const 取れた = buildView(c, new Map(), strings(), { ...CONTEXT, checksRun: 36 });
+  assert.ok(取れた.footnotes.some((f) => f.includes("36 検査")), `脚注: ${取れた.footnotes}`);
+
+  const 取れない = buildView(c, new Map(), strings(), { ...CONTEXT, checksRun: null });
+  assert.ok(
+    !取れない.footnotes.some((f) => f.includes("0 検査")),
+    `「0 検査」と言っている: ${取れない.footnotes}`,
+  );
+  assert.ok(
+    取れない.footnotes.some((f) => f.includes("検査は取れていない")),
+    `取れていないことを言っていない: ${取れない.footnotes}`,
+  );
+});
+
+test("006-30. 範囲が取れていない回の案内が、「起点が無い」ではない", () => {
+  const graph = graphOf(["O", "P"], ["O>P"]);
+  const 取れた = buildView(
+    buildConsequence(graph, null, { ...NO_CONTEXT, ranges: [] }),
+    new Map(),
+    strings(),
+    CONTEXT,
+  );
+  assert.ok(!取れた.emptyReason.includes("範囲が取れていない"), `案内: ${取れた.emptyReason}`);
+
+  const 取れない = buildView(
+    buildConsequence(graph, null, { ...NO_CONTEXT, ranges: null }),
+    new Map(),
+    strings(),
+    CONTEXT,
+  );
+  assert.ok(
+    取れない.emptyReason.includes("範囲が取れていない"),
+    `既に開いている利用者へ「印を持つファイルを開け」と案内している: ${取れない.emptyReason}`,
+  );
+});
+
 test("006-27. 迂回路だけを名乗って、存在する直の辺を無いことにしない", () => {
   // P は O を直に depends_on に持ち、かつ M を経由してもいる（最長距離で第 2 波）。
   const graph = graphOf(["O", "M", "P"], ["O>M", "O>P", "M>P"]);
@@ -633,6 +732,13 @@ function strings(): Parameters<typeof buildView>[2] {
     summaryCounts: "{0} 文書 / コード {1}",
     summarySymbols: "× {0} / + {1} / ? {2} / ! {3} / ~ {4}",
     summaryFacts: "壊れている {0} / 足りない {1} / 範囲無し {2}",
+    summaryDocuments: "{0} 文書",
+    summaryCodeRanges: "コード {0}",
+    summaryFactBroken: "壊れている {0}",
+    summaryFactMissing: "足りない {0}",
+    summaryFactNoRange: "範囲無し {0}",
+    footAuditNoChecks: "監査 {0}（検査は取れていない）",
+    noOriginRangesUnknown: "範囲が取れていない（{0}）",
     summaryFactNotCurrent: "非現行 {0}",
     footHeaviest: "行には最も重い記号だけが出る",
 

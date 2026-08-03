@@ -23,10 +23,10 @@ export interface Snapshot {
   ranges: TraceRange[] | null;
   /** 所見が取れなかったときは `null`。判定の表示だけを止める。 */
   findings: AuditFinding[] | null;
-  /** 上流が実際に走らせた検査の名。取れなければ空。数を実装が持たない（ADR-014）。 */
-  checksRun: string[];
-  /** 上流が挙げた逆孤児（対応する仕様や試験が無いもの）の id。 */
-  reverseOrphans: string[];
+  /** 上流が実際に走らせた検査の名。**取れなければ `null`。** 数を実装が持たない（ADR-014）。 */
+  checksRun: string[] | null;
+  /** 上流が挙げた逆孤児（対応する仕様や試験が無いもの）の id。**取れなければ `null`。** */
+  reverseOrphans: string[] | null;
   /** 文書の題名など。取れなければ空の表。主文が id へ落ちる。 */
   docMeta: DocMetaIndex;
   /** 木の用語辞書。取れなければ空。語の定義を出さないだけで、明細は出る（ADR-018）。 */
@@ -141,8 +141,9 @@ export async function fetchSnapshot(
       ranges: rangesOutcome.ok ? rangesOutcome.value : null,
       // 監査を飛ばした回は null を返す。呼び手が前回の判定を保つ（ADR-008）。
       findings: findingsOutcome?.ok ? findingsOutcome.value.findings : null,
-      checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : [],
-      reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : [],
+      // 取れなかったものは `null` のまま運ぶ。空へ潰すと「無い」に化ける（ADR-023）。
+      checksRun: findingsOutcome?.ok ? findingsOutcome.value.checksRun : null,
+      reverseOrphans: orphanOutcome.ok ? orphanOutcome.value : null,
       // 題名は節点が持つ（上流 0.8.0 以降）。継ぎは捨てた（ADR-020）。
       docMeta: docMetaFrom(raw),
       glossary: glossaryOutcome.ok ? glossaryOutcome.value : new Map(),

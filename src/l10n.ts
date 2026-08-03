@@ -109,7 +109,12 @@ export const messages = {
 export function viewStrings(): ViewStrings {
   return {
     summaryCounts: t("{0} documents to fix · {1} code ranges", "{0}", "{1}"),
+    summaryDocuments: t("{0} documents to fix", "{0}"),
+    summaryCodeRanges: t("{0} code ranges", "{0}"),
     summarySymbols: t("× {0} · + {1} · ? {2} · ! {3} · ~ {4}", "{0}", "{1}", "{2}", "{3}", "{4}"),
+    summaryFactBroken: t("already broken {0}", "{0}"),
+    summaryFactMissing: t("missing {0}", "{0}"),
+    summaryFactNoRange: t("no code range {0}", "{0}"),
     summaryFacts: t(
       "already broken {0} · missing {1} · no code range {2}",
       "{0}", "{1}", "{2}",
@@ -133,6 +138,10 @@ export function viewStrings(): ViewStrings {
     noOriginNoFile: t(
       "No origin. This screen only answers \"what happens if I change what I have open\". Open a file that carries a doctrine marker, or a .md inside the tree.",
     ),
+    noOriginRangesUnknown: t(
+      "The code ranges could not be fetched, so the cursor in {0} cannot resolve to a document. This is not \"no origin\" — it is \"not known yet\".",
+      "{0}",
+    ),
     footPremises: t(
       "{0} documents the origin relies on are not listed — this screen only walks forward",
       "{0}",
@@ -149,6 +158,7 @@ export function viewStrings(): ViewStrings {
     originFindingsNote: t("Upstream says this document itself is broken:"),
     footAudit: t("Upstream docs-audit ran {1} checks at {0}", "{0}", "{1}"),
     footAuditNever: t("Upstream docs-audit has not run yet"),
+    footAuditNoChecks: t("Upstream docs-audit ran at {0} (which checks ran is not known)", "{0}"),
     footNoTitles: t("Some titles could not be read; those rows show the id instead"),
     footBehind: t("The number on the right of a row is how many others it settles once fixed"),
     footHeaviest: t(

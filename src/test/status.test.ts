@@ -35,7 +35,9 @@ test("取得に失敗した回は警告として出し、押すと取り直せ�
   assert.equal(plan.kind, "failed");
   assert.equal(plan.warn, true);
   assert.equal(plan.command, "doctrineLens.refresh");
-  assert.equal(plan.stale, 0, "失敗した回に古い数を出さない");
+  // **0 ではなく `null`。** 失敗した回に「食い違い 0」と言うと、
+  // 取れなかったことが良い知らせに化ける（ADR-023）。
+  assert.equal(plan.stale, null, "失敗した回に「食い違い 0」と言っている");
 });
 
 test("取得ができない構成では、押しても何も起きない", () => {

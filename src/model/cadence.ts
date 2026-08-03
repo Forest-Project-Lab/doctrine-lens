@@ -21,12 +21,17 @@ import type { AuditFinding } from "../doctrine/audit.js";
 export interface AuditCarry {
   /** 判定を取った時刻。一度も取れていなければ `null`。 */
   readonly auditAt: Date | null;
-  /** 指紋が食い違っている文書の id。 */
-  readonly staleIds: ReadonlySet<string>;
+  /**
+   * 指紋が食い違っている文書の id。**一度も取れていなければ `null`。**
+   *
+   * 空集合は「食い違いが一つも無い」であり、`null` は「まだ知らない」である。
+   * 空へ潰すと、起動直後の帯が「食い違い無し」と言ったことになる（ADR-023）。
+   */
+  readonly staleIds: ReadonlySet<string> | null;
   /** その回に返った所見そのもの。一度も取れていなければ `null`。 */
   readonly findings: readonly AuditFinding[] | null;
-  /** その回に上流が走らせた検査の名。 */
-  readonly checksRun: readonly string[];
+  /** その回に上流が走らせた検査の名。**一度も取れていなければ `null`。** */
+  readonly checksRun: readonly string[] | null;
 }
 
 /** この回の取得がどうだったか。 */
@@ -51,9 +56,10 @@ export interface AuditRound {
 
 export const NO_AUDIT: AuditCarry = {
   auditAt: null,
-  staleIds: new Set(),
+  // **空集合ではない。** 一度も取れていないことと、取れて綺麗だったことは別である。
+  staleIds: null,
   findings: null,
-  checksRun: [],
+  checksRun: null,
 };
 
 /**
