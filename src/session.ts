@@ -232,11 +232,20 @@ export class LensSession {
     if (!sameRanges(known, outcome.value)) this.scheduleRefresh();
   }
 
-  /** 上流が使う相対パスを、編集器の位置へ直す。 */
-  toUri(relPath: string): vscode.Uri | null {
-    const folder = this.#state.candidate?.folder;
-    if (!folder) return null;
-    return vscode.Uri.joinPath(vscode.Uri.file(folder), ...relPath.split("/"));
+  /**
+   * 上流が使う相対パスを、編集器の位置へ直す。
+   *
+   * **座標系を呼び手が言う。** 上流は二つの基準で相対パスを返す——
+   * 範囲（`trace-index`）は作業フォルダ基準、所見（`docs-audit`）は統治木基準。
+   * 既定を作業フォルダに寄せていたので、**所見の道は一度も開けていなかった**
+   * （実測。`lens/spec/SPEC-006-….md` を作業フォルダに継いで「見つからない」を出していた。
+   * `CHANGE-027`）。
+   */
+  toUri(relPath: string, base: "workspace" | "docs"): vscode.Uri | null {
+    const candidate = this.#state.candidate;
+    const root = base === "docs" ? candidate?.docsRoot : candidate?.folder;
+    if (!root) return null;
+    return vscode.Uri.joinPath(vscode.Uri.file(root), ...relPath.split("/"));
   }
 
   /**

@@ -275,7 +275,13 @@ export class LensPanel {
         return;
       }
       case "openRange":
-        await openRange(this.#session, message.path, message.beginLine, message.endLine);
+        await openRange(
+          this.#session,
+          message.path,
+          message.beginLine,
+          message.endLine,
+          message.base,
+        );
         return;
     }
   }
@@ -307,8 +313,9 @@ export async function openRange(
   relPath: string,
   beginLine: number,
   endLine: number,
+  base: "workspace" | "docs",
 ): Promise<void> {
-  const uri = session.toUri(relPath);
+  const uri = session.toUri(relPath, base);
   if (!uri) {
     void vscode.window.showInformationMessage(messages.cannotOpen(relPath));
     return;

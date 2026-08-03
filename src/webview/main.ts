@@ -64,7 +64,9 @@ function drawFinding(f: FindingView): HTMLElement {
     link.textContent = f.path;
     link.addEventListener("click", (event) => {
       event.stopPropagation();
-      send({ kind: "openRange", path: f.path, beginLine: 1, endLine: 1 });
+      // 所見の path は**統治木基準**である（範囲は作業フォルダ基準）。
+      // 座標系を言わずに送ると、拡張機能ホストが作業フォルダに継いで開けない。
+      send({ kind: "openRange", path: f.path, beginLine: 1, endLine: 1, base: "docs" });
     });
     box.append(link);
   }
@@ -105,6 +107,7 @@ function drawRow(row: RowView): HTMLElement {
         path: range.path,
         beginLine: range.beginLine,
         endLine: range.endLine,
+        base: "workspace",
       });
     });
     body.append(link);

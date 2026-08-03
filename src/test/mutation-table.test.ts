@@ -173,16 +173,34 @@ test("主張を一つも持たない試験が無い（零件の主張で通さ�
 
 test("部品の表が名指す実装が、すべて印で囲まれている", () => {
   // **表の名指しは、指紋を作らない**（CHANGE-022）。実測で、`IMPL-001` が
-  // 名指す 25 ファイルのうち 7 つ（1747 行）が印を持たず、
+  // 名指す 26 ファイルのうち 7 つ（1747 行）が印を持たず、
   // どれだけ書き換えても `trace_stale` が鳴らなかった。
   //
   // 表に足して印を忘れる／印を打って表に載せ忘れる、の両方をここで捕まえる。
+  //
+  // **文字クラスで名を絞らない**（CHANGE-027）。初版は `[a-zA-Z/.]` で読んでいて
+  // **数字を含む名を一件読み落としていた**——`src/l10n.ts` である。しかもそれは、
+  // この門が捕まえるはずの欠陥（表に在るのに印が無い）を持つ**唯一のファイル**だった。
+  // 門は 25 件を検めて緑を返し、26 件目を見ていなかった（ADR-024）。
+  // 逆引用符で囲まれた中身をそのまま取る。
   const impl = readFileSync(
     join(PROJECT, "doctrine_docs", "lens", "implementation", "IMPL-001-extension-layout.md"),
     "utf8",
   );
-  const listed = [...new Set([...impl.matchAll(/`(src\/[a-zA-Z/.]+\.ts)`/g)].map((m) => m[1] as string))];
-  assert.ok(listed.length > 15, `部品の表を読み取れていない（${listed.length} 件）`);
+  const listed = [...new Set([...impl.matchAll(/`(src\/[^`]+\.ts)`/g)].map((m) => m[1] as string))];
+
+  // **宣言した数と、読み取った数を突き合わせる。** 下限（`> 15`）だけだと
+  // 25 でも 26 でも通る——実測でそうなった。文字クラスが一件を落としても、
+  // 数える側が同じ式で数えていたので、どこからも見えなかった（CHANGE-027）。
+  // 本文の「N ファイル」＋「残る M ファイル」＝表の件数、を門にする。
+  const own = Number(/属さない (\d+) ファイル/.exec(impl)?.[1] ?? "0");
+  const rest = Number(/残る (\d+) ファイル/.exec(impl)?.[1] ?? "0");
+  assert.ok(own > 0 && rest > 0, `IMPL-001 が内訳の数を書いていない（${own}＋${rest}）`);
+  assert.equal(
+    own + rest,
+    listed.length,
+    `IMPL-001 の内訳（${own}＋${rest}＝${own + rest}）と、表の名指し ${listed.length} 件が合わない`,
+  );
 
   const unmarked = listed
     .filter((rel) => existsSync(join(PROJECT, rel)))
