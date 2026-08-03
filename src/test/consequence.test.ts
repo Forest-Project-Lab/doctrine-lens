@@ -753,6 +753,48 @@ test("006-35. 循環の中の起点から、成分の別の一員を経由して
   assert.equal(straight.waves[0]?.rows[0]?.reason.kind, "depends-directly");
 });
 
+test("006-27b. 影響の側の迂回でも、存在する直の辺を無いことにしない", () => {
+  // 初版は `depends-through` だけを見ていたので、**影響の側では註が落ちた**。
+  // 起点が直に impacts している相手でも、別の経路が長ければ後の波へ回り、
+  // その行は「M が影響すると宣言」とだけ名乗った。実測でこの木に 30 行・25 起点。
+  const graph = graphOf(["O", "M", "P"], ["O~M", "O~P", "M~P"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  const row = c.waves.flatMap((w) => w.rows).find((r) => r.id === "P");
+  assert.ok(row, "P の行が出ていない");
+  assert.equal(row?.reason.kind, "impacted", "影響の側の見本になっていない");
+  assert.equal(row?.alsoDirect, true, "直の辺が在ることを持っていない");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const shown = view.waves.flatMap((w) => w.rows).find((r) => r.title === "P")?.reason ?? "";
+  assert.ok(shown.includes("直にも持つ"), `影響の側で直の辺を名乗っていない: ${shown}`);
+});
+
+test("006-37. 前提として名で出した文書を、同じ画面が「起点に繋がらない」と言わない", () => {
+  // 前提は行にならないので必ず「画面に出ていない」側へ落ちる。だがそれは
+  // 「繋がらない」ではない。初版は同じ文書を**直の前提**としても
+  // **起点に繋がらない**としても、同じ脚注の並びに出していた（CHANGE-028）。
+  // `unreached` は初めから前提を引いており、**一つの画面で定義が二通り**だった。
+  const graph = graphOf(["O", "A"], ["A>O"]); // A が O の前提（O は A に依る）
+  const c = buildConsequence(graph, "O", {
+    ...NO_CONTEXT,
+    findings: [finding("A", "error", "前提に付いた所見")],
+  });
+  assert.deepEqual([...c.premisesDirect], ["A"], "前提として出ていない");
+  assert.ok(
+    !c.findingsElsewhereAt.includes("A"),
+    "前提の文書を「起点に繋がらない」に混ぜている",
+  );
+  assert.deepEqual([...c.findingsOnPremisesAt], ["A"], "前提の所見を数ごと落としている");
+
+  // 画面でも、二つの行き先が交わらないこと。
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const both = view.premiseFindingsAt.filter((id) => view.findingsAt.includes(id));
+  assert.deepEqual(both, [], "同じ id が二つの行き先に出ている");
+  assert.ok(
+    view.footnotes.some((f) => f.includes("前提の 1 文書に所見")),
+    `前提の所見を脚注で言っていない: ${JSON.stringify(view.footnotes)}`,
+  );
+});
+
 test("006-36. 跳び先が、どちらの基準の相対パスかを一緒に運ぶ", () => {
   // 上流は二つの座標系で相対パスを返す——範囲（trace-index）は作業フォルダ基準、
   // 所見（docs-audit）は統治木基準（実測: `lens/decisions/CHANGE-022-….md`）。
@@ -790,7 +832,7 @@ test("006-5c. 空白だけの題名は id へ落とす", () => {
   assert.equal(buildView(c, meta, strings(), CONTEXT).waves[0]?.rows[0]?.title, "P");
 });
 
-test("006-9c. 所見の六項がそのまま届く（severity や path を捨てない）", () => {
+test("006-39. 所見の六項が、写す層と画面の両方に出る", () => {
   const graph = graphOf(["O", "P"], ["O>P"]);
   const f = { ...finding("P", "error", "壊れている"), check: "dead_link", path: "a/b.md", refs: ["X"] };
   const c = buildConsequence(graph, "O", { ...NO_CONTEXT, findings: [f] });
@@ -799,6 +841,17 @@ test("006-9c. 所見の六項がそのまま届く（severity や path を捨て
   assert.equal(got?.check, "dead_link");
   assert.equal(got?.path, "a/b.md");
   assert.deepEqual([...(got?.refs ?? [])], ["X"]);
+  // **名前どおり六項を検める**（CHANGE-028）。初版は四項しか主張しておらず、
+  // `doc_id` が写されないまま緑だった。一件の所見は `doc_id` でも `refs` でも
+  // 行に並ぶので、`doc_id` が無いとどの文書に付いた所見かが読めない。
+  assert.equal(got?.doc_id, "P", "doc_id が落ちている");
+  assert.equal(got?.message, "壊れている", "message が落ちている");
+
+  // 画面が六項を描くこと。写す層が持っていても、描かなければ画面には出ない。
+  const main = readFileSync(join(resolve(__dirname, "..", ".."), "src", "webview", "main.ts"), "utf8");
+  for (const key of ["f.severity", "f.message", "f.check", "f.path", "f.doc_id", "f.refs"]) {
+    assert.ok(main.includes(key), `画面が所見の ${key} を描いていない`);
+  }
 });
 
 
@@ -883,6 +936,7 @@ function strings(): Parameters<typeof buildView>[2] {
     footPremises: "前提 {0}",
     footHidden: "隠した {0}",
     footElsewhere: "行ける {0} 文書",
+    footPremiseFindings: "前提の {0} 文書に所見",
     footUnattached: "属さない {0} 件",
     originFindingsNote: "起点自身が壊れている:",
     footAudit: "監査 {0}／{1} 検査",

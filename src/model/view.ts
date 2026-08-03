@@ -77,6 +77,8 @@ export interface ViewStrings {
   readonly footHidden: string;
   /** `起点に繋がらない {0} 文書に所見が付いている` */
   readonly footElsewhere: string;
+  /** `起点が前提にしている {0} 文書に所見が付いている` */
+  readonly footPremiseFindings: string;
   /** `この画面の問いに属さない所見が {0} 件（どの文書にも紐づかない）` */
   readonly footUnattached: string;
   /** 起点自身に所見が付いているときの前置き */
@@ -143,7 +145,14 @@ function reasonText(
 ): string {
   const base = reasonBase(reason, originId, strings);
   // 迂回路だけを名乗って、存在する直の辺を無いことにしない（ADR-017）。
-  return reason.kind === "depends-through" && alsoDirect
+  //
+  // **影響の側でも同じである**（CHANGE-028）。初版は `depends-through` だけを見ていたので、
+  // 「起点が直に影響すると宣言しているのに、別の経路が長いので後の波へ回った」行が
+  // 迂回路だけを名乗った。実測でこの木に 30 行・25 起点あった。
+  // 基文が既に起点を名で出している行（直の依存・起点自身が宣言した影響）は除く。
+  const detour =
+    reason.kind === "depends-through" || (reason.kind === "impacted" && reason.by !== originId);
+  return detour && alsoDirect
     ? `${base} ${fill(strings.reasonAlsoDirect, originId)}`
     : base;
 }
@@ -161,6 +170,10 @@ function toFindingView(f: AuditFinding): FindingView {
   return {
     check: typeof f.check === "string" ? f.check : "",
     severity: typeof f.severity === "string" ? f.severity : "",
+    // **六項のうち二つが落ちていた**（CHANGE-028）。`doc_id` はここで写されず、
+    // `refs` は画面が描いていなかった。一件の所見は `doc_id` でも `refs` でも
+    // 行に並ぶので、`doc_id` が無いと**どの文書に付いた所見かが読めない**。
+    doc_id: typeof f.doc_id === "string" ? f.doc_id : "",
     message: f.message,
     path: typeof f.path === "string" ? f.path : "",
     refs: Array.isArray(f.refs) ? f.refs : [],
@@ -305,6 +318,12 @@ export function buildView(
       fill(strings.footElsewhere, String(consequence.findingsElsewhereAt.length)),
     );
   }
+  // 前提に付いた所見。**繋がらないのとは別である**（CHANGE-028）。
+  if (consequence.findingsOnPremisesAt.length > 0) {
+    footnotes.push(
+      fill(strings.footPremiseFindings, String(consequence.findingsOnPremisesAt.length)),
+    );
+  }
   // 行き先が無いものは、無いと言う。「出していない」とだけ書くと、
   // 読み手は「探せばどこかで出る」と読む。出ない。
   if (consequence.findingsUnattached > 0) {
@@ -359,6 +378,7 @@ export function buildView(
     // 押せる行き先。押すとその文書が開き、開けば起点になる（ADR-019）。
     findingsAt: [...consequence.findingsElsewhereAt],
     premisesAt: [...consequence.premisesDirect],
+    premiseFindingsAt: [...consequence.findingsOnPremisesAt],
     // 画面に実際に出た文字列と辞書を突き合わせる。
     // **出す語の一覧を実装が持たない**（ADR-018）。
     terms: termsIn(

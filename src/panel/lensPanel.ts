@@ -72,6 +72,17 @@ export class LensPanel {
   #last: { readonly key: string; readonly view: ToWebview & { kind: "view" } } | null = null;
   #lastSnapshot: unknown = null;
 
+  /**
+   * 直前に前面に在った文章編集器。
+   *
+   * **明細が焦点を取ると `activeTextEditor` は `undefined` になる。**
+   * 焦点が外れたことと「起点が無い」ことは別である（`ADR-023`）。
+   * 覚えていないと、明細を触ろうとした瞬間に明細そのものが消える——
+   * 脚注の行き先も循環の行も、押すために焦点を取ると押す対象ごと描き直された
+   * （`CHANGE-028`）。
+   */
+  #lastEditor: vscode.TextEditor | undefined;
+
   static show(context: vscode.ExtensionContext, session: LensSession): LensPanel {
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
     if (LensPanel.#current) {
@@ -157,7 +168,11 @@ export class LensPanel {
    * どちらでもなければ起点は無い（利用者に選ばせない。ADR-012）。
    */
   #originId(): { id: string | null; openFile: string } {
-    const editor = vscode.window.activeTextEditor;
+    // 前面に文章編集器が在るあいだは、それを覚える。無いときは覚えたほうを見る。
+    // 閉じられた編集器は捨てる（消えた文書を起点として出さない）。
+    if (vscode.window.activeTextEditor) this.#lastEditor = vscode.window.activeTextEditor;
+    else if (this.#lastEditor?.document.isClosed) this.#lastEditor = undefined;
+    const editor = vscode.window.activeTextEditor ?? this.#lastEditor;
     const state = this.#session.state;
     if (!editor) return { id: null, openFile: "" };
     const relPath = this.#session.toRelativePath(editor.document.uri);

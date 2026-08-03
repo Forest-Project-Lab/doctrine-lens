@@ -203,12 +203,25 @@ export interface Consequence {
    */
   readonly findingsUnattached: number;
   /**
-   * 画面に出ていない所見が付いている文書の id。
+   * 画面に出ていない所見が付いている文書のうち、**起点に繋がらない**ものの id。
    *
    * **行き先である。** 押せばその文書が開き、開けば起点になる。
    * 件数だけを出して読み手に手が無い状態を「隠していない」と呼ばない（ADR-019）。
+   *
+   * **前提はここに入れない**（CHANGE-028）。前提は行にならないので必ず
+   * 「画面に出ていない」側へ落ちるが、それは「繋がらない」ではない。
+   * 初版は同じ文書を「直の前提」としても「起点に繋がらない」としても出していた——
+   * 同じ画面の中で「繋がらない」の定義が二通りになっていた
+   * （`unreached` は初めから前提を引いている）。
    */
   readonly findingsElsewhereAt: readonly string[];
+  /**
+   * 画面に出ていない所見が付いている文書のうち、**起点の前提**であるものの id。
+   *
+   * 前提から除いた分を、数ごと落とさない（ADR-014・ADR-019）。
+   * 「繋がらない」とは別の行に、別の文で出す。
+   */
+  readonly findingsOnPremisesAt: readonly string[];
 }
 
 /** 組み立てに要る、グラフの外から来る値。 */
@@ -545,6 +558,8 @@ export function buildConsequence(
       findingsElsewhereAt: [
         ...new Set((context.findings ?? []).flatMap((f) => attachedTo(f))),
       ].sort(),
+      // 起点が無いので前提も無い。**空を数で言う**（ADR-014）。
+      findingsOnPremisesAt: [],
     };
   }
 
@@ -750,9 +765,15 @@ export function buildConsequence(
     // そのうえで、**行き先が在るものと無いものを分ける**（ADR-019）。
     // 属するかどうかは `doc_id`（と `refs`）で判じる。検査名を実装が持たない。
     findingsUnattached: hidden.filter((f) => !attachedTo(f).length).length,
-    findingsElsewhereAt: [
-      ...new Set(hidden.flatMap((f) => attachedTo(f))),
-    ].sort(),
+    // **前提を「繋がらない」に混ぜない**（CHANGE-028）。前提は行にならないので
+    // 必ず `hidden` 側へ落ちるが、それは繋がっていないということではない。
+    // 除いた分は捨てず、`findingsOnPremisesAt` として別の行き先に出す。
+    findingsElsewhereAt: [...new Set(hidden.flatMap((f) => attachedTo(f)))]
+      .filter((id) => id !== origin.id && !premises.has(id))
+      .sort(),
+    findingsOnPremisesAt: [...new Set(hidden.flatMap((f) => attachedTo(f)))]
+      .filter((id) => premises.has(id))
+      .sort(),
   };
 }
 

@@ -169,6 +169,20 @@ export class LensSession {
     this.#carry = NO_AUDIT;
     this.#watchedRoot = undefined;
     this.#lastDocsRoot = undefined;
+    // **状態からも捨てる。** 読み手が見るのは `#state` だけである（CHANGE-028）。
+    // ここで捨てないと、次の取得が着地するまで**前の木の地図と範囲が、
+    // 新しい木の候補と一緒に配られる**。実測——`choose()` の直後、
+    // `candidate` は新しい木なのに `snapshot.docsRoot` は前の木のままで、
+    // 新しい木のファイルの行に前の木の id が起点として当たった。
+    // 失敗の経路（作業フォルダ無し・木無し・プラグイン無し）はどれも
+    // `EMPTY_STATE` を撒いている。**成功の経路だけが撒いていなかった。**
+    this.#emit({
+      snapshot: null,
+      partial: [],
+      failure: null,
+      auditAt: null,
+      staleCount: null,
+    });
   }
 
   /**
