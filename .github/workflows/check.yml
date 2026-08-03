@@ -74,6 +74,12 @@ jobs:
       - name: 統治木の全件点検
         run: npm run docs:lint
 
+      # 統治木の外に在る根の文書（README・AGENTS・CLAUDE・DESIGN・CHANGELOG）。
+      # `docs:lint` は木の中しか走らないので、ここが無いと辞書が一度も当たらない。
+      # 上流は自分の CI に同じ段を持っていた。こちらには無かった（CHANGE-025）。
+      - name: 根の文書の用語
+        run: npm run docs:terms
+
       # 文書が挙げる実測を、その場で測り直して突き合わせる（3 秒）。
       # 手元で `npm run check` の出力を絞って読んでいたせいで、この段が
       # 赤いまま「全門が緑」と報告し続けたことがある（CHANGE-019）。

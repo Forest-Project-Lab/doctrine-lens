@@ -497,7 +497,7 @@ Python 3, Playwright, Claude Code).
 |---|---|---|
 | `×` | 既に壊れている | `docs-audit` の severity が error か warn の所見 |
 | `+` | 足りない | `dep-graph --reverse-orphans` |
-| `?` | 直す場所が無い | 波及先だが、結ばれたコード範囲が零件 |
+| `?` | 直す場所が無い | 帰結だが、結ばれたコード範囲が零件 |
 | `!` | 直す | 起点を `depends_on` に持つ。前提が変わる |
 | `~` | 見直す | 何かが「影響する」と宣言している |
 

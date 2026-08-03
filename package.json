@@ -166,7 +166,7 @@
   },
   "scripts": {
     "build:test": "rm -rf out && tsc -p tsconfig.test.json",
-    "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check && npm run docs:lint && npm run docs:measured",
+    "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check && npm run docs:lint && npm run docs:terms && npm run docs:measured",
     "compile": "node esbuild.mjs",
     "docs:check": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-audit.py\" --root-from . --fail-on error",
     "docs:render": "python3 \"$(node tools/doctrine-path.mjs)/scripts/render-projection.py\" all --docs-root doctrine_docs",
@@ -180,7 +180,8 @@
     "vscode:prepublish": "npm run compile",
     "watch": "node esbuild.mjs --watch",
     "docs:measured": "node tools/check-measured-claims.mjs",
-    "docs:lint": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-linter.py\" --batch ."
+    "docs:lint": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-linter.py\" --batch .",
+    "docs:terms": "node tools/check-root-terms.mjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
