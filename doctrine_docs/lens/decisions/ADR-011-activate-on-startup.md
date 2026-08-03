@@ -6,8 +6,9 @@ domain: lens
 status: accepted
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-03
 sources: []
+impacts: [SPEC-001]
 llm_context: task
 ---
 
