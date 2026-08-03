@@ -9,7 +9,7 @@
   "cmd.revealById": "id を指した文書が何を動かすか",
   "cmd.explainStale": "指紋の食い違いを説明する",
   "cmd.selectFolder": "どの統治木を出すかを選ぶ",
-  "cfg.pythonPath": "doctrine の CLI を動かす python の実行ファイル。既定は `python3`。",
+  "cfg.pythonPath": "doctrine CLI を走らせる python の実行体。絶対路・`~/` 付き・裸の命令名のいずれかにする——`.venv/bin/python` のような相対路は拒む（拡張機能ホストがどこに居るかで指す先が変わるため）。既定は `python3`。",
   "cfg.docsRoot": "統治木への相対パス。空なら `doctrine_docs/` を先に、次に `_system/` を持つ `docs/` を探す。",
   "cfg.pluginPath": "doctrine プラグインの実体パス。空なら導入台帳とキャッシュから解決する。",
   "cfg.timeoutMs": "CLI 一回あたりの待ち時間の上限（ミリ秒）。",

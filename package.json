@@ -1,7 +1,7 @@
 {
   "name": "doctrine-lens",
   "displayName": "Doctrine Lens",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "publisher": "Forest-Project-Lab",
   "description": "Answer one question: if I change what I have open, what will I have to fix, and in what order? An ordered list, derived from a doctrine-governed document tree.",
   "license": "MIT",
@@ -33,7 +33,8 @@
     "theme": "dark"
   },
   "engines": {
-    "vscode": "^1.90.0"
+    "vscode": "^1.90.0",
+    "node": ">=22"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -167,12 +168,7 @@
     "build:test": "rm -rf out && tsc -p tsconfig.test.json",
     "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check && npm run docs:measured",
     "compile": "node esbuild.mjs",
-    "docs:aggregate": "node tools/doc-manager/aggregate-targets.mjs",
     "docs:check": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-audit.py\" --root-from . --fail-on error",
-    "docs:diff": "node tools/doc-manager/diff.mjs",
-    "docs:extract": "for f in docs/manifest/*.json; do [ -f \"$f\" ] || continue; c=$(basename \"$f\" .json); node tools/doc-manager/extract.mjs \"$c\"; done",
-    "docs:fetch": "node tools/doc-manager/fetch.mjs docs/targets/all.json --timeout=30000",
-    "docs:refresh": "npm run docs:aggregate && npm run docs:fetch && npm run docs:extract && npm run docs:diff",
     "docs:render": "python3 \"$(node tools/doctrine-path.mjs)/scripts/render-projection.py\" all --docs-root doctrine_docs",
     "docs:trace": "python3 \"$(node tools/doctrine-path.mjs)/scripts/trace-index.py\" --root . --docs-root doctrine_docs --format json",
     "mutate": "node tools/mutate-check.mjs",

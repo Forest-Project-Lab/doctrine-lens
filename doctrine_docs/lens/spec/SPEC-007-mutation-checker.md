@@ -152,5 +152,5 @@ doctrine プラグインの `trace-index.py` で取り直す。
 **追跡の免除を狭めた。** `_system/.context-config.json` の `trace_exempt` は
 `tools/` を丸ごと「持ち込んだ道具」として免除していたが、潰しの検査器はこの
 リポジトリ固有の品質の門であり、その理由は当たらない。免除は持ち込んだ道具
-（`tools/doc-manager/`・`doctrine-path.mjs`・`preview-webview.mjs`・
+（`doctrine-path.mjs`・`preview-webview.mjs`・
 `run-vscode-test.mjs`・`shoot-preview.mjs`）だけに限った。

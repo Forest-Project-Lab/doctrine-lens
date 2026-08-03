@@ -73,6 +73,7 @@ sources: []
 | CHANGE-017 | CHANGE | lens | 生きている ICD が、捨てた概念の正本を名乗っている |
 | CHANGE-018 | CHANGE | lens | 撮り直さない写しが、消えずに残る |
 | CHANGE-020 | CHANGE | lens | 決定を変えても、直すものが出てこない |
+| CHANGE-021 | CHANGE | lens | 借りてきた道具 1445 行が、一度も使われていない |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -92,6 +93,7 @@ sources: []
 | IMPACT-017 | IMPACT | lens | 捨てた概念の名乗りを外すことの影響 |
 | IMPACT-018 | IMPACT | lens | 写しを撮る前に掃除することの影響 |
 | IMPACT-020 | IMPACT | lens | 決定に行き先を書くことの影響 |
+| IMPACT-021 | IMPACT | lens | 借りてきた道具を消すことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |
