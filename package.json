@@ -3,7 +3,7 @@
   "displayName": "Doctrine Lens",
   "version": "0.9.5",
   "publisher": "Forest-Project-Lab",
-  "description": "Answer one question: if I change what I have open, what will I have to fix, and in what order? An ordered list, derived from a doctrine-governed document tree.",
+  "description": "%ext.description%",
   "license": "MIT",
   "icon": "icon.png",
   "repository": {

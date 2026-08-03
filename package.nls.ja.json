@@ -11,7 +11,7 @@
   "cmd.selectFolder": "どの統治木を出すかを選ぶ",
   "cfg.pythonPath": "doctrine CLI を走らせる python の実行体。絶対路・`~/` 付き・裸の命令名のいずれかにする——`.venv/bin/python` のような相対路は拒む（拡張機能ホストがどこに居るかで指す先が変わるため）。既定は `python3`。",
   "cfg.docsRoot": "統治木への相対パス。空なら `doctrine_docs/` を先に、次に `_system/` を持つ `docs/` を探す。",
-  "cfg.pluginPath": "doctrine プラグインの実体パス。空なら導入台帳とキャッシュから解決する。",
+  "cfg.pluginPath": "doctrine プラグインの実体パス。空なら導入台帳とキャッシュから解決する。絶対パスか「~/」で始まる道だけを受ける。相対の道は受け付けない（`doctrineLens.pythonPath` と同じ理由）。",
   "cfg.timeoutMs": "CLI 一回あたりの待ち時間の上限（ミリ秒）。",
   "cfg.autoRefresh": "統治木の `.md` か、印を持つ原本を保存したとき、取り直す。",
   "cfg.auditDebounceMs": "変更のあと、指紋の食い違いを判じる全件監査を走らせるまでの待ち（ミリ秒）。`0` なら明示の取り直しのときだけ走らせる。",

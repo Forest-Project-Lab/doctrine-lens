@@ -7,7 +7,8 @@
 // そして webview から来た「開け」を編集器へつなぐことだけである。
 import * as vscode from "vscode";
 
-import { messages, shellStrings, viewStrings } from "../l10n.js";
+import type { PartialFetch } from "../doctrine/graph.js";
+import { adviceFor, messages, shellStrings, viewStrings } from "../l10n.js";
 import { buildConsequence } from "../model/consequence.js";
 import { rangeAtLine, toEditorLine } from "../model/trace.js";
 import { buildView, formatTime } from "../model/view.js";
@@ -17,21 +18,16 @@ import { renderHtml } from "./html.js";
 
 const VIEW_TYPE = "doctrineLens.consequence";
 
-/** 失敗の種類ごとの案内。読み手が次に何をすればよいかまで書く（ADR-007）。 */
-function adviceFor(reason: string): string {
-  if (reason === "bad-setting") return messages.badSetting();
-  if (reason === "spawn-failed") return messages.spawnFailed();
-  if (reason === "bad-json") return messages.badJson();
-  if (reason === "timeout") return messages.timedOut();
-  return messages.exitNonZero();
-}
-
-/** 部分的に取れなかったものの名前を訳す（ADR-007）。 */
-function partialName(what: string): string {
+/** 部分的に取れなかったものの名前を訳す（ADR-007）。
+ *
+ * **引数を `PartialFetch["what"]` で受ける**（CHANGE-029）。`string` で受けていたので、
+ * 生産者が一人も居ない枝（`"titles"`）が型に咎められずに残っていた。
+ * 題名の欠けは部分的な失敗ではなく、脚注（`footNoTitles`）で告げる設計である
+ * （`ADR-020` で継ぎを捨てたときに移った）。 */
+function partialName(what: PartialFetch["what"]): string {
   if (what === "registry") return messages.partialRegistry();
   if (what === "ranges") return messages.partialRanges();
   if (what === "orphans") return messages.partialOrphans();
-  if (what === "titles") return messages.partialTitles();
   if (what === "glossary") return messages.partialGlossary();
   return messages.partialFindings();
 }
@@ -58,7 +54,6 @@ export class LensPanel {
   readonly #panel: vscode.WebviewPanel;
   readonly #session: LensSession;
   readonly #disposables: vscode.Disposable[] = [];
-  #ready = false;
 
   /**
    * 直前に組んだ明細。同じ起点・同じ取得なら組み直さない。
@@ -270,7 +265,6 @@ export class LensPanel {
   async #onMessage(message: ToHost): Promise<void> {
     switch (message.kind) {
       case "ready": {
-        this.#ready = true;
         if (this.#session.snapshot) this.#publish(this.#session.state);
         else await this.#session.refresh();
         return;

@@ -221,12 +221,14 @@ have open and says why it isn't one.
 | `Doctrine Lens: Open the document for this range` | Open the document governing the range at the cursor |
 | `Doctrine Lens: Jump to this document's implementation` | Jump to the code bound to the open document |
 | `Doctrine Lens: Choose which doctrine tree to show` | Switch trees when several workspace folders have one |
-| `Doctrine Lens: Open a document by id` | Open a governed document by its id |
-| `Doctrine Lens: Show what a document changes, by id` | Open the consequence list for a given id |
-| `Doctrine Lens: Explain the fingerprint mismatch` | Say what drifted, in upstream's own words |
+| `Doctrine Lens: Open a document by id` | Open a governed document by its id — **needs an id, so it is hidden from the palette and cannot be bound to a key** |
+| `Doctrine Lens: Show what a document changes, by id` | Open the consequence list for a given id — **needs an id, same as above** |
+| `Doctrine Lens: Explain the fingerprint mismatch` | Say what drifted, in upstream's own words — **needs an id, same as above** |
 
 **There are no default keybindings** (ADR-009) — installing this extension must
-not take a chord away from you. Add your own in `keybindings.json`:
+not take a chord away from you. Add your own in `keybindings.json`.
+**Three of the commands above take an id** and are invoked from the list, not from a
+key; bind one and it says so rather than doing nothing (`CHANGE-029`):
 
 ```json
 [

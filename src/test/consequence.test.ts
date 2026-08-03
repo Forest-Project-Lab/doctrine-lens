@@ -607,6 +607,76 @@ test("006-28c. 取れていない事実を記号と比べて、誤った理由�
   );
 });
 
+test("006-28d. 記号と事実の数が食い違う回は、その理由の脚注を出す", () => {
+  // **否定形だけでは、脚注を消しても緑になる**（CHANGE-029）。
+  // 006-28c は「出さない」しか見ておらず、`footHeaviest` を積む行を丸ごと落としても
+  // 一件も落ちなかった。**正の向きを一本置く。**
+  //
+  // P は重い所見を持ち、同時に逆孤児でもある。行の記号は最も重い一つ（×）だけ出るので、
+  // 記号ごとの件数と事実ごとの件数が食い違う。
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", {
+    ...NO_CONTEXT,
+    findings: [finding("P", "error", "壊れている")],
+    ranges: [range("P")],
+    reverseOrphans: new Set(["P"]),
+  });
+  assert.equal(c.summary.bySymbol.missing, 0, "記号は最も重い一つだけのはず");
+  assert.equal(c.summary.facts.missing, 1, "事実は数えているはず");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.ok(
+    view.footnotes.some((f) => f.includes("最も重い")),
+    `食い違いの理由を言っていない: ${JSON.stringify(view.footnotes)}`,
+  );
+});
+
+test("006-22f. 属さない所見が在る回は、その件数を脚注で言う", () => {
+  // これも否定形しか無かった（CHANGE-029）。`footUnattached` を積む行を落としても緑だった。
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", {
+    ...NO_CONTEXT,
+    findings: [{ check: "x", severity: "error", doc_id: "", path: "", message: "どこにも属さない", refs: [] }],
+  });
+  assert.equal(c.findingsUnattached, 1, "属さない所見を数えていない");
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.ok(
+    view.footnotes.some((f) => f.includes("属さない")),
+    `属さない所見の件数を言っていない: ${JSON.stringify(view.footnotes)}`,
+  );
+});
+
+test("006-29b. 上流が検査の一覧を返さない回、橋は空へ潰さず `null` を運ぶ", async () => {
+  // **空配列は長さ 0 という数である**（ADR-023・CHANGE-029）。初版は `checks_run` の
+  // 欠けを `[]` へ潰していたので、画面が「上流の監査を HH:MM に走らせた／**0 検査**」と
+  // 刷った。裏返しに「どの検査が走ったか分からない」の脚注は**一度も到達できなかった。**
+  // 画面の層の門（006-29）は在ったが、**橋の層に無かった。**
+  const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-checks-"));
+  try {
+    const scripts = join(dir, "plugin", "scripts");
+    mkdirSync(scripts, { recursive: true });
+    mkdirSync(join(dir, "doctrine_docs"), { recursive: true });
+    // `checks_run` を持たない報告。古い上流や、途中で落ちた回に起きうる形である。
+    const report = { schema: "docs-audit/1", root: join(dir, "doctrine_docs"), findings: [] };
+    writeFileSync(
+      join(scripts, "docs-audit.py"),
+      `import json,sys\njson.dump(${JSON.stringify(report)}, sys.stdout)`,
+      "utf8",
+    );
+    const { fetchFindings } = await import("../doctrine/audit.js");
+    const outcome = await fetchFindings(dir, join(dir, "doctrine_docs"), join(dir, "plugin"), {
+      pythonPath: "python3",
+      timeoutMs: 20000,
+      cwd: dir,
+    });
+    assert.ok(outcome.ok, `取れなかった: ${outcome.ok ? "" : outcome.detail}`);
+    assert.equal(
+      outcome.value.checksRun,
+      null,
+      "検査の一覧を空配列へ潰している（取れていないことが「測って零」に化ける）",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("006-29. 検査の一覧が取れない回に「0 検査を走らせた」と言わない", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const 取れた = buildView(c, new Map(), strings(), { ...CONTEXT, checksRun: 36 });
@@ -1001,14 +1071,16 @@ test("橋が所見を検査名で絞らない（木の健康状態に依らず�
       ["dead_link", "dep_cycle", "guard_liveness_gap", "trace_stale"],
       "橋が検査名で絞っている（追跡以外が落ちている）",
     );
+    const checksRun = outcome.value.checksRun;
+    assert.ok(checksRun !== null, "走らせた検査の一覧が取れていない（null）");
     assert.deepEqual(
-      [...outcome.value.checksRun].sort(),
+      [...checksRun].sort(),
       ["dead_link", "dep_cycle", "guard_liveness_gap", "orphan", "trace_stale"],
       "走らせた検査の一覧が届いていない",
     );
     // 所見が出ていない検査（orphan）も一覧には在る。ここが「数を数える」根拠である。
     assert.ok(
-      outcome.value.checksRun.length > outcome.value.findings.length,
+      checksRun.length > outcome.value.findings.length,
       "所見の数と検査の数を混同している",
     );
   } finally {
@@ -1039,8 +1111,10 @@ test("走らせた検査の数が、上流の検査の一覧と一致する（�
     cwd: project,
   });
   assert.ok(outcome.ok, `監査に失敗した: ${outcome.ok ? "" : outcome.detail}`);
+  const bridged = outcome.value.checksRun;
+  assert.ok(bridged !== null, "橋が検査の一覧を伝えていない（null）");
   assert.deepEqual(
-    [...outcome.value.checksRun].sort(),
+    [...bridged].sort(),
     [...upstream].sort(),
     "上流が走らせた検査と、橋が伝えた一覧が食い違う",
   );

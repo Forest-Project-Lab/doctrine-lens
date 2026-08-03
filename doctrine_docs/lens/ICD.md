@@ -31,7 +31,7 @@ canonical_for: [upstream-json-contracts]
 
 | トピック | 事実 |
 |---|---|
-| `upstream-json-contracts` | 上流 doctrine から受け取る入力は下表の四つである |
+| `upstream-json-contracts` | 上流 doctrine から受け取る入力は下表の六つである |
 
 **`depth-levels` と `lens-dials` の名乗りは外した**（`CHANGE-017`）。
 深度の四段は `ADR-012` が、ダイヤルの四つは `NONGOAL-001` が捨てている。
@@ -41,7 +41,7 @@ canonical_for: [upstream-json-contracts]
 
 このドメインは外部へ機械可読の出力を出さない。読む側であり、出す側ではない。
 
-上流の doctrine から受け取る入力は次の四つである。いずれも doctrine プラグインが出す JSON であり、
+上流の doctrine から受け取る入力は次の六つである。いずれも doctrine プラグインが出す JSON であり、
 このドメインは形を定義しない。形の正本は上流にある。
 
 | 入力 | 出す側 | このドメインでの用途 |
@@ -50,17 +50,19 @@ canonical_for: [upstream-json-contracts]
 | `dep-graph/classify-edges` | `dep-graph.py` | 帰結の明細の波の距離と、各行の一文の材料 |
 | `trace-index/1` | `trace-index.py` | 文書とコード範囲の対応。明細の行とコード側の面で使う |
 | `docs-audit/1` | `docs-audit.py` | 所見。指紋の食い違いの判定に使う |
+| `dep-graph/reverse-orphans` | `dep-graph.py --reverse-orphans` | 対応する仕様や試験を持たない文書の id。明細の「足りない」の記号に使う |
+| 辞書の写し | `_termcheck`・`_frontmatter` を読む問い合わせ | 木の用語辞書。画面に出た語の定義を脚注に添えるのに使う |
 
 登録簿の写しは、上流の `_registry` をその場で読んで得る。写しを保存しない。
 これにより、型や status の語彙をこのドメインが持たずに済む（REQ-003）。
 
 ### 事実と判定の分担
 
-上流の四つの入力は、返すものの性質が二つに分かれる。この分担を崩さない。
+上流の六つの入力は、返すものの性質が二つに分かれる。この分担を崩さない。
 
 | 性質 | 出す側 | 例 |
 |---|---|---|
-| 事実 | `dep-graph`・`trace-index`・`_registry` | 節点はどれか。範囲はどこか。型の並びは何か |
+| 事実 | `dep-graph`・`trace-index`・`_registry`・`_termcheck` | 節点はどれか。範囲はどこか。型の並びは何か。語の定義は何か |
 | 判定 | `docs-audit` | 指紋が食い違っているか。参照が切れているか |
 
 判定を事実から自前で導かない。導けば、上流が判定を変えたときに画面だけが古びる（ADR-005）。

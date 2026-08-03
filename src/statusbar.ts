@@ -6,7 +6,7 @@
 // 帯は常に見えるので、そこに理由を出す。
 import * as vscode from "vscode";
 
-import { messages } from "./l10n.js";
+import { adviceFor, messages } from "./l10n.js";
 import { planStatus } from "./model/status.js";
 import type { LensSession, SessionState } from "./session.js";
 
@@ -59,7 +59,15 @@ export class LensStatusBar {
 
     if (plan.kind === "failed") {
       this.#item.text = `$(warning) ${messages.statusUnavailable()}`;
-      this.#item.tooltip = state.failure?.detail ?? "";
+      // **帯にも直し方を出す**（CHANGE-029）。明細を開いていない利用者には、
+      // ここが唯一の手掛かりである。生の標準エラーだけだと、空のときに
+      // 理由ゼロの警告色が立つ。
+      this.#item.tooltip = [
+        state.failure ? adviceFor(state.failure.reason) : "",
+        state.failure?.detail ?? "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
       this.#item.command = plan.command ?? undefined;
       this.#item.backgroundColor = new vscode.ThemeColor("statusBarItem.warningBackground");
       return;

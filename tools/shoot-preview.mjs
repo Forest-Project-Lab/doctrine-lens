@@ -76,9 +76,12 @@ page.on("pageerror", (e) => errors.push(String(e)));
 await page.goto(pathToFileURL(join(previewDir, "index.html")).href);
 await page.waitForSelector(".row", { timeout: 10000 });
 
+/** 撮った名を覚える。走行のあとに、置き場の中身と突き合わせるため（受入 34）。 */
+const taken = [];
 const shot = async (name) => {
   await page.waitForTimeout(150);
   await page.screenshot({ path: join(shotDir, `${name}.png`), fullPage: true });
+  taken.push(`${name}.png`);
 };
 
 const text = async (selector) =>
@@ -337,6 +340,21 @@ if (cleared.notice !== null) {
 }
 
 await browser.close();
+
+// **消したことを、消えたことの証拠にしない**（受入 34・CHANGE-029）。
+// 初版は撮る前に消すところまでは働いたが、走行のあとに置き場を一度も読み返さなかった。
+// 「撮り直さない写しが残っていない」は、**残っていないことを見て初めて言える。**
+{
+  const after = readdirSync(shotDir).filter((n) => n.endsWith(".png")).sort();
+  const expected = [...taken].sort();
+  if (JSON.stringify(after) !== JSON.stringify(expected)) {
+    failures.push(
+      `写しが ${after.length} 枚（この走行で撮ったのは ${expected.length} 枚）: ` +
+        `余り ${after.filter((n) => !expected.includes(n)).join(" / ") || "無し"}・` +
+        `欠け ${expected.filter((n) => !after.includes(n)).join(" / ") || "無し"}`,
+    );
+  }
+}
 
 for (const step of steps) {
   console.log(

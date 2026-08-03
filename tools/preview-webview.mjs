@@ -113,32 +113,11 @@ const reverseOrphans = new Set(
   Object.values(orphanReport.result ?? {}).flatMap((b) => (Array.isArray(b) ? b : [])),
 );
 
-const titleReport = run([
-  "-c",
-  [
-    "import sys",
-    'sys.path[:] = [p for p in sys.path if p not in ("", ".")]',
-    "sys.path.insert(0, sys.argv[1])",
-    "import json, os",
-    "import _frontmatter as fm",
-    "out = {}",
-    "for base, dirs, files in os.walk(sys.argv[2]):",
-    "    dirs[:] = [d for d in dirs if not d.startswith('.')]",
-    "    for name in files:",
-    "        if not name.endswith('.md'):",
-    "            continue",
-    "        meta, _b, _e = fm.parse_file(os.path.join(base, name))",
-    "        if isinstance(meta, dict) and meta.get('id'):",
-    "            out[meta['id']] = {'title': meta.get('title') or '',",
-    "                               'updated': str(meta.get('updated') or ''),",
-    "                               'supersededBy': meta.get('superseded_by') or ''}",
-    "json.dump(out, sys.stdout, ensure_ascii=False)",
-  ].join("\n"),
-  join(pluginRoot, "scripts"), join(projectRoot, "doctrine_docs"),
-]);
-if (Object.keys(titleReport).length === 0) {
-  throw new Error("題名が一件も取れない。空の表で写しを撮ると、id だけの画面を確かめたことになる。");
-}
+// 題名・更新・後継は **本体と同じ関数**（docMetaFrom）で組む（CHANGE-029）。
+// 初版はここで python の一行スクリプトを走らせて frontmatter を直に読んでいた。
+// **同じ画面を作ると称しながら、題名だけが別の経路**だった——
+// 上流が節点に載せる値と、frontmatter の生の値がずれた回に、写しは気づけない。
+// 組むのは model の束ねを作ったあとなので、ここでは何もしない。
 
 // 木の用語辞書。本体と同じ関数を通す（ADR-018）。
 const glossaryBundle = join(outDir, "glossary.mjs");
@@ -171,7 +150,8 @@ writeFileSync(
   join(outDir, "model-entry.ts"),
   'export { buildConsequence } from "../src/model/consequence.js";\n' +
     'export { buildView, formatTime } from "../src/model/view.js";\n' +
-    'export { fetchRegistry } from "../src/doctrine/registry.js";\n',
+    'export { fetchRegistry } from "../src/doctrine/registry.js";\n' +
+    'export { docMetaFrom } from "../src/doctrine/graph.js";\n',
   "utf8",
 );
 execFileSync(
@@ -180,9 +160,15 @@ execFileSync(
    "--platform=node", `--outfile=${modelBundle}`, "--log-level=warning"],
   { cwd: projectRoot, stdio: "inherit" },
 );
-const { buildConsequence, buildView, formatTime, fetchRegistry } = await import(
+const { buildConsequence, buildView, formatTime, fetchRegistry, docMetaFrom } = await import(
   pathToFileURL(modelBundle).href
 );
+
+// **題名の表は、本体と同じ関数から組む**（CHANGE-029）。
+const docMeta = docMetaFrom(graph);
+if (docMeta.size === 0) {
+  throw new Error("題名が一件も取れない。空の表で写しを撮ると、id だけの画面を確かめたことになる。");
+}
 
 const registryOutcome = await fetchRegistry(pluginRoot, {
   pythonPath: "python3", timeoutMs: 60000, cwd: projectRoot,
@@ -231,7 +217,7 @@ const ORIGIN =
 const consequence = buildConsequence(graph, ORIGIN, context);
 const view = buildView(
   consequence,
-  new Map(Object.entries(titleReport)),
+  docMeta,
   viewStrings(),
   {
     openFile: ranges[0]?.path ?? "src/extension.ts",
@@ -240,7 +226,7 @@ const view = buildView(
     checksRun: Array.isArray(audit.checks_run) ? audit.checks_run.length : 0,
     // 木の用語辞書。本体と同じ道筋で取る（ADR-018）。写さない。
     glossary,
-    titlesMissing: Object.keys(titleReport).length === 0,
+    titlesMissing: docMeta.size === 0,
   },
 );
 
@@ -323,6 +309,6 @@ await build(webviewOptions(join(outDir, "webview.js")));
 console.log(
   `${join(outDir, "index.html")} を書いた（起点 ${ORIGIN}・` +
     `波 ${view.waves.length}・行 ${view.waves.reduce((n, w) => n + w.rows.length, 0)}・` +
-    `循環 ${view.cycles.length}・題名 ${Object.keys(titleReport).length}・` +
+    `循環 ${view.cycles.length}・題名 ${docMeta.size}・` +
     `承認語 ${glossary.size}）。`,
 );

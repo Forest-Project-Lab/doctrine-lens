@@ -328,7 +328,7 @@ test("まだ知らないファイルは「無関係」ではなく「訊く」",
   assert.equal(actionOnSave("src/b.ts", "doctrine_docs", ranges), "probe");
   assert.equal(actionOnSave("notes.txt", "doctrine_docs", ranges), "probe");
   assert.equal(actionOnSave("README.md", "doctrine_docs", ranges), "probe");
-  // 訊くのは一本だけである（すべて取り直すと七本走る）。
+  // 訊くのは一本だけである（すべて取り直すと 11 本走る）。
 });
 
 test("範囲がまだ取れていないうちは取り直す（取れるまで動かないよりよい）", () => {

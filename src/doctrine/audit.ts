@@ -42,7 +42,7 @@ export interface AuditReport {
  */
 export interface AuditResult {
   readonly findings: AuditFinding[];
-  readonly checksRun: string[];
+  readonly checksRun: string[] | null;
 }
 
 /** 追跡に関わる検査名の前置き。上流の検査名の付け方に従う。 */
@@ -147,10 +147,15 @@ export async function fetchFindings(
       `the audit resolved a different tree (${audited})`,
     );
   }
-  // 走らせた検査の一覧。上流が返さなければ空にする。数を補わない
-  //（補うと「数えた」ことになり、ADR-014 が禁じた「数の代わりに置く」になる）。
+  // 走らせた検査の一覧。**上流が返さなければ `null` にする**（ADR-023・CHANGE-029）。
+  // 初版は空配列へ潰していたが、**空配列は長さ 0 という数である**——
+  // 画面は「上流の監査を HH:MM に走らせた／0 検査」と刷り、
+  // 取れていないことを「測って零」と言っていた。
+  // 裏返しに「どの検査が走ったか分からない」の脚注は**一度も到達できなかった。**
   const raw = outcome.value.checks_run;
-  const checksRun = Array.isArray(raw) ? raw.filter((c): c is string => typeof c === "string") : [];
+  const checksRun = Array.isArray(raw)
+    ? raw.filter((c): c is string => typeof c === "string")
+    : null;
   return ok({ findings: outcome.value.findings, checksRun });
 }
 // doctrine:end SPEC-004

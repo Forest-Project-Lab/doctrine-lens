@@ -58,7 +58,13 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand("doctrineLens.revealDocumentById", async (docId?: string) => {
-      if (!docId) return;
+      // **黙って返らない**（CHANGE-029）。この命令はパレットから伏せてあるが、
+      // 利用者が `keybindings.json` に割り当てると引数無しで呼ばれる。
+      // 押したのに何も起きず、理由がどこにも出ない状態になっていた。
+      if (!docId) {
+        void vscode.window.showInformationMessage(messages.needsDocId());
+        return;
+      }
       // 指した文書を**開いてから**画面を出す。
       //
       // 画面へ「この id を起点にせよ」と渡さない。渡すと、画面はカーソルに従う
@@ -70,7 +76,10 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.commands.registerCommand("doctrineLens.openDocumentById", async (docId?: string) => {
-      if (!docId) return;
+      if (!docId) {
+        void vscode.window.showInformationMessage(messages.needsDocId());
+        return;
+      }
       await openDocumentById(session, docId);
     }),
 
@@ -126,7 +135,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // コードが変わると指紋が動く。保存のたびに取り直す（拍の分け方は session が持つ）。
     // ただし、統治の `.md` か印を持つ原本のときだけである。何でも取り直すと、
-    // 無関係な一回の保存で上流の CLI が七本走る（速い拍と遅い拍の両方）。
+    // 無関係な一回の保存で上流の CLI が 11 本走る（速い拍 5 本＋遅い拍 6 本。実測）。
     // 判定は src/model/trace.ts の純粋な関数が持つ。
     vscode.workspace.onDidSaveTextDocument((document) => {
       if (document.uri.scheme !== "file") return;

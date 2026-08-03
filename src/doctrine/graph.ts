@@ -74,7 +74,7 @@ export interface FetchResult {
  * 以前は上流の内部モジュールを直接呼ぶ継ぎ（`titles.ts` 137 行）で補っていた。
  * **上流が答えたので捨てた**（ADR-020）。
  */
-function docMetaFrom(graph: Graph): DocMetaIndex {
+export function docMetaFrom(graph: Graph): DocMetaIndex {
   const out = new Map<string, { title: string; updated: string; supersededBy: string }>();
   for (const node of graph.nodes) {
     if (typeof node.id !== "string" || !node.id) continue;
