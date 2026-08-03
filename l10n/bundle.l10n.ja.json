@@ -69,7 +69,6 @@
   "{0} documents": "{0} 文書",
   "{0} documents reach the origin in neither direction and are not listed": "帰結にも前提にも繋がらない {0} 文書は出していない",
   "{0} documents that do not reach the origin carry findings — open one to see them": "起点に繋がらない {0} 文書に所見が付いている（開けば起点になる）",
-  "{0} documents the origin relies on are not listed — this screen only walks forward": "起点が前提にしている {0} 文書は出していない（この画面は逆向きに辿らない）",
   "{0} documents to fix · {1} code ranges": "直すことになる {0} 文書 ・ コード {1} か所",
   "{0} findings are outside this screen's question (they belong to no document)": "この画面の問いに属さない所見が {0} 件（どの文書にも紐づかない）",
   "{0} has no code ranges bound to it.": "{0} に結ばれたコード範囲は無い。",
@@ -86,5 +85,6 @@
   "missing {0}": "足りない {0}",
   "no code range {0}": "範囲が無い {0}",
   "Upstream docs-audit ran at {0} (which checks ran is not known)": "上流の docs-audit を {0} に実行（どの検査が走ったかは取れていない）",
-  "The code ranges could not be fetched, so the cursor in {0} cannot resolve to a document. This is not \"no origin\" — it is \"not known yet\".": "コード範囲が取れていないので、{0} のカーソルからは文書を引けない。これは「起点が無い」ではなく「まだ分からない」である。"
+  "The code ranges could not be fetched, so the cursor in {0} cannot resolve to a document. This is not \"no origin\" — it is \"not known yet\".": "コード範囲が取れていないので、{0} のカーソルからは文書を引けない。これは「起点が無い」ではなく「まだ分からない」である。",
+  "{0} documents the origin rests on are not listed — this screen only walks forward. The {1} it rests on directly:": "起点が前提にしている {0} 文書は出していない（この画面は逆向きに辿らない）。直に前提にしている {1} 件:"
 }

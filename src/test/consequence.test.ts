@@ -663,6 +663,31 @@ test("006-28d. 取れていない事実に、記号を当てない", () => {
   );
 });
 
+test("006-33. 前提の数を出したら、直の一歩の行き先も出す", () => {
+  // 「起点 ← A ← B」。A は直の前提、B は推移の前提。
+  const graph = graphOf(["O", "A", "B"], ["A>O", "B>A"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+
+  assert.equal(c.premiseCount, 2, "推移の件数は A と B の 2 件");
+  assert.deepEqual(c.premisesDirect, ["A"], "直の一歩だけを名で出す（推移の全部を並べない）");
+
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.deepEqual([...view.premisesAt], ["A"], "画面へ行き先が届いていない");
+  assert.ok(
+    view.footnotes.some((f) => f.includes("2")),
+    `推移の件数を数で言っていない: ${view.footnotes}`,
+  );
+});
+
+test("006-33b. 前提が無ければ、その脚注も行き先も出さない", () => {
+  // 起点に流れ込む辺が無い。説明だけが浮かないこと（SPEC-006 制約）。
+  const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  assert.equal(c.premiseCount, 0);
+  assert.deepEqual(c.premisesDirect, []);
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  assert.deepEqual([...view.premisesAt], []);
+});
+
 test("006-31. status を言っていない節点を「非現行」と数えない", () => {
   // 上流は、型も status も書かれていない文書に `""` を返す（既定を引けないため）。
   // `""` を「現行でない」と数えると、要約は「非現行 1」と言うのに

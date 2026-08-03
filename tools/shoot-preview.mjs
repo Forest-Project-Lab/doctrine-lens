@@ -4,7 +4,7 @@
 // 「組み上がった」と「動いた」は別である。ここは後者を確かめる。
 // 明細を読み、行を押し、狭い幅まで詰めて、面から出るものが無いかを見る
 // （SPEC-006 受入基準 10・11）。
-import { mkdirSync, readdirSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
@@ -49,6 +49,21 @@ if (srcAt > preview) {
 
 mkdirSync(shotDir, { recursive: true });
 
+// **撮る前に、前の走行の写しを消す。** 撮り直さない写しが残ると、
+// 捨てた画面の写しが「いまの画面」として配られる道が開く。実測で、
+// 地図時代（`CHANGE-004` で捨てた）の写しが 9 枚、4.8 日残っていた——
+// `.preview/` は `.gitignore` の中に在るので、誰も咎めない（CHANGE-018）。
+//
+// **撮り始める前に一度だけ消す。** 走行が途中で落ちた回は「途中まで撮れた」状態が
+// 残り、そこから原因が読める。撮り終えてから消すと、その手掛かりが消える。
+//
+// 消す範囲は自分の出力先の `.png` だけである。外へ手を出さない。
+{
+  const before = readdirSync(shotDir).filter((n) => n.endsWith(".png"));
+  for (const name of before) rmSync(join(shotDir, name));
+  if (before.length > 0) console.log(`前の走行の写し ${before.length} 枚を消した。`);
+}
+
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 720, height: 900 } });
 
@@ -87,6 +102,8 @@ const state = async () => ({
   // 行から語を消したので、数だけが「隠していない」ことの証になる。
   // 数と行が食い違えば、消しすぎているか、数え違えている。
   statusRows: await page.locator(".row .status").count(),
+  // 直の前提の行き先。**数を出したら行き先も出す**（ADR-019・CHANGE-016）。
+  premisesAt: await page.locator(".at.premises button").count(),
   // 通知が**実際に出たか**。否定だけを検めると、通知の描画を殺しても
   // 「溢れていない・差し込みの跡が無い」で通ってしまう（ADR-017）。
   notice: await page.evaluate(() => {
@@ -186,6 +203,23 @@ if (!first.waveHeading || first.waveHeading.length < 4) {
 if (!first.summary || !/\d/.test(first.summary)) {
   failures.push(`要約に数が出ていない: ${JSON.stringify(first.summary)}`);
 }
+// 前提の数を出したなら、直の一歩の行き先も出ていること（ADR-019・CHANGE-016）。
+// **数だけを出して読み手に手が無い状態を「隠していない」と呼ばない。**
+{
+  const line = (first.footnotes ?? 0) > 0 ? true : false;
+  void line;
+  const premises = /(\d+) documents the origin rests on/.exec(first.summary ?? "");
+  void premises;
+}
+if (first.premisesAt === 0) {
+  const foot = await page.evaluate(() =>
+    [...document.querySelectorAll(".foot p")].some((p) => /rests on/.test(p.textContent ?? "")),
+  );
+  if (foot) {
+    failures.push("前提の数を出しているのに、直の一歩の行き先が一つも出ていない");
+  }
+}
+
 // 行から消した語を、数が支えていること（ADR-021 決定 2）。
 // 実物の木では登録簿が取れるので、数は必ず出る。出ないなら判定が届いていない。
 if (first.notCurrent === null) {
@@ -292,7 +326,7 @@ for (const step of steps) {
   console.log(
     `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
       `記号 ${step.marks.join("")}・語 ${step.terms}・非現行 ${step.notCurrent}/${step.statusRows}・` +
-      `通知 ${step.notice ? "出" : "無"}・svg ${step.svg}・` +
+      `通知 ${step.notice ? "出" : "無"}・前提の行き先 ${step.premisesAt}・svg ${step.svg}・` +
       `差し込みの跡 ${step.placeholders.length}`,
   );
 }

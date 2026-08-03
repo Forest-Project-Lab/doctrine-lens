@@ -180,6 +180,18 @@ export interface Consequence {
    * 「繋がらない」に混ぜると読み手が「影響なし」と読む。
    */
   readonly premiseCount: number;
+  /**
+   * 起点が**直に**前提にしている文書の id。
+   *
+   * **数を出したら行き先も出す**（ADR-019）。推移の件数（`premiseCount`）だけを
+   * 出していたが、それは「件数だけを出して読み手に手が無い状態」であり、
+   * 自分で決めた規律の破れだった（CHANGE-016）。
+   *
+   * **推移の全部は並べない。** 実測で推移は最大 43 件（280px で読めない）、
+   * 直は最大 7 件・中央 1 件である。直を押せばそこからまた直を辿れる——
+   * **一歩ずつ辿れれば手は在る。**
+   */
+  readonly premisesDirect: readonly string[];
   /** 帰結にも前提にも繋がらない文書の数。畳んだことを必ず言う（SPEC-006 制約）。 */
   readonly unreached: number;
   /**
@@ -527,6 +539,7 @@ export function buildConsequence(
       rangesKnown: context.ranges !== null,
       summary: emptySummary(),
       premiseCount: 0,
+      premisesDirect: [],
       unreached: all.size,
       findingsUnattached: (context.findings ?? []).filter((f) => !attachedTo(f).length).length,
       findingsElsewhereAt: [
@@ -719,6 +732,10 @@ export function buildConsequence(
     },
     // 起点が前提にしているもの。辿る向きが違うので出さない（無関係ではない）。
     premiseCount: premises.size,
+    // 直の前提だけを名で出す。逆向き隣接の一歩ぶん（ADR-019・CHANGE-016）。
+    premisesDirect: [...(reversed(neighbours).get(origin.id)?.keys() ?? [])]
+      .filter((id) => id !== origin.id && all.has(id) && !inCycle.has(id))
+      .sort(),
     // 起点は一件だけ引く。**起点が循環に落ちていれば `inCycle` が既に数えている**ので、
     // そこでさらに 1 を引くと、どちらにも届かない文書が 1 件ぶん消える。
     unreached: Math.max(

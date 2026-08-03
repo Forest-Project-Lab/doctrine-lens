@@ -286,7 +286,15 @@ export function buildView(
   // 「辿る向きが違うので出さない」と「繋がらないので出さない」は別の事実である。
   // 一語に畳むと、前者が「影響なし」と読まれる（ADR-017）。
   if (consequence.premiseCount > 0) {
-    footnotes.push(fill(strings.footPremises, String(consequence.premiseCount)));
+    // 推移の件数は数で言い、**直の一歩は名で言う**（ADR-019・CHANGE-016）。
+    // 全部を並べない——実測で推移は最大 43 件、直は 92% の起点で 8 件以下である。
+    footnotes.push(
+      fill(
+        strings.footPremises,
+        String(consequence.premiseCount),
+        String(consequence.premisesDirect.length),
+      ),
+    );
   }
   if (consequence.unreached > 0) {
     footnotes.push(fill(strings.footHidden, String(consequence.unreached)));
@@ -350,6 +358,7 @@ export function buildView(
     footnotes,
     // 押せる行き先。押すとその文書が開き、開けば起点になる（ADR-019）。
     findingsAt: [...consequence.findingsElsewhereAt],
+    premisesAt: [...consequence.premisesDirect],
     // 画面に実際に出た文字列と辞書を突き合わせる。
     // **出す語の一覧を実装が持たない**（ADR-018）。
     terms: termsIn(

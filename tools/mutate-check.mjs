@@ -368,6 +368,20 @@ const MUTATIONS = [
     to: "    if (false) continue;",
   },
   {
+    label: "直の前提の行き先を出さない（数だけを出して手が無い）",
+    file: "src/model/consequence.ts",
+    from: `    premisesDirect: [...(reversed(neighbours).get(origin.id)?.keys() ?? [])]
+      .filter((id) => id !== origin.id && all.has(id) && !inCycle.has(id))
+      .sort(),`,
+    to: "    premisesDirect: [],",
+  },
+  {
+    label: "直の前提に推移の全部を並べる（280px で読めない）",
+    file: "src/model/consequence.ts",
+    from: "    premisesDirect: [...(reversed(neighbours).get(origin.id)?.keys() ?? [])]",
+    to: "    premisesDirect: [...premises]\n      .concat([...(reversed(neighbours).get(origin.id)?.keys() ?? [])])",
+  },
+  {
     label: "畳んだ件数を数え損なう（隠したことを黙る）",
     file: "src/model/consequence.ts",
     from: `    unreached: Math.max(

@@ -6,9 +6,9 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-03
 sources: []
-canonical_for: [depth-levels, lens-dials, upstream-json-contracts]
+canonical_for: [upstream-json-contracts]
 ---
 
 # lens ICD
@@ -17,19 +17,25 @@ canonical_for: [depth-levels, lens-dials, upstream-json-contracts]
 
 このドメインが所有し、他のドメインが使ってよい語を挙げる。意味の正本は `_system/glossary.md` にある。
 
-- レンズ
-- 深度
-- 地図
-- 節点
-- 辺
+- 起点
+- 帰結
+- 波
+- 明細
+- 記号
+
+**`レンズ`・`深度`・`地図`・`節点`・`辺` は公開しない。** `ADR-012` が地図を捨て、
+`NONGOAL-001` が「図を描かない」「深度の段を持たない」と決めた。
+捨てた概念の語を、境界の外へ出さない。
 
 ## 正本である事実
 
 | トピック | 事実 |
 |---|---|
-| `depth-levels` | 深度の段は L0・L1・L2・L3 の四つである。番号が大きいほど細部を見る。四段すべてを実装する |
-| `lens-dials` | レンズが持つダイヤルは色・絞り・配置・深度の四つである |
 | `upstream-json-contracts` | 上流 doctrine から受け取る入力は下表の四つである |
+
+**`depth-levels` と `lens-dials` の名乗りは外した**（`CHANGE-017`）。
+深度の四段は `ADR-012` が、ダイヤルの四つは `NONGOAL-001` が捨てている。
+**捨てた概念の正本を名乗り続けない。**
 
 ## データ契約
 
@@ -41,8 +47,8 @@ canonical_for: [depth-levels, lens-dials, upstream-json-contracts]
 | 入力 | 出す側 | このドメインでの用途 |
 |---|---|---|
 | 登録簿の写し | `_registry` を読む問い合わせ | 型の登録順と現行を示す status の値。語彙の判定に使う |
-| `dep-graph/classify-edges` | `dep-graph.py` | 節点と辺の全体。地図の描画に使う |
-| `trace-index/1` | `trace-index.py` | 文書とコード範囲の対応。深度 L3 とコード側の面で使う |
+| `dep-graph/classify-edges` | `dep-graph.py` | 帰結の明細の波の距離と、各行の一文の材料 |
+| `trace-index/1` | `trace-index.py` | 文書とコード範囲の対応。明細の行とコード側の面で使う |
 | `docs-audit/1` | `docs-audit.py` | 所見。指紋の食い違いの判定に使う |
 
 登録簿の写しは、上流の `_registry` をその場で読んで得る。写しを保存しない。

@@ -5,7 +5,7 @@ type: OVERVIEW
 domain: _system
 status: current
 owner: render-projection
-updated: 2026-07-28
+updated: 2026-08-03
 llm_context: always
 sources: []
 ---
@@ -16,4 +16,4 @@ sources: []
 
 | domain | ICD id | title | canonical_for | updated |
 |---|---|---|---|---|
-| lens | ICD-001 | lens のインターフェース | depth-levels, lens-dials, upstream-json-contracts | 2026-07-28 |
+| lens | ICD-001 | lens のインターフェース | upstream-json-contracts | 2026-08-03 |
