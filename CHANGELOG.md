@@ -5,6 +5,45 @@
 
 「なぜ決めたか」は統治木の ADR が持つ。ここが持つのは「何が変わったか」だけである。
 
+## [0.9.0] — 2026-08-03
+
+**この製品が何を解くかを、木の中に置いた**（CHANGE-015・ADR-026）。
+
+**この体系の値打ちは「正本を一つ持つ」ことなのに、その一点だけ正本が木の外に在った。**
+
+測ったら `REQ` 四本はすべて**機能の粒度**で、製品として何を解くかを言う文書は無く、
+内容は `README.md` にしかなかった。`README` は**ビュー**である（人が手で書き、
+刻印で参照時点を示す文書）。実測で、この製品の `README` は**四版ぶん古びていた**。
+
+`doctrine_docs/_system/REQ-000-what-this-product-solves.md` を書いた。
+**内容は `README` から移した——新しく考えていない。** 既に在るものへ正本を与えた。
+
+### 上流の v0.9.0 を切った
+
+`0.8.0` のままでは書けなかった。行き止まりを実測してある。
+
+```
+_system/ に置く          → [error] reverse_orphan_req_no_spec
+仕様を繋いで解こうとする → [error] icd_dependency_violation（_system に ICD は無い）
+```
+
+上流の `PROC-001` に従って `v0.9.0` を切り（[doctrine#186](https://github.com/Forest-Project-Lab/doctrine/pull/186)）、
+呼び手から出した三本への答えを取り込んだ。
+
+| イシュー | 答え |
+|---|---|
+| [#152](https://github.com/Forest-Project-Lab/doctrine/issues/152) | ドメインの種類の語彙（`core`／`supporting`／`generic`） |
+| [#153](https://github.com/Forest-Project-Lab/doctrine/issues/153) | `REQ` の置き場所へ `_system/` を足す |
+| [#154](https://github.com/Forest-Project-Lab/doctrine/issues/154) | 雛形が定める節を全型で検める |
+
+上流の検査が **36 → 37** に増えても、この木は error 0 / warn 0 のままだった。
+
+### 版番号は中身を指していない
+
+手元の「0.8.0」は `7d2769b` の時点の中身だった。
+**キャッシュのフォルダ名＝版番号、中身＝取り込んだ時点のコミット。**
+同じ版番号でも人によって中身が違う。
+
 ## [0.8.4] — 2026-08-03
 
 **自分で作った語を、辞書へ足す**（CHANGE-014・ADR-025）。
