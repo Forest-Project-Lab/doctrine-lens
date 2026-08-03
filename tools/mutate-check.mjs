@@ -196,10 +196,22 @@ const MUTATIONS = [
     to: "        notCurrent: rows.filter((r) => r.notCurrent === true).length,",
   },
   {
+    label: "status を言っていない節点を「非現行」と数える（数と行が食い違う）",
+    file: "src/model/consequence.ts",
+    from: '  if (typeof status !== "string" || status === "") return null;',
+    to: '  if (typeof status !== "string") return true;',
+  },
+  {
+    label: "起点が循環に入った回に、起点を二重に引く（届かない件数が 1 減る）",
+    file: "src/model/consequence.ts",
+    from: "      all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1) - premises.size,",
+    to: "      all.size - rows.length - inCycle.size - 1 - premises.size,",
+  },
+  {
     label: "現行の判定を反転（現行だけが語り出す）",
     file: "src/model/consequence.ts",
-    from: "  return typeof status === \"string\" ? !currentStatuses.has(status) : true;",
-    to: "  return typeof status === \"string\" ? currentStatuses.has(status) : true;",
+    from: "  return !currentStatuses.has(status);",
+    to: "  return currentStatuses.has(status);",
   },
   {
     label: "部分失敗の詳細を捨てる・登録簿（設定の誤りが一時的失敗に見える）",
@@ -364,8 +376,11 @@ const MUTATIONS = [
   {
     label: "畳んだ件数を数え損なう（隠したことを黙る）",
     file: "src/model/consequence.ts",
-    from: "unreached: Math.max(0, all.size - rows.length - inCycle.size - 1 - premises.size),",
-    to: "unreached: 0,",
+    from: `    unreached: Math.max(
+      0,
+      all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1) - premises.size,
+    ),`,
+    to: "    unreached: 0,",
   },
   {
     label: "所見を追跡の検査だけに絞る（上流の判断を橋の上で捨てる）",

@@ -645,6 +645,38 @@ test("006-30. 範囲が取れていない回の案内が、「起点が無い」
   );
 });
 
+test("006-31. status を言っていない節点を「非現行」と数えない", () => {
+  // 上流は、型も status も書かれていない文書に `""` を返す（既定を引けないため）。
+  // `""` を「現行でない」と数えると、要約は「非現行 1」と言うのに
+  // 行には空文字が渡って何も出ず、数と行が突き合わせられない（ADR-021 決定 2）。
+  const graph = graphOf(["O", "書きかけ"], ["O>書きかけ"]);
+  (graph.nodes as { id: string; status: string }[]).forEach((n) => {
+    if (n.id === "書きかけ") n.status = "";
+  });
+  const c = buildConsequence(graph, "O", { ...NO_CONTEXT, registry: REGISTRY });
+  const row = c.waves.flatMap((w) => w.rows)[0];
+  assert.equal(row?.notCurrent, null, "上流が言っていない status を判じている");
+  assert.equal(c.summary.facts.notCurrent, 0, "画面に出ない行を非現行に数えている");
+
+  const view = buildView(c, new Map(), strings(), CONTEXT);
+  const 語る行 = view.waves.flatMap((w) => w.rows).filter((r) => r.status !== "").length;
+  assert.equal(語る行, c.summary.facts.notCurrent, "数と行が食い違う");
+});
+
+test("006-32. 起点が循環に落ちても、畳んだ件数の総和が節点の数に届く", () => {
+  // `O ↔ A` の輪に起点が入る。`X` はどちらにも届かない。
+  const graph = graphOf(["O", "A", "X"], ["O>A", "A>O"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  const rows = c.waves.flatMap((w) => w.rows).length;
+  const inCycle = c.cycles.reduce((n, x) => n + x.members.length, 0);
+  assert.equal(
+    rows + inCycle + c.premiseCount + c.unreached,
+    graph.nodes.length,
+    "起点を二重に引いている（どちらにも届かない文書が消える）",
+  );
+  assert.equal(c.unreached, 1, "X が「届かない」に数えられていない");
+});
+
 test("006-27. 迂回路だけを名乗って、存在する直の辺を無いことにしない", () => {
   // P は O を直に depends_on に持ち、かつ M を経由してもいる（最長距離で第 2 波）。
   const graph = graphOf(["O", "M", "P"], ["O>M", "O>P", "M>P"]);

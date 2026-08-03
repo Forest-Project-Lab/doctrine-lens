@@ -165,7 +165,7 @@
   },
   "scripts": {
     "build:test": "rm -rf out && tsc -p tsconfig.test.json",
-    "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check",
+    "check": "npm run typecheck && npm run test && npm run compile && npm run docs:check && npm run docs:measured",
     "compile": "node esbuild.mjs",
     "docs:aggregate": "node tools/doc-manager/aggregate-targets.mjs",
     "docs:check": "python3 \"$(node tools/doctrine-path.mjs)/scripts/docs-audit.py\" --root-from . --fail-on error",
@@ -182,7 +182,8 @@
     "test:integration": "npm run compile && tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "vscode:prepublish": "npm run compile",
-    "watch": "node esbuild.mjs --watch"
+    "watch": "node esbuild.mjs --watch",
+    "docs:measured": "node tools/check-measured-claims.mjs"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

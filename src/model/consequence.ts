@@ -480,7 +480,12 @@ function judgeNotCurrent(
   currentStatuses: ReadonlySet<string> | null,
 ): boolean | null {
   if (currentStatuses === null) return null;
-  return typeof status === "string" ? !currentStatuses.has(status) : true;
+  // **上流が status を言っていない節点は、判じられない。**
+  // 上流は型も status も書かれていない文書に `""` を返す（既定を引けないため）。
+  // `""` を「現行でない」と数えると、要約は「非現行 N」と言うのに
+  // 行には空文字が渡って何も出ず、数と行が突き合わせられなくなる（ADR-021 決定 2）。
+  if (typeof status !== "string" || status === "") return null;
+  return !currentStatuses.has(status);
 }
 
 /** 記号の重さを返す。並び替えと排他の判定に使う。 */
@@ -707,7 +712,12 @@ export function buildConsequence(
     },
     // 起点が前提にしているもの。辿る向きが違うので出さない（無関係ではない）。
     premiseCount: premises.size,
-    unreached: Math.max(0, all.size - rows.length - inCycle.size - 1 - premises.size),
+    // 起点は一件だけ引く。**起点が循環に落ちていれば `inCycle` が既に数えている**ので、
+    // そこでさらに 1 を引くと、どちらにも届かない文書が 1 件ぶん消える。
+    unreached: Math.max(
+      0,
+      all.size - rows.length - inCycle.size - (inCycle.has(origin.id) ? 0 : 1) - premises.size,
+    ),
     // 「外」は「画面のどこにも出ていない」である。「起点以外」ではない。
     // そのうえで、**行き先が在るものと無いものを分ける**（ADR-019）。
     // 属するかどうかは `doc_id`（と `refs`）で判じる。検査名を実装が持たない。
