@@ -53,6 +53,7 @@ sources: []
 | ADR-024 | ADR | lens | 発火していない門を、緑と呼ばない |
 | ADR-025 | ADR | lens | 自分で作った語を、辞書へ足す |
 | ADR-026 | ADR | lens | 目的の正本も、木の中に置く |
+| ADR-027 | ADR | lens | 等幅は一段。ADR-013 の「二段」を置き換える |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -71,6 +72,7 @@ sources: []
 | CHANGE-016 | CHANGE | lens | 前提の数だけを出して、行き先を出していない |
 | CHANGE-017 | CHANGE | lens | 生きている ICD が、捨てた概念の正本を名乗っている |
 | CHANGE-018 | CHANGE | lens | 撮り直さない写しが、消えずに残る |
+| CHANGE-020 | CHANGE | lens | 決定を変えても、直すものが出てこない |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -89,6 +91,7 @@ sources: []
 | IMPACT-016 | IMPACT | lens | 前提の行き先を出すことの影響 |
 | IMPACT-017 | IMPACT | lens | 捨てた概念の名乗りを外すことの影響 |
 | IMPACT-018 | IMPACT | lens | 写しを撮る前に掃除することの影響 |
+| IMPACT-020 | IMPACT | lens | 決定に行き先を書くことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

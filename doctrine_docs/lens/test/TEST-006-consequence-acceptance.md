@@ -23,9 +23,12 @@ llm_context: task
 **単体試験を持たない受入は、下の表で「画面側」と宣言する。** 宣言も試験も無い受入は、
 `src/test/mutation-table.test.ts` の門が落とす。
 
+**宣言した受け持ちは、機械の経路に置く。** `npm run preview` は CI が毎回走らせる
+（`CHANGE-019`）。手元でしか走らない門は、走らせ忘れれば無いのと同じである。
+
 | 受入 | 受け持ち |
 |---|---|
-| 1 | 画面側（`npm run test:integration`。編集器のカーソルから起点が決まること） |
+| 1 | 画面側（二つに割れる。**カーソルから範囲が引けること**は `npm run test:integration` が、**その起点で明細が描かれること**は `npm run preview` が受け持つ。起点は webview へ `postMessage` で渡るので、拡張機能ホストの側からは読めない） |
 | 10 | 画面側（`npm run preview`。`<svg>` の数を実物の画面で数える） |
 | 11 | 画面側（`npm run preview`。280px で溢れないことを実物で測る） |
 | 12 | 画面側（`src/test/design.test.ts`。`DESIGN.md` を正本として CSS を走査する） |

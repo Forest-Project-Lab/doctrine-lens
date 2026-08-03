@@ -64,9 +64,21 @@ jobs:
       - name: 統治木の全件監査
         run: npm run docs:check   # 手元と同じ命令。プラグインの引き方も一つにする
 
+      # 文書が挙げる実測を、その場で測り直して突き合わせる（3 秒）。
+      # 手元で `npm run check` の出力を絞って読んでいたせいで、この段が
+      # 赤いまま「全門が緑」と報告し続けたことがある（CHANGE-019）。
+      - name: 文書の実測
+        run: npm run docs:measured
+
       # 拡張機能ホストは Electron なので、X サーバが要る。
       - name: 拡張機能ホストの試験
         run: xvfb-run -a npm run test:integration
+
+      # 実物の画面を撮って読む（11 秒）。TEST-006 が受入 10・11・34 の
+      # 受け持ちを「画面側（npm run preview）」と宣言しているので、
+      # **宣言した受け持ちを機械の経路に置く**（CHANGE-019）。
+      - name: 実物の画面
+        run: npx playwright install --with-deps chromium && npm run preview
 
       - name: 配布物を組む
         run: npm run package   # devDependencies に固定した vsce を使う（手元と同じ道具）

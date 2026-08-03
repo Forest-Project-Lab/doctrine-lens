@@ -8,7 +8,9 @@
 // 辺を一本も持たず、実測は **0 行**である。正しい起点は `REQ-002` だった。
 // **三つの文書が同じ誤りを持ち、誰も測り直さなかった。**
 //
-// ここは「`<id>` を起点に置くと `<N>` 行」という形の主張だけを拾い、
+// ここは「`<id>` を起点に置くと `<N>` 行」という形の**主張**だけを拾い、
+// **誤りの引用は拾わない**（変更の記録は「こう書いてあったが誤りだった」を引くので、
+// それを測ると直した記録そのものが門を赤くする）。
 // 実際に組み立てて数を突き合わせる。合わなければ非ゼロで終わる。
 //
 //   node tools/check-measured-claims.mjs
@@ -41,6 +43,11 @@ const claims = [];
 for (const file of docs(join(projectRoot, "doctrine_docs"))) {
   const text = readFileSync(file, "utf8");
   for (const m of text.matchAll(/`([A-Z]+-\d+)` を起点に置くと (\d+) 行/g)) {
+    // **誤りの引用を、主張として読まない。** 変更の記録は「こう書いてあったが誤りだった」
+    // を引く。その引用まで測ると、**直した記録そのものが門を赤くする**（実測でそうなった）。
+    // 直前の 200 字に「誤り」を含む語が在れば、それは引用である。
+    const before = text.slice(Math.max(0, (m.index ?? 0) - 200), m.index ?? 0);
+    if (/誤り|間違|実在しない|取り違え|書いていたが|と書いていた/.test(before)) continue;
     claims.push({ file: file.slice(projectRoot.length + 1), id: m[1], rows: Number(m[2]) });
   }
 }

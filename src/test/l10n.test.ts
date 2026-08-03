@@ -194,3 +194,28 @@ function stringLiterals(text: string): string[] {
   }
   return out;
 }
+
+test("README が挙げる命令名が、実体の命令とすべて対応する", () => {
+  // **README はビューである**（人が手で書き、刻印で参照時点を示す文書）。
+  // 実測で、`Choose which doctrine tree to read` は実体に無く（実体は `to show`）、
+  // 実体の四つが README に無かった。**利用者はコマンドパレットで探して見つけられない。**
+  const project = resolve(__dirname, "..", "..");
+  const manifest = JSON.parse(readFileSync(join(project, "package.json"), "utf8")) as {
+    contributes: { commands: { title: string }[] };
+  };
+  const nls = JSON.parse(readFileSync(join(project, "package.nls.json"), "utf8")) as Record<
+    string,
+    string
+  >;
+  const real = new Set(
+    manifest.contributes.commands.map((c) => nls[c.title.replace(/%/g, "")] ?? c.title),
+  );
+
+  const readme = readFileSync(join(project, "README.md"), "utf8");
+  // 命令表の行だけを見る。散文の中の引用は拾わない。
+  const listed = [...readme.matchAll(/^\| `Doctrine Lens: ([^`]+)` \|/gm)].map((m) => m[1] as string);
+  assert.ok(listed.length > 3, `README の命令表を読み取れていない（${listed.length} 件）`);
+
+  const ghosts = listed.filter((name) => !real.has(name));
+  assert.deepEqual(ghosts, [], "README が実体に無い命令を挙げている");
+});
