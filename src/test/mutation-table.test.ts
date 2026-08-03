@@ -148,10 +148,17 @@ test("主張を一つも持たない試験が無い（零件の主張で通さ�
   // **括弧の数で本体を切らない。** 最初にそうしたら、正規表現リテラル `/[{;]/` の
   // `{` に騙されて、主張を持つ試験を三本「持たない」と報せた。
   // **門を作るときに、門が嘘をついた。** 行頭の `test(` で区切る。
+  // **統合試験も見る。** `CHANGE-013` で足したときは `src/test/` だけを走査しており、
+  // `src/integration/` の二件（うち一つは**受入 1 の受け持ち**）を見逃していた。
+  // **門の走査先が、門の届く範囲である**（CHANGE-019）。
   const bare: string[] = [];
-  for (const file of testSources(join(PROJECT, "src", "test"))) {
+  for (const file of [
+    ...testSources(join(PROJECT, "src", "test")),
+    ...testSources(join(PROJECT, "src", "integration", "suite")),
+  ]) {
     const text = readFileSync(file, "utf8");
-    const starts = [...text.matchAll(/^test\(\s*"((?:[^"\\]|\\.)*)"/gm)];
+    // `node:test` は `test(`、mocha は `it(` である。両方を見る。
+    const starts = [...text.matchAll(/^\s*(?:test|it)\(\s*["`]((?:[^"`\\]|\\.)*)["`]/gm)];
     for (const [index, match] of starts.entries()) {
       const from = match.index ?? 0;
       const to = starts[index + 1]?.index ?? text.length;

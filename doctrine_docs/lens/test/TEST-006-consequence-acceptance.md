@@ -28,7 +28,7 @@ llm_context: task
 
 | 受入 | 受け持ち |
 |---|---|
-| 1 | 画面側（`npm run test:integration`。編集器のカーソルから起点が決まること） |
+| 1 | 画面側（二つに割れる。**カーソルから範囲が引けること**は `npm run test:integration` が、**その起点で明細が描かれること**は `npm run preview` が受け持つ。起点は webview へ `postMessage` で渡るので、拡張機能ホストの側からは読めない） |
 | 10 | 画面側（`npm run preview`。`<svg>` の数を実物の画面で数える） |
 | 11 | 画面側（`npm run preview`。280px で溢れないことを実物で測る） |
 | 12 | 画面側（`src/test/design.test.ts`。`DESIGN.md` を正本として CSS を走査する） |

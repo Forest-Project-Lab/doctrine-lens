@@ -130,6 +130,13 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     editor.selection = new vscode.Selection(0, 0, 0, 0);
     // 対応が無い旨を出して終わる。例外にしない。
     await vscode.commands.executeCommand("doctrineLens.openDocumentForRange");
+    // **「落ちなかった」だけを主張にしない**（CHANGE-019）。
+    // 印の無いファイルは、開いたまま何処へも跳ばない——それが「対応が無い」の形である。
+    assert.equal(
+      vscode.window.activeTextEditor?.document.uri.fsPath,
+      uri.fsPath,
+      "対応が無いのに、どこかへ跳んでいる",
+    );
   });
 
   it("コード → 文書。範囲の中から呼ぶと、その根拠の文書が開く", async () => {
@@ -199,8 +206,23 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     editor.selection = new vscode.Selection(20, 0, 20, 0);
 
     await vscode.commands.executeCommand("doctrineLens.open");
-    // webview が開いたことは、命令が例外なく終わったことで足りる。
-    // 中身の描画はブラウザ側の確認（tools/shoot-preview.mjs）が受け持つ。
+
+    // **「例外が出なかった」を主張にしない**（CHANGE-019）。
+    //
+    // ただし**明細の起点そのものは、ここからは読めない**——起点は webview へ
+    // `postMessage` で渡るので、拡張機能ホストの側に痕跡が残らない。
+    // 受入 1 の全部をここで検めることはできない。**できないことを、できるふりで書かない。**
+    //
+    // ここで検めるのは、その半分——**同じカーソルの位置から、同じ範囲が引けること**である
+    // （`doctrineLens.openDocumentForRange` は `rangeAtLine` を通る。
+    //   明細の起点は `LensPanel.#originId()` が同じ `rangeAtLine` を通る）。
+    // **画面に何が出るかは写しの門**（`tools/shoot-preview.mjs`）が受け持つ。
+    await vscode.commands.executeCommand("doctrineLens.openDocumentForRange");
+    const landed = vscode.window.activeTextEditor?.document.uri.fsPath ?? "";
+    assert.ok(
+      landed.endsWith("SPEC-006-consequence-list.md"),
+      `カーソルの位置から範囲が引けていない: ${landed}`,
+    );
 
     // 印の無いファイルへ移っても落ちない（起点が無いだけである）。
     const plain = await vscode.workspace.openTextDocument(
@@ -208,5 +230,13 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     );
     await vscode.window.showTextDocument(plain);
     await vscode.commands.executeCommand("doctrineLens.refresh");
+    // **文書へは跳ばない。** 起点が無いだけであって、どこかの文書を開いたりしない。
+    // （明細の webview が焦点を取ると `activeTextEditor` は `undefined` になる。
+    //   それは「文書へ跳んでいない」ことの一つの形なので、どちらも通す。）
+    const after = vscode.window.activeTextEditor?.document.uri.fsPath;
+    assert.ok(
+      after === undefined || after === plain.uri.fsPath,
+      `印の無いファイルで取り直したら、別の文書へ跳んだ: ${after}`,
+    );
   });
 });

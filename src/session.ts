@@ -266,11 +266,23 @@ export class LensSession {
         .getConfiguration("doctrineLens")
         .get<string>("docsRoot", "")
         .trim();
+      // **木を敷く手立ては、その plugin が提供するものである。**
+      // 木も plugin も無いのは初回の利用者そのものなのに、ここで返ると
+      // plugin の導入手順が永久に出ない。先に見て、無ければ両方を告げる。
+      const pluginForHint = locatePluginRoot(
+        candidates[0]?.folder ?? "",
+        vscode.workspace.getConfiguration("doctrineLens").get<string>("pluginPath", "").trim(),
+      );
       this.#emit({
         ...EMPTY_STATE,
         unavailable: override
           ? { text: messages.docsRootRejected(override), detail: messages.docsRootRejectedDetail() }
-          : { text: messages.noTree(), detail: messages.noTreeDetail() },
+          : {
+              text: messages.noTree(),
+              detail: pluginForHint
+                ? messages.noTreeDetail()
+                : `${messages.noTreeDetail()}\n\n${messages.noPlugin()}\n${messages.noPluginDetail()}`,
+            },
       });
       return;
     }
