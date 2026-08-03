@@ -153,6 +153,10 @@ export function viewStrings(): ViewStrings {
       "{0} documents that do not reach the origin carry findings — open one to see them",
       "{0}",
     ),
+    footPremiseFindings: t(
+      "{0} documents the origin depends on carry findings — they are premises, not unreachable",
+      "{0}",
+    ),
     footUnattached: t(
       "{0} findings are outside this screen's question (they belong to no document)",
       "{0}",

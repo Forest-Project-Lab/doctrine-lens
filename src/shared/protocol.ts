@@ -30,6 +30,8 @@ export interface RangeLink {
 export interface FindingView {
   readonly check: string;
   readonly severity: string;
+  /** 上流がその所見を付けた文書の id。**行の id とは限らない**（refs 経由で並ぶため）。 */
+  readonly doc_id: string;
   readonly message: string;
   readonly path: string;
   readonly refs: readonly string[];
@@ -122,6 +124,14 @@ export interface ConsequenceView {
    * 「そうなるまでの変異」——なぜこの形になったか——はここから入る（CHANGE-016）。
    */
   readonly premisesAt: readonly string[];
+  /**
+   * 起点の**前提**のうち、画面に出ていない所見が付いている文書の id。
+   *
+   * 前提は行にならないので所見も画面に出ない。だが「起点に繋がらない」ではない
+   * （`findingsAt` と混ぜると、同じ文書を前提とも無関係とも言うことになる。CHANGE-028）。
+   * **別の行き先として出す。** 推移の前提も含むので、`premisesAt` に無い id も並ぶ。
+   */
+  readonly premiseFindingsAt: readonly string[];
   /** 記号の語彙（`×壊れている` など）。 */
   readonly legend: readonly string[];
   /**

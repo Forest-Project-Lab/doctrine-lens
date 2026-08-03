@@ -261,6 +261,22 @@ await record("鍵盤で開いた", "04-keyboard", {
   sent: (v) => v.filter((k) => k === "openDocument").length >= 2,
 });
 
+// **行の中の釦へも、鍵盤で届くこと**（受入 38・CHANGE-028）。
+// 初版は行の keydown が泡立ちを止めず、しかも preventDefault が
+// **釦の素の活性化まで潰していた**ので、鍵盤だけの利用者は
+// 範囲の札にも所見の跳び先にも一度も到達できなかった（実測）。
+// 「行が開ける」だけを見ていたので、門はそれを一度も咎めなかった。
+const rangeButton = page.locator(".row .range").first();
+if ((await rangeButton.count()) > 0) {
+  await rangeButton.focus();
+  await page.keyboard.press("Enter");
+  await record("鍵盤で範囲の札を押した", "04-keyboard-range", {
+    sent: (v) => v.at(-1) === "openRange",
+  });
+} else {
+  failures.push("行の中に範囲の札が一つも無い（受入 38 を検められない）");
+}
+
 // 取り直しの釦。
 await page.locator("#refresh").click();
 await record("取り直しを押した", "05-refresh", {

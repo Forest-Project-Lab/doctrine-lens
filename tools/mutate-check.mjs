@@ -489,8 +489,14 @@ const MUTATIONS = [
   {
     label: "出ていない所見の行き先を捨てる（件数だけ出して手が無い）",
     file: "src/model/consequence.ts",
-    from: "      ...new Set(hidden.flatMap((f) => attachedTo(f))),\n    ].sort(),",
-    to: "    ].sort(),",
+    from: '    findingsElsewhereAt: [...new Set(hidden.flatMap((f) => attachedTo(f)))]\n      .filter((id) => id !== origin.id && !premises.has(id))\n      .sort(),',
+    to: "    findingsElsewhereAt: [],",
+  },
+  {
+    label: "前提を「起点に繋がらない」へ混ぜる（同じ文書を前提とも無関係とも言う）",
+    file: "src/model/consequence.ts",
+    from: "      .filter((id) => id !== origin.id && !premises.has(id))",
+    to: "      .filter((id) => id !== origin.id)",
   },
   {
     label: "属さない所見を「行き先が在る」側へ混ぜる（探しても見つからない）",

@@ -48,7 +48,11 @@ const docs = (dir) => {
 const claims = [];
 for (const file of docs(join(projectRoot, "doctrine_docs"))) {
   const text = readFileSync(file, "utf8");
-  for (const m of text.matchAll(/`([A-Z]+-\d+)` を起点に置くと (\d+) 行/g)) {
+  // **字面を一字一句で縛らない**（CHANGE-028）。初版は「`<id>` を起点に置くと <N> 行」
+  // だけを拾っていたので、`CHANGE-020` の「`ADR-008`（取得を二つの拍に分ける）を
+  // 起点に置くと、明細は 0 行である」を一度も見なかった。**その主張は実際に偽になっていた**
+  // （書いた時点は 0 行、いまは 13 行。同じ変更が `ADR-008` に辺を足したためである）。
+  for (const m of text.matchAll(/`([A-Z]+-\d+)`[^\n`]{0,40}?を起点に置くと[^\n]{0,24}?(\d+)\s*行/g)) {
     // **誤りの引用を、主張として読まない。** 変更の記録は「こう書いてあったが誤りだった」
     // を引く。その引用まで測ると、**直した記録そのものが門を赤くする**（実測でそうなった）。
     // 直前の 200 字に「誤り」を含む語が在れば、それは引用である。
@@ -66,9 +70,15 @@ for (const file of docs(join(projectRoot, "doctrine_docs"))) {
     });
   }
 }
-if (claims.length === 0) {
-  console.log("実測の主張が一つも無い（形が変わったなら、この道具を直すこと）。");
-  process.exit(0);
+// **零件を緑と読まない**（ADR-023・CHANGE-028）。文書に在るはずのものを一件も
+// 拾えないなら、点検が済んだのではなく**点検できていない**。
+// 下限も置く——正規表現が静かに痩せたときに、件数の落ち込みで気づける。
+const FLOOR = 4;
+if (claims.length < FLOOR) {
+  console.error(`実測の主張を ${claims.length} 件しか拾えなかった（下限 ${FLOOR}）。`);
+  console.error("文書の字面が変わったのなら tools/check-measured-claims.mjs の正規表現を直すこと。");
+  console.error("主張そのものを消したのなら、この下限を下げること（数を黙って減らさない）。");
+  process.exit(2);
 }
 
 /** 一つの木（作業木、または刻印が指す commit を展開した木）で数を測る。 */

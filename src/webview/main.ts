@@ -57,6 +57,12 @@ function drawFinding(f: FindingView): HTMLElement {
   if (f.severity) box.append(text("span", "severity", f.severity));
   box.append(text("span", "message", f.message));
   if (f.check) box.append(text("span", "check", f.check));
+  // **六項をそのまま出す**（SPEC-006 制約）。初版は四項しか描かず、
+  // `doc_id` と `refs` が画面から消えていた（CHANGE-028）。
+  // 一件の所見は `doc_id` でも `refs` でも行に並ぶので、`doc_id` が無いと
+  // 「この所見は実際どの文書に付いたのか」を読み手が判じられない。
+  if (f.doc_id) box.append(text("span", "doc", f.doc_id));
+  if (f.refs.length > 0) box.append(text("span", "refs", f.refs.join(" ")));
   if (f.path) {
     const link = document.createElement("button");
     link.type = "button";
@@ -117,6 +123,12 @@ function drawRow(row: RowView): HTMLElement {
   const open = (): void => send({ kind: "openDocument", id: row.id });
   item.addEventListener("click", open);
   item.addEventListener("keydown", (event) => {
+    // **中の釦に焦点が在る回は、行の動作を起こさない**（CHANGE-028）。
+    // keydown は泡立つので、範囲や所見の釦に焦点が在っても行のここへ届く。
+    // しかも `preventDefault()` が**釦の素の活性化（Enter→click）まで潰す**ので、
+    // 鍵盤だけの利用者は行の中の釦へ一度も到達できなかった（実測）。
+    // `click` の `stopPropagation` は click の泡立ちしか止めないので効かない。
+    if (event.target !== item) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       open();
@@ -179,6 +191,20 @@ function draw(view: ConsequenceView): void {
     const at = document.createElement("p");
     at.className = "at premises";
     for (const id of view.premisesAt) {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.textContent = id;
+      link.addEventListener("click", () => send({ kind: "openDocument", id }));
+      at.append(link);
+    }
+    foot.append(at);
+  }
+  // 前提に付いた所見の行き先。**「繋がらない」とは別の行に出す**（CHANGE-028）。
+  // 推移の前提も含むので、上の premisesAt に無い id も並ぶ。
+  if (view.premiseFindingsAt.length > 0) {
+    const at = document.createElement("p");
+    at.className = "at premise-findings";
+    for (const id of view.premiseFindingsAt) {
       const link = document.createElement("button");
       link.type = "button";
       link.textContent = id;
