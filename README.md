@@ -262,8 +262,9 @@ The extension also declares that it does **not** run in untrusted workspaces.
 It was. The map was measurably unreadable, and the measurements said something
 more uncomfortable than "the layout needs work":
 
-- The tree is 45 nodes, 45 edges, density 0.02. Research on node-link diagrams
-  says a graph *that* small should win. It didn't.
+- The tree was 45 nodes, 45 edges, density 0.02 at the time (`ADR-012`; it is
+  106 nodes now). Research on node-link diagrams says a graph *that* small
+  should win. It didn't.
 - **Both axes were meaningless.** Columns were registry order, rows were id
   alphabetical. 52% of edges spanned two or more columns. Optimizing row order
   6000 times only took crossings from 31 to 24.
@@ -348,13 +349,29 @@ Allowed values now live only in tables.
 | Fast | registry, `dep-graph`, `trace-index`, titles | on save (coalesced, 400 ms) |
 | Slow | the above plus `docs-audit` | on startup, on explicit refresh, after quiet (2500 ms) |
 
-Measured on this repository (45 documents): `dep-graph` 127 ms, `trace-index`
-645 ms, `docs-audit` 543 ms, titles 324 ms, registry probe 21 ms. `dep-graph`
-runs first on its own — everything else needs its result to be worth fetching —
-and the rest then run in parallel, so a full round is about 1.9 s. On a large
-repository, where the audit dominates, set `auditDebounceMs: 0` and run it only
-on demand. The screen always shows *when* the verdict was taken, so a stale
-verdict never reads as a fresh fact.
+Measured on this repository's own tree at `21131e4` — 106 documents, median of
+three runs, `node tools/measure-tree.mjs`:
+
+| Part | Time |
+|---|---|
+| registry probe | 17 ms |
+| glossary | 37 ms |
+| `trace-index` | 604 ms |
+| `docs-audit` | 2544 ms |
+| **fast round** (everything but the audit) | **2022 ms** |
+| **slow round** (with the audit) | **3516 ms** |
+
+`dep-graph` runs first on its own — everything else needs its result to be worth
+fetching — and the rest then run in parallel, so a round costs less than the sum
+of its parts. The audit dominates, and it grows with the tree: this same
+measurement read 543 ms when the tree held 45 documents. On a large repository,
+set `auditDebounceMs: 0` and run the audit only on demand. The screen always
+shows *when* the verdict was taken, so a stale verdict never reads as a fresh fact.
+
+The earlier version of this paragraph carried the 45-document numbers with no
+commit attached, two hundred lines below a paragraph that says *a measurement
+without its basis goes stale in silence*. It had gone stale in silence. The
+numbers now come from a tool, not from a hand (`CHANGE-026`).
 
 Moving the cursor re-derives the list without touching Python at all — it is
 pure computation over the snapshot already in memory.

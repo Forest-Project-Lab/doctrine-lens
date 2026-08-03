@@ -79,6 +79,7 @@ sources: []
 | CHANGE-023 | CHANGE | lens | 上流に在る門を、どの経路にも結んでいなかった |
 | CHANGE-024 | CHANGE | lens | 門が示した逃げ道を、門が塞いでいた |
 | CHANGE-025 | CHANGE | lens | 統治木の外に在る根の文書に、辞書が一度も当たっていなかった |
+| CHANGE-026 | CHANGE | lens | README が自分で書いた規律を、自分の 240 行下で破っていた |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -103,6 +104,7 @@ sources: []
 | IMPACT-023 | IMPACT | lens | 結んでいなかった門の影響 |
 | IMPACT-024 | IMPACT | lens | 塞がれていた逃げ道の影響 |
 | IMPACT-025 | IMPACT | lens | 木の外に在る文書の影響 |
+| IMPACT-026 | IMPACT | lens | 刻印なしで古びた数の影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

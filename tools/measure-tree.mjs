@@ -76,3 +76,43 @@ console.log(
 );
 console.log(`登録簿が現行と呼ぶ status          ${(snapshot.registry?.currentStatuses ?? []).length} 語`);
 console.log(`上流が走らせた検査                 ${snapshot.checksRun.length} 件`);
+
+// 拍の所要も測る。README がここの数を載せるので、**手で測らない**——
+// 手で測ると、木が育ったときに古びたことに誰も気づかない（実測でそうなった。
+// README は「45 documents」で測った数を、木が 106 になっても載せ続けていた）。
+const { fetchRegistry } = await import("../out/doctrine/registry.js");
+const { fetchTraceRanges } = await import("../out/doctrine/trace.js");
+const { fetchFindings } = await import("../out/doctrine/audit.js");
+const { fetchGlossary } = await import("../out/doctrine/glossary.js");
+const options = { pythonPath: "python3", timeoutMs: 120000, cwd: projectRoot };
+
+/** 三回回して中央値を取る。一回目は暖まっていない。 */
+const median = async (fn) => {
+  const took = [];
+  for (let i = 0; i < 3; i += 1) {
+    const started = process.hrtime.bigint();
+    await fn();
+    took.push(Number(process.hrtime.bigint() - started) / 1e6);
+  }
+  return Math.round(took.sort((a, b) => a - b)[1]);
+};
+
+// **名札を中身に合わせる。** `fetchSnapshot` は dep-graph だけではなく、
+// 登録簿・範囲・所見・逆孤児・辞書までを一度に取る「一巡」である。
+// 部品の名で呼ぶと、読み手は dep-graph が 3 秒かかると読む。
+const parts = [
+  ["登録簿", () => fetchRegistry(pluginRoot, options)],
+  ["辞書", () => fetchGlossary(snapshot.graph, docsRoot, pluginRoot, options)],
+  ["範囲（trace-index）", () => fetchTraceRanges(projectRoot, docsRoot, pluginRoot, options)],
+  ["所見（docs-audit）", () => fetchFindings(projectRoot, docsRoot, pluginRoot, options)],
+  ["速い拍（監査を除く一巡）", () =>
+    fetchSnapshot(projectRoot, docsRoot, pluginRoot, options, false)],
+  ["遅い拍（監査を含む一巡）", () =>
+    fetchSnapshot(projectRoot, docsRoot, pluginRoot, options, true)],
+];
+console.log("");
+for (const [name, fn] of parts) {
+  console.log(`${name.padEnd(26, "　")} ${await median(fn)} ms`);
+}
+console.log("");
+console.log("部品は単独で測った値。拍は並べて走らせるので、部品の和にはならない。");
