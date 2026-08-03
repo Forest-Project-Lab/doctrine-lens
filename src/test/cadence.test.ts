@@ -236,3 +236,12 @@ test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査�
 function carry(auditAt: Date | null, staleIds: ReadonlySet<string>): AuditCarry {
   return { auditAt, staleIds, findings: staleIds.size >= 0 ? [] : null, checksRun: [] };
 }
+
+test("001-10j. 一度も監査していない引き継ぎが、空集合や空配列を持たない", () => {
+  // 空集合は「食い違いが一つも無い」、`null` は「まだ知らない」である。
+  // 空へ潰すと、起動直後の帯が「食い違い無し」と言ったことになる（ADR-023）。
+  assert.equal(NO_AUDIT.auditAt, null);
+  assert.equal(NO_AUDIT.staleIds, null, "一度も監査していない回に「食い違い無し」と言う形になっている");
+  assert.equal(NO_AUDIT.findings, null);
+  assert.equal(NO_AUDIT.checksRun, null, "一度も監査していない回に「0 検査を走らせた」と言う形になっている");
+});

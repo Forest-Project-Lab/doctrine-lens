@@ -51,3 +51,12 @@ test("文書の数はそのまま運ぶ", () => {
   assert.equal(planStatus({ ...ready, docs: 0 }).docs, 0);
   assert.equal(planStatus({ ...ready, docs: 512 }).docs, 512);
 });
+
+test("取れていない食い違いの件数を、帯が 0 と断定しない", () => {
+  // 起動直後は一度も監査していない。`0` と出すと「食い違い無し」に読める。
+  const 取れた = planStatus({ ...ready, staleCount: 0 });
+  assert.equal(取れた.stale, 0, "測って零なら 0 と言う（ADR-014）");
+
+  const 取れない = planStatus({ ...ready, staleCount: null });
+  assert.equal(取れない.stale, null, "取れていない件数を 0 と断定している");
+});

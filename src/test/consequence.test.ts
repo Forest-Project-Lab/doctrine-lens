@@ -645,6 +645,24 @@ test("006-30. 範囲が取れていない回の案内が、「起点が無い」
   );
 });
 
+test("006-28d. 取れていない事実に、記号を当てない", () => {
+  // 記号は「その事実が在る」ことの印である。取れていないものに当てると、
+  // 上流の失敗が「壊れている」「足りない」に化ける（ADR-023 決定 1）。
+  const 基本 = { rangeCount: 1, kind: "depends-directly" as const };
+
+  assert.equal(symbolFor({ ...基本, findings: [finding("P", "error", "壊")], isReverseOrphan: false }), "broken");
+  // 所見が取れていない回は、その文書に付いた所見も空で届く（`findingsFor`）。
+  // 空なら重い所見も無いので `×` は当たらない。**道を二つ作らない。**
+  assert.equal(symbolFor({ ...基本, findings: [], isReverseOrphan: false }), "fix");
+
+  assert.equal(symbolFor({ ...基本, findings: [], isReverseOrphan: true }), "missing");
+  assert.equal(
+    symbolFor({ ...基本, findings: [], isReverseOrphan: null }),
+    "fix",
+    "逆孤児が取れていないのに + を当てている",
+  );
+});
+
 test("006-31. status を言っていない節点を「非現行」と数えない", () => {
   // 上流は、型も status も書かれていない文書に `""` を返す（既定を引けないため）。
   // `""` を「現行でない」と数えると、要約は「非現行 1」と言うのに

@@ -298,12 +298,6 @@ const MUTATIONS = [
     to: '? { kind: "impacted", by: origin.id }',
   },
   {
-    label: "所見が取れていない回に × を当てる（取れなかったを壊れているに化けさせる）",
-    file: "src/model/consequence.ts",
-    from: '  if (input.findings !== null && hasHeavyFinding(input.findings)) return "broken";',
-    to: '  if (hasHeavyFinding(input.findings ?? [])) return "broken";',
-  },
-  {
     label: "逆孤児が取れていない回に + を当てる",
     file: "src/model/consequence.ts",
     from: '  if (input.isReverseOrphan === true) return "missing";',

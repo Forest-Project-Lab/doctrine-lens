@@ -449,8 +449,15 @@ function hasHeavyFinding(findings: readonly AuditFinding[]): boolean {
  * 各記号はちょうど一つの事実から出る。二つの事実を一つの記号に畳まない。
  */
 export function symbolFor(input: {
-  /** その文書に付いた所見。**取れていなければ `null`。** */
-  readonly findings: readonly AuditFinding[] | null;
+  /**
+   * その文書に付いた所見。
+   *
+   * **ここは `null` を取らない。** 所見が取れていない回は `findingsFor` が空で返し、
+   * 空なら重い所見も無いので `×` は当たらない。**同じ答えに二つの道を作らない。**
+   * 以前は `| null` を許して `null` を弾いていたが、その枝は一度も通らず、
+   * 潰しの門が「潰しても何も落ちない」と報せて教えた（到達不能な枝）。
+   */
+  readonly findings: readonly AuditFinding[];
   /** 逆孤児か。**取れていなければ `null`。** */
   readonly isReverseOrphan: boolean | null;
   /** 結ばれた範囲の数。**取れていなければ `null`。** */
@@ -458,7 +465,7 @@ export function symbolFor(input: {
   readonly kind: Reason["kind"];
 }): Symbol {
   // `null`（取れていない）ときは当てない。知らないことを断定しない（ADR-023）。
-  if (input.findings !== null && hasHeavyFinding(input.findings)) return "broken";
+  if (hasHeavyFinding(input.findings)) return "broken";
   if (input.isReverseOrphan === true) return "missing";
   // 取れていない（null）ときは「無い」と言わない。知らないことを断定しない。
   if (input.rangeCount === 0) return "nowhere";
