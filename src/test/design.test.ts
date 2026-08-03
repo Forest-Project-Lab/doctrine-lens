@@ -85,6 +85,27 @@ const [PROPORTIONAL, MONOSPACE] = (() => {
 const FONT_SIZES = new Set([...PROPORTIONAL, ...MONOSPACE]);
 
 /**
+ * 等幅を宣言している規則の、大きさだけを検める。
+ *
+ * **族を混ぜて検めると、等幅の段が守られない。** `FONT_SIZES` は比例と等幅の和なので、
+ * 等幅で比例の段（11px）を使っても通ってしまう。実測でそうなっていた——
+ * `.finding .severity, .finding .check` が等幅を 11px で使い、
+ * `DESIGN.md` が「**等幅は一段**（12px）」と定めているのに門は素通しした（CHANGE-019）。
+ */
+function monospaceRules(css: string): { selector: string; size: number }[] {
+  const out: { selector: string; size: number }[] = [];
+  for (const m of css.matchAll(/([^{}]+)\{([^}]*)\}/g)) {
+    const body = m[2] ?? "";
+    if (!body.includes("--vscode-editor-font-family")) continue;
+    const size = /font-size:\s*(\d+)px/.exec(body);
+    if (!size) continue;
+    const selector = (m[1] ?? "").trim().split("\n").pop() ?? "";
+    out.push({ selector, size: Number(size[1]) });
+  }
+  return out;
+}
+
+/**
  * 太さ。3 節の表から読む。
  *
  * 地の文からは拾わない。「`500` を使わない」という**禁止の文**から 500 を
@@ -276,4 +297,15 @@ test("意匠の値が実装の他の場所に散らばっていない", () => {
   const text = readFileSync(join(PROJECT, "src", "webview", "main.ts"), "utf8");
   const offenders = [...text.matchAll(/\d+px|--vscode-|#[0-9a-fA-F]{6}/g)].map((m) => m[0]);
   assert.deepEqual(offenders, [], `描き手が意匠の値を持っている: ${offenders.join(" / ")}`);
+});
+
+test("等幅が DESIGN.md の等幅の段だけを使う（族を混ぜない）", () => {
+  // 比例の 13px と等幅の 12px は「隣り合う段」ではない（3 節）。
+  // 検めるときも族を分ける。混ぜると、等幅で比例の段を使っても通る。
+  const rules = monospaceRules(STYLE);
+  assert.ok(rules.length > 4, `等幅の規則を読み取れない（${rules.length} 件）`);
+  const offenders = rules
+    .filter((r) => !MONOSPACE.includes(r.size))
+    .map((r) => `${r.selector}: ${r.size}px`);
+  assert.deepEqual(offenders, [], `等幅の段（${MONOSPACE.join("/")}px）の外を使っている`);
 });

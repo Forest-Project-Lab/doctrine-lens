@@ -201,8 +201,11 @@ Keep the tree directly under your workspace folder (`<workspace>/doctrine_docs/`
 Put the cursor somewhere governed, then command palette →
 **`Doctrine Lens: Show what this changes`**.
 
-If nothing appears, look at the status bar (bottom right). It tells you which of
-the three it is: no governance tree, python won't start, or the plugin isn't found.
+If nothing appears, look at the status bar (bottom right). It reads
+`Doctrine Lens: unavailable` — **hover it**: the tooltip names which of the three it is
+(no governance tree, python won't start, or the plugin isn't found) and what to do about it.
+The bar itself stays one line; the reason lives in the tooltip, because being unavailable
+is not an error and does not earn a warning colour.
 
 If the screen says it has no origin, that is not an error — it names the file you
 have open and says why it isn't one.
@@ -216,7 +219,10 @@ have open and says why it isn't one.
 | `Doctrine Lens: Show what the open document changes` | Same, from the open document |
 | `Doctrine Lens: Open the document for this range` | Open the document governing the range at the cursor |
 | `Doctrine Lens: Jump to this document's implementation` | Jump to the code bound to the open document |
-| `Doctrine Lens: Choose which doctrine tree to read` | Switch trees when several workspace folders have one |
+| `Doctrine Lens: Choose which doctrine tree to show` | Switch trees when several workspace folders have one |
+| `Doctrine Lens: Open a document by id` | Open a governed document by its id |
+| `Doctrine Lens: Show what a document changes, by id` | Open the consequence list for a given id |
+| `Doctrine Lens: Explain the fingerprint mismatch` | Say what drifted, in upstream's own words |
 
 **There are no default keybindings** (ADR-009) — installing this extension must
 not take a chord away from you. Add your own in `keybindings.json`:

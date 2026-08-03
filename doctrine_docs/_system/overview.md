@@ -53,6 +53,7 @@ sources: []
 | ADR-024 | ADR | lens | 発火していない門を、緑と呼ばない |
 | ADR-025 | ADR | lens | 自分で作った語を、辞書へ足す |
 | ADR-026 | ADR | lens | 目的の正本も、木の中に置く |
+| ADR-027 | ADR | lens | 等幅は一段。ADR-013 の「二段」を置き換える |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |

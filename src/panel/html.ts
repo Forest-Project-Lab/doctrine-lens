@@ -208,8 +208,10 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
   display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline;
 }
 .row .finding .message, .origin .finding .message, .cycles .finding .message { flex: 1 1 auto; }
+/* Monospace has one step (12px). Do not mix families: proportional 11px and
+   monospace 12px are not adjacent steps. See DESIGN.md section 3 / CHANGE-019. */
 .finding .severity, .finding .check {
-  font-family: var(--vscode-editor-font-family); font-size: 11px;
+  font-family: var(--vscode-editor-font-family); font-size: 12px;
 }
 .finding.error .severity { color: var(--vscode-charts-red); }
 .finding.warn .severity { color: var(--vscode-charts-yellow); }
