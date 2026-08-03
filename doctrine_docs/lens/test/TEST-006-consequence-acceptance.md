@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-29
-updated: 2026-08-02
+updated: 2026-08-03
 sources: []
 depends_on: [SPEC-006]
 llm_context: task
@@ -29,6 +29,7 @@ llm_context: task
 | 10 | 画面側（`npm run preview`。`<svg>` の数を実物の画面で数える） |
 | 11 | 画面側（`npm run preview`。280px で溢れないことを実物で測る） |
 | 12 | 画面側（`src/test/design.test.ts`。`DESIGN.md` を正本として CSS を走査する） |
+| 34 | 画面側（`npm run preview`。走行の前後で `.preview/shots/` の中身が入れ替わることを見る） |
 
 以下は番号を持つ受入の一覧である。
 
@@ -72,6 +73,7 @@ llm_context: task
 | 使わない値を取らない | 登録簿の写しの各項が、実装のどこかで使われていることを見る |
 | 前提の行き先 | 「起点 ← A ← B」で、推移は 2 件と数で言い、直は A だけを名で出すことを見る |
 | 前提が無い回 | 起点に流れ込む辺が無いとき、その脚注も行き先も出ないことを見る（説明だけが浮かない） |
+| 写しの掃除 | 走行のあと `.preview/shots/` に、その走行で撮った写しだけが在ることを見る |
 
 ## 退行観点
 
@@ -118,3 +120,7 @@ llm_context: task
   （`ADR-019`。`CHANGE-016` で当てていなかった箇所が見つかった）。
 - **推移の全部を並べないこと。** 実測で最大 43 件は 280px で読めない。
   直の一歩だけを名で出し、押せばそこからまた一歩辿れる形にする。
+
+- **撮り直さない写しを残さないこと。** `.preview/` は `.gitignore` の中に在るので、
+  古びても誰も咎めない。実測で地図時代の写しが 9 枚・4.8 日残っていた（`CHANGE-018`）。
+  **git の外に在るものは、統治の外に在る。**

@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-08-02
+updated: 2026-08-03
 sources: []
 depends_on: [REQ-001, SPEC-001, ICD-001]
 impacts: [IMPL-001]

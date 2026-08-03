@@ -4,7 +4,7 @@
 // 「組み上がった」と「動いた」は別である。ここは後者を確かめる。
 // 明細を読み、行を押し、狭い幅まで詰めて、面から出るものが無いかを見る
 // （SPEC-006 受入基準 10・11）。
-import { mkdirSync, readdirSync, statSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { chromium } from "playwright";
@@ -48,6 +48,21 @@ if (srcAt > preview) {
 }
 
 mkdirSync(shotDir, { recursive: true });
+
+// **撮る前に、前の走行の写しを消す。** 撮り直さない写しが残ると、
+// 捨てた画面の写しが「いまの画面」として配られる道が開く。実測で、
+// 地図時代（`CHANGE-004` で捨てた）の写しが 9 枚、4.8 日残っていた——
+// `.preview/` は `.gitignore` の中に在るので、誰も咎めない（CHANGE-018）。
+//
+// **撮り始める前に一度だけ消す。** 走行が途中で落ちた回は「途中まで撮れた」状態が
+// 残り、そこから原因が読める。撮り終えてから消すと、その手掛かりが消える。
+//
+// 消す範囲は自分の出力先の `.png` だけである。外へ手を出さない。
+{
+  const before = readdirSync(shotDir).filter((n) => n.endsWith(".png"));
+  for (const name of before) rmSync(join(shotDir, name));
+  if (before.length > 0) console.log(`前の走行の写し ${before.length} 枚を消した。`);
+}
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 720, height: 900 } });

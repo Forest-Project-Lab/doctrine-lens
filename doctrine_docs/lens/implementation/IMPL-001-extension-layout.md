@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-08-02
+updated: 2026-08-03
 sources: []
 depends_on: [SPEC-001, SPEC-004, SPEC-005, SPEC-006]
 llm_context: task
@@ -29,7 +29,7 @@ llm_context: task
 
 - 上流の JSON に知らない項が増えても落とさない。既知の項だけを読み、残りは素通しする。
 - 上流の CLI の呼び出しは束ねる。統治木の変更が続けて起きても、取得は一つに畳む。
-- 取得が失敗しても、直前に成功した地図を消さない。失敗の表示と地図の表示は両立する。
+- 取得が失敗しても、直前に成功した明細を消さない。失敗の表示と明細の表示は両立する。
 - 通知の帯は二つに分ける。本体からの通知（取得の失敗・部分的な欠け）と、明細そのものが
   告げること（畳んだ件数・題名が取れなかった旨）は出所が違う。一つの帯を共有すると、
   本体が取得のたびに送る「消せ」で明細側の通知が必ず消える。
@@ -67,7 +67,7 @@ llm_context: task
 | 帯の中身 | `src/model/status.ts` | 状態の帯に何を出し、押すと何が走るか |
 | 作業フォルダ | `src/model/workspace.ts` | 統治木を持つフォルダから見るものを選ぶ |
 | 取得の共有 | `src/session.ts` | 取得を持ち、二つの拍で走らせる。画面はその読み手 |
-| 状態の帯 | `src/statusbar.ts` | 取得の様子を地図の外でも示す |
+| 状態の帯 | `src/statusbar.ts` | 取得の様子を明細の外でも示す |
 | 通信の取り決め | `src/shared/protocol.ts` | 本体と webview のあいだで交わす値の形 |
 | 画面の器の HTML | `src/panel/html.ts` | 内容セキュリティ方針と、明細の骨組み。値は DESIGN.md が正本（ADR-013） |
 | 表示の文字列 | `src/l10n.ts` | 訳を一箇所に集め、webview へ渡す |

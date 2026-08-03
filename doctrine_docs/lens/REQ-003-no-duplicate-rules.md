@@ -6,7 +6,7 @@ domain: lens
 status: current
 owner: doctrine-lens-maintainer
 created: 2026-07-28
-updated: 2026-07-28
+updated: 2026-08-03
 sources: [doctrine spec §3, doctrine scripts/_registry.py]
 impacts: [SPEC-001]
 llm_context: task
@@ -25,7 +25,7 @@ doctrine 自身が検出対象としている失敗の型であり、それを�
 この要求が満たされたことは、次の二つで確かめる。
 
 1. 拡張機能の実装のどこにも、型の一覧・status の語彙・置き場所の対応表が書かれていない。
-2. 上流が型を一つ増やしたとき、拡張機能を変更しなくても新しい型の文書が地図に現れる。
+2. 上流が型を一つ増やしたとき、拡張機能を変更しなくても新しい型の文書が明細に現れる。
 
 ## 優先度
 
