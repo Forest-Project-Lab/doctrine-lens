@@ -8,6 +8,11 @@ One question, answered from where your cursor already is:
 
 Not a map. A list — ordered, with a reason on every line.
 
+**The canonical statement of what this product solves lives in the tree, not here** —
+`doctrine_docs/_system/REQ-000-what-this-product-solves.md`. This README is a *view*:
+maintained by hand, stamped with the version it was written against. When the two
+disagree, the tree is right.
+
 *日本語の説明は下の [日本語](#日本語) にあります。*
 
 ![The consequence list](media/consequence.png)
@@ -469,6 +474,11 @@ Playwright, Claude Code).
 > **これを変えたら、何を、どの順で直すことになるか。**
 
 地図ではありません。順のついた明細で、どの行にも「なぜ居るか」の一文が付きます。
+
+**この製品が何を解くかの正本は、ここではなく木の中にあります**——
+`doctrine_docs/_system/REQ-000-what-this-product-solves.md`。
+この README は**ビュー**です（人が手で書き、刻印で参照時点を示す文書）。
+**食い違ったら、木のほうが正しい。**
 
 ### 起点は選ばない
 

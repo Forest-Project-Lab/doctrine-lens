@@ -19,6 +19,7 @@ sources: []
 | GLOSSARY-001 | GLOSSARY | _system | 用語辞書の正本 |
 | DECIDED-001 | DECIDED | _system | Doctrine Lens の確定方針 |
 | NONGOAL-001 | NONGOAL | _system | Doctrine Lens がやらないこと |
+| REQ-000 | REQ | _system | これを変えたら何をどの順で直すことになるかに、いま開いている場所から答える |
 | ICD-001 | ICD | lens | lens のインターフェース |
 | REQ-001 | REQ | lens | いま触れているものから、直すことになるものを順に辿る |
 | REQ-002 | REQ | lens | 一つの画面は一つの問いだけに答える |
@@ -51,6 +52,7 @@ sources: []
 | ADR-023 | ADR | lens | 取れていない数を、その場に出さない |
 | ADR-024 | ADR | lens | 発火していない門を、緑と呼ばない |
 | ADR-025 | ADR | lens | 自分で作った語を、辞書へ足す |
+| ADR-026 | ADR | lens | 目的の正本も、木の中に置く |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -65,6 +67,7 @@ sources: []
 | CHANGE-012 | CHANGE | lens | 「取れなかった」を「無い」と言っている箇所が、まだ六つ在る |
 | CHANGE-013 | CHANGE | lens | 発火していない門が、まだ三つ在る |
 | CHANGE-014 | CHANGE | lens | 自分で作った語が、辞書に無い |
+| CHANGE-015 | CHANGE | lens | この製品が何を解くかを、木の中に置く |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -79,6 +82,7 @@ sources: []
 | IMPACT-012 | IMPACT | lens | 「取れなかった」を保つことの影響 |
 | IMPACT-013 | IMPACT | lens | 発火していない門を塞ぐことの影響 |
 | IMPACT-014 | IMPACT | lens | 四語を辞書へ足すことの影響 |
+| IMPACT-015 | IMPACT | lens | 目的の正本を木へ置くことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |
