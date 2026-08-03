@@ -1,7 +1,7 @@
 {
   "name": "doctrine-lens",
   "displayName": "Doctrine Lens",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "publisher": "Forest-Project-Lab",
   "description": "Answer one question: if I change what I have open, what will I have to fix, and in what order? An ordered list, derived from a doctrine-governed document tree.",
   "license": "MIT",

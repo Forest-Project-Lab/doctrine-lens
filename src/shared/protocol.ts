@@ -113,6 +113,14 @@ export interface ConsequenceView {
    * 読み手に手が無い状態を「隠していない」と呼ばない。
    */
   readonly findingsAt: readonly string[];
+  /**
+   * 起点が**直に**前提にしている文書の id。**押せる行き先**（ADR-019）。
+   *
+   * この画面は逆向きに辿らないが、**辿らないことと行き先を出さないことは別である。**
+   * 一歩ぶんの名を出せば、押してそこからまた一歩辿れる。
+   * 「そうなるまでの変異」——なぜこの形になったか——はここから入る（CHANGE-016）。
+   */
+  readonly premisesAt: readonly string[];
   /** 記号の語彙（`×壊れている` など）。 */
   readonly legend: readonly string[];
   /**

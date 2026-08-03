@@ -143,8 +143,9 @@ export function viewStrings(): ViewStrings {
       "{0}",
     ),
     footPremises: t(
-      "{0} documents the origin relies on are not listed — this screen only walks forward",
+      "{0} documents the origin rests on are not listed — this screen only walks forward. The {1} it rests on directly:",
       "{0}",
+      "{1}",
     ),
     footHidden: t("{0} documents reach the origin in neither direction and are not listed", "{0}"),
     footElsewhere: t(

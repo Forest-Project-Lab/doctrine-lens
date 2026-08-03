@@ -171,6 +171,19 @@ function draw(view: ConsequenceView): void {
   const foot = document.createElement("footer");
   foot.className = "foot";
   for (const line of view.footnotes) foot.append(text("p", "", line));
+  // 直の前提の行き先。押せばそこからまた一歩辿れる（ADR-019・CHANGE-016）。
+  if (view.premisesAt.length > 0) {
+    const at = document.createElement("p");
+    at.className = "at premises";
+    for (const id of view.premisesAt) {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.textContent = id;
+      link.addEventListener("click", () => send({ kind: "openDocument", id }));
+      at.append(link);
+    }
+    foot.append(at);
+  }
   // 行き先。押すとその文書が開き、開けば起点になる（ADR-019）。
   if (view.findingsAt.length > 0) {
     const at = document.createElement("p");
