@@ -634,7 +634,11 @@ export function buildConsequence(
       reason:
         hit.kind === "impacted"
           ? { kind: "impacted", by: hit.from }
-          : at === 1
+          : // **直かどうかは、距離ではなく相手で決まる**（CHANGE-027）。
+            // `at` は起点が属する強連結成分からの距離であって、起点からの距離ではない。
+            // 起点が循環に落ちていると、成分の**別の一員**から来た行まで
+            // 「起点を depends_on に持つ」と名乗った（実測で名乗った）。
+            hit.from === origin.id
             ? { kind: "depends-directly" }
             : { kind: "depends-through", through: hit.from },
       behind: descendants.get(id) ?? 0,

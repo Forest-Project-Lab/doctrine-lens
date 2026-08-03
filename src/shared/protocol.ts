@@ -156,11 +156,20 @@ export type ToHost =
   | { readonly kind: "refresh" }
   /** 文書を開く。`id` で指す。 */
   | { readonly kind: "openDocument"; readonly id: string }
-  /** コード範囲を開く。 */
+  /**
+   * 範囲か文書のファイルを開く。
+   *
+   * **`base` が座標系である。** 上流は二つの座標系で相対パスを返す——
+   * 範囲（`trace-index`）は作業フォルダ基準の `src/model/view.ts`、
+   * 所見（`docs-audit`）は統治木基準の `lens/spec/SPEC-006-….md`。
+   * 一つの項に二座標系を混ぜると、片方が必ず開かない
+   * （実測でそうなっていた。所見の道は一度も開けていなかった。CHANGE-027）。
+   */
   | {
       readonly kind: "openRange";
       readonly path: string;
       readonly beginLine: number;
       readonly endLine: number;
+      readonly base: "workspace" | "docs";
     };
 // doctrine:end IMPL-001

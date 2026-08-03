@@ -286,6 +286,12 @@ const MUTATIONS = [
     to: "if (known === undefined) {",
   },
   {
+    label: "直かどうかを距離で判じる（循環の相手から来た行が「起点の直の前提」を名乗る）",
+    file: "src/model/consequence.ts",
+    from: "hit.from === origin.id",
+    to: "at === 1",
+  },
+  {
     label: "相互のペアで影響を上書きする（同じ事実の行が ~ に化ける）",
     file: "src/model/consequence.ts",
     from: 'if (!(bucket.get(to) === "depends-directly")) bucket.set(to, kind);',

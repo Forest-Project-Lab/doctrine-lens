@@ -2,6 +2,7 @@
 //
 // 原文は英語で書く。日本語は l10n/bundle.l10n.ja.json が持つ。
 // webview は翻訳の仕組みを持たないので、ここで訳した一式を渡す（ADR-007）。
+// doctrine:begin IMPL-001
 import * as vscode from "vscode";
 
 import type { ViewStrings } from "./model/view.js";
@@ -191,3 +192,4 @@ export interface ShellStrings {
   busy: string;
   follow: string;
 }
+// doctrine:end IMPL-001

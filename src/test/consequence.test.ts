@@ -733,6 +733,57 @@ test("006-27. 迂回路だけを名乗って、存在する直の辺を無いこ
   assert.ok(shown.includes("直にも持つ"), `直の辺を名乗っていない: ${shown}`);
 });
 
+test("006-35. 循環の中の起点から、成分の別の一員を経由して来た行を「直」と呼ばない", () => {
+  // 起点 O と M が循環する。P は M だけを depends_on に持ち、O は持っていない。
+  // 初版は「起点の強連結成分からの距離が 1」で直かどうかを判じていたので、
+  // **P が「起点を depends_on に持つ」と名乗った**（実測。CHANGE-027）。
+  const graph = graphOf(["O", "M", "P"], ["O>M", "M>O", "M>P"]);
+  const c = buildConsequence(graph, "O", NO_CONTEXT);
+  const row = c.waves.flatMap((w) => w.rows).find((r) => r.id === "P");
+  assert.ok(row, "P の行が出ていない");
+  assert.equal(row?.reason.kind, "depends-through", "循環の相手を経由した行を直と呼んでいる");
+  assert.equal(
+    (row?.reason as { through?: string }).through,
+    "M",
+    "経由した相手を名で言っていない",
+  );
+
+  // 直の相手は、いまも直と呼ぶこと（直を全部消してしまわない）。
+  const straight = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
+  assert.equal(straight.waves[0]?.rows[0]?.reason.kind, "depends-directly");
+});
+
+test("006-36. 跳び先が、どちらの基準の相対パスかを一緒に運ぶ", () => {
+  // 上流は二つの座標系で相対パスを返す——範囲（trace-index）は作業フォルダ基準、
+  // 所見（docs-audit）は統治木基準（実測: `lens/decisions/CHANGE-022-….md`）。
+  // 一つの項に混ぜると片方が必ず開かない。初版は所見の道が一度も開けていなかった。
+  const main = readFileSync(join(resolve(__dirname, "..", ".."), "src", "webview", "main.ts"), "utf8");
+  const sends = [...main.matchAll(/kind:\s*"openRange"/g)];
+  assert.ok(sends.length >= 2, `openRange の送り手が足りない（${sends.length} 件）`);
+  for (const m of sends) {
+    const around = main.slice(m.index ?? 0, (m.index ?? 0) + 320);
+    assert.ok(
+      /base:\s*"(workspace|docs)"/.test(around),
+      `openRange の送り手が座標系を言っていない: ${around.slice(0, 80)}`,
+    );
+  }
+  // 所見の側は統治木基準、範囲の側は作業フォルダ基準であること。
+  assert.ok(
+    /path: f\.path[^}]*base: "docs"/.test(main),
+    "所見の跳び先が統治木基準になっていない",
+  );
+  assert.ok(
+    /path: range\.path[\s\S]{0,160}base: "workspace"/.test(main),
+    "範囲の跳び先が作業フォルダ基準になっていない",
+  );
+  // 受け口の側にも既定を置かない（既定は語らない。ADR-021）。
+  const session = readFileSync(join(resolve(__dirname, "..", ".."), "src", "session.ts"), "utf8");
+  assert.ok(
+    /toUri\(relPath: string, base: "workspace" \| "docs"\)/.test(session),
+    "toUri が座標系の既定を持っている",
+  );
+});
+
 test("006-5c. 空白だけの題名は id へ落とす", () => {
   const c = buildConsequence(graphOf(["O", "P"], ["O>P"]), "O", NO_CONTEXT);
   const meta: DocMetaIndex = new Map([["P", { title: "   ", updated: "", supersededBy: "" }]]);

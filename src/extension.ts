@@ -165,7 +165,8 @@ async function jumpToImplementation(session: LensSession, docId: string): Promis
   }
   const only = ranges[0];
   if (ranges.length === 1 && only) {
-    await openRange(session, only.path, only.begin_line, only.end_line);
+    // 範囲は `trace-index` が返すので作業フォルダ基準である（CHANGE-027）。
+    await openRange(session, only.path, only.begin_line, only.end_line, "workspace");
     return;
   }
   const picked = await vscode.window.showQuickPick(
@@ -178,7 +179,7 @@ async function jumpToImplementation(session: LensSession, docId: string): Promis
   );
   // 選ばずに閉じたときは何もしない（SPEC-005 エラー時挙動）。
   if (!picked) return;
-  await openRange(session, picked.range.path, picked.range.begin_line, picked.range.end_line);
+  await openRange(session, picked.range.path, picked.range.begin_line, picked.range.end_line, "workspace");
 }
 
 /** いま開いている文書の id。統治木の外や id が無いときは `null`。 */
