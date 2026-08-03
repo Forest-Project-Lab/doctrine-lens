@@ -13,6 +13,12 @@ const t = vscode.l10n.t;
 export const messages = {
   noWorkspace: (): string => t("No folder is open."),
 
+  /** 引数を要る命令を、鍵盤の割り当てなどから引数無しで呼んだとき。 */
+  needsDocId: (): string =>
+    t(
+      "This command needs a document id. It is meant to be invoked from the lens, not from a keybinding.",
+    ),
+
   noTree: (): string => t("No doctrine tree here."),
   noTreeDetail: (): string =>
     t(
@@ -96,7 +102,6 @@ export const messages = {
   notInGraphShort: (): string => t("not in the tree"),
   staleShort: (): string => t("fingerprint mismatch"),
   partialOrphans: (): string => t("what is missing"),
-  partialTitles: (): string => t("document titles"),
   partialGlossary: (): string => t("the glossary"),
   showOnMap: (): string => t("Show what this changes"),
 } as const;
@@ -197,3 +202,18 @@ export interface ShellStrings {
   follow: string;
 }
 // doctrine:end IMPL-001
+
+/** 失敗の種類ごとの案内。**帯と明細で同じ文を使う**（CHANGE-029）。
+ *
+ * 初版は明細（`lensPanel`）だけがこれを持っていたので、
+ * **明細を開いていない利用者には直し方が一つも届かなかった**——
+ * 帯は「使えない」と警告色で立つが、tooltip には上流の生の標準エラー
+ * （空のことも在る）しか無かった。`SPEC-001` のエラー時挙動が約束した
+ * 「`pythonPath` の確認を促す」「待ち時間を上げよ」が、どこにも出ていない。 */
+export function adviceFor(reason: string): string {
+  if (reason === "bad-setting") return messages.badSetting();
+  if (reason === "spawn-failed") return messages.spawnFailed();
+  if (reason === "bad-json") return messages.badJson();
+  if (reason === "timeout") return messages.timedOut();
+  return messages.exitNonZero();
+}

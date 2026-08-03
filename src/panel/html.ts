@@ -240,7 +240,9 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 .foot {
   border-top: 1px solid var(--vscode-panel-border);
   padding: 16px 0 0; margin: 16px 16px 24px;
-  font-size: 11px; color: var(--vscode-descriptionForeground);
+  /* Supporting step. DESIGN.md section 3 gives 11px a leading of 1.5.
+     The table declared a step the implementation never used (CHANGE-029). */
+  font-size: 11px; line-height: 1.5; color: var(--vscode-descriptionForeground);
 }
 .foot p { margin: 0 0 4px; }
 .foot .legend { margin: 8px 0 0; display: flex; gap: 12px; flex-wrap: wrap; }

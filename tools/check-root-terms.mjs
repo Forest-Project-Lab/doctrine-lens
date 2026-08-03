@@ -48,6 +48,16 @@ try {
   process.exit(2);
 }
 
+// **点検できなかった回を、合った回に化けさせない**（ADR-023・CHANGE-029）。
+// 上流の用語チェッカーは内部例外を握り潰して stdout に一行出し、**exit 0 を返す**
+// （頭注が「常に終了コード 0（リンタの一機能として Hook 連鎖を壊さない）」と明記している）。
+// `[ERROR]` だけを見ると、**辞書を一度も引けなかった回が緑になる。**
+if (/term-check: internal error/.test(out)) {
+  console.error("用語チェッカーが内部で落ちた（点検は済んでいない）:");
+  console.error(out.trim());
+  process.exit(2);
+}
+
 const errors = out.split("\n").filter((line) => line.includes("[ERROR]"));
 if (errors.length > 0) {
   console.error(`根の文書に ${errors.length} 件の ERROR:`);

@@ -54,7 +54,9 @@ llm_context: task
 
 ### 登録簿の取得
 
-入力はプラグインの実体パス。出力は型の登録順・現行を示す status の値・status の語彙の全体・投影の型の四つ。
+入力はプラグインの実体パス。出力は型の登録順・現行を示す status の値・status の語彙の全体の三つ。
+**投影の型は返さない**（`CHANGE-010` で捨てた。地図を捨てて以来、実装のどこからも
+使われていなかった。実測で `projectionTypes` の参照は `src/` に 0 件）。
 
 上流の `_registry` をその場で読んで得る。読んだ値を保存しない。
 この取得があるため、このドメインは型と status の語彙を自身の中に持たずに済む。
@@ -69,11 +71,14 @@ llm_context: task
 
 入力は統治木の絶対パス。出力は上流が出す `classify-edges` の JSON をそのまま写した値。
 
-実行する命令は次の一つだけである。
+実行する命令は二つである（同じ脚本を別の引数で呼ぶ）。
 
 ```
 <python> <plugin>/scripts/dep-graph.py --root <統治木> --classify-edges --json
+<python> <plugin>/scripts/dep-graph.py --root <統治木> --reverse-orphans --json
 ```
+
+後者は「対応する仕様や試験を持たない文書」の id を返す。明細の記号（足りない）に使う。
 
 受け取る形は上流が定める。このドメインは `nodes` と `edges` の各項を読むが、
 知らない項が増えても落とさず素通しする。
@@ -84,7 +89,8 @@ llm_context: task
   取得を上流の CLI に委ねる決定は ADR-001 にある。
 - 上流の命令は読み取り専用のものだけを呼ぶ。統治木へ書き込む命令を呼ばない。
 - 実行は逐次でなく並行してよいが、同じ統治木に対する取得は同時に一つに束ねる。
-- 取得は二つの拍を持つ（ADR-008）。速い拍は登録簿・グラフ・範囲、遅い拍はそれに監査を足す。
+- 取得は二つの拍を持つ（ADR-008）。速い拍は登録簿・グラフ・範囲・逆孤児・辞書の**五本**、
+  遅い拍はそれに監査を足した**六本**（実測。子プロセスを数えた）。
   監査を飛ばした回は、前回の判定と、それを取った時刻をそのまま保つ。判定の時刻を画面に持つ。
 - 使う `python` は設定 `doctrineLens.pythonPath` から取る。既定は `python3`。
 - 標準出力だけを JSON として読む。標準エラーは診断のために保つが、解析の対象にしない。
@@ -163,11 +169,11 @@ llm_context: task
 doctrine プラグインの `trace-index.py` で取り直す。
 
 - sha256:2a9f70c295f7e4434f9c1091db89c59bc70488b6864efd2134a8d8f5822a71fc
-- sha256:2f7ec42bae464542753325f1770aa17709b5db0f2038f5932f1aead9ffdd1b6c
 - sha256:46b971cea14751ae513f2b0da58d9c103c0499ab164c76f693084450a1e8ccc1
 - sha256:52d9f75adad2e216156c57b8794a538103e285ae7d1a58af885858bf5bf1b615
+- sha256:6e93d947d92bd1bd7e917982c8ef8da53a0dd0af5c32fd9f36dc01f3a42452d1
 - sha256:7b33d71d2e80ecc832defd37e7b92df92b3482ecb859ea9b4633ed88b93365ad
-- sha256:9395440ad7a0f509e36d5196bfc86394483c3901e5bd085e268c55d470abbc45
 - sha256:da0cf77ce8851d9363b1ee3db91c9bed4570ab41916d0527e86337833bd7da01
+- sha256:dc0c51bf743bcd74392ccdc420e75252d6c68eeeb2c6e164c203defeb48fdbb7
 - sha256:ebbd134facc7e7b0d8010cb0047808e48ce163b18832c9ffca80ec4d55317888
 - sha256:ece367ec229fa93b36ddfcbf8f0a2cdbfbe8d5620b345327a679a2c3bd25caf8

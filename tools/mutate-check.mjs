@@ -460,7 +460,7 @@ const MUTATIONS = [
     label: "所見を message だけに潰す（severity と path を捨てる）",
     file: "src/model/view.ts",
     from: "    findings: row.findings.map(toFindingView),",
-    to: '    findings: row.findings.map((f) => ({ check: "", severity: "", message: f.message, path: "", refs: [] })),',
+    to: '    findings: row.findings.map((f) => ({ check: "", severity: "", doc_id: "", message: f.message, path: "", refs: [] })),',
   },
   {
     label: "判定の引き継ぎから所見を落とす（保存のたびに壊れている 0 へ落ちる）",

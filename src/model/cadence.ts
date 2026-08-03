@@ -51,7 +51,7 @@ export interface AuditRound {
   /** この回に実際に返った所見。返らなければ `null`。 */
   readonly findings: readonly AuditFinding[] | null;
   /** この回に上流が走らせた検査の名。 */
-  readonly checksRun: readonly string[];
+  readonly checksRun: readonly string[] | null;
 }
 
 export const NO_AUDIT: AuditCarry = {

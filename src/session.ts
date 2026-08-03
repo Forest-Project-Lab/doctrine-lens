@@ -217,7 +217,7 @@ export class LensSession {
    * 範囲だけを上流へ一本訊く。増減していたら取り直す。
    *
    * まだ知らないファイルの保存で使う。印を新しく書いた原本を拾うためである。
-   * すべて取り直すと上流の CLI が七本走るので、ここは一本で済ませる。
+   * すべて取り直すと上流の CLI が 11 本走るので、ここは一本で済ませる。
    */
   #scheduleProbe(): void {
     const config = vscode.workspace.getConfiguration("doctrineLens");
@@ -369,7 +369,7 @@ export class LensSession {
         failed: result.failure !== null,
         staleIds: findings ? staleDocumentIds(findings) : null,
         findings: findings ?? null,
-        checksRun: result.snapshot?.checksRun ?? [],
+        checksRun: result.snapshot?.checksRun ?? null,
       });
       const auditAt = this.#carry.auditAt;
       // 監査を飛ばした回の取得は判定を持たない。持たない値で前回の判定を

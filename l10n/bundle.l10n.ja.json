@@ -53,7 +53,6 @@
   "A row shows only its heaviest symbol, so the per-symbol counts and the per-fact counts differ": "行には最も重い記号だけが出るので、記号ごとの数と事実ごとの数は食い違う",
   "audit findings": "監査の所見",
   "code ranges": "コード範囲",
-  "document titles": "文書の題名",
   "fingerprint mismatch": "指紋が食い違う",
   "lines {0}–{1}": "{0}–{1} 行",
   "not in the tree": "統治木に無い",
@@ -87,5 +86,6 @@
   "Upstream docs-audit ran at {0} (which checks ran is not known)": "上流の docs-audit を {0} に実行（どの検査が走ったかは取れていない）",
   "The code ranges could not be fetched, so the cursor in {0} cannot resolve to a document. This is not \"no origin\" — it is \"not known yet\".": "コード範囲が取れていないので、{0} のカーソルからは文書を引けない。これは「起点が無い」ではなく「まだ分からない」である。",
   "{0} documents the origin rests on are not listed — this screen only walks forward. The {1} it rests on directly:": "起点が前提にしている {0} 文書は出していない（この画面は逆向きに辿らない）。直に前提にしている {1} 件:",
-  "{0} documents the origin depends on carry findings — they are premises, not unreachable": "起点が前提にしている {0} 文書に所見が付いている（繋がらないのではない）"
+  "{0} documents the origin depends on carry findings — they are premises, not unreachable": "起点が前提にしている {0} 文書に所見が付いている（繋がらないのではない）",
+  "This command needs a document id. It is meant to be invoked from the lens, not from a keybinding.": "この命令は文書の id を要る。明細から呼ばれるためのもので、鍵盤の割り当てからは使えない。"
 }

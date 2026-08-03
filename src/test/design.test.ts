@@ -85,6 +85,21 @@ const [PROPORTIONAL, MONOSPACE] = (() => {
 const FONT_SIZES = new Set([...PROPORTIONAL, ...MONOSPACE]);
 
 /**
+ * 行送りの段。3 節の比例の表が段ごとに一つ定める。
+ *
+ * **表に在る値だけを CSS に置く**（CHANGE-029）。初版はここを一度も見ておらず、
+ * 実測で DESIGN.md が四段（1.3・1.4・1.5・1.6）を定めるのに、
+ * CSS には三つ（1.3・1.4・1.6）しか無かった——**表が実装より多くを名乗っていた。**
+ */
+const LEADINGS = (() => {
+  const proportional = section(3).split(/\*\*等幅は/)[0] as string;
+  const rows = [...proportional.matchAll(/\|\s*\d+px\s*\|\s*\d+\s*\|\s*([\d.]+)\s*\|/g)];
+  const values = [...new Set(rows.map((m) => Number(m[1])))];
+  assert.ok(values.length >= 3, `行送りの段を読み取れない（${values}）`);
+  return new Set(values);
+})();
+
+/**
  * 等幅を宣言している規則の、大きさだけを検める。
  *
  * **族を混ぜて検めると、等幅の段が守られない。** `FONT_SIZES` は比例と等幅の和なので、
@@ -129,7 +144,10 @@ const VARIABLES = new Set([...DESIGN.matchAll(/--vscode-[a-zA-Z-]+/g)].map((m) =
 
 test("余白が DESIGN.md の 4px 格子の外へ出ていない", () => {
   const offenders: string[] = [];
-  for (const value of declarations(/padding|margin|gap|row-gap|column-gap/)) {
+  // **長形も見る**（CHANGE-029）。`margin-left` や `padding-inline` は
+  // 短形だけの式に当たらない。実測でいまは違反が無いが、**門が見ていないので
+  // 次に入り込んでも気づかない**。`auto` は px を持たないので無害である。
+  for (const value of declarations(/(?:padding|margin|gap|row-gap|column-gap)[a-z-]*/)) {
     for (const px of pxIn(value)) {
       if (!SPACING.has(Math.abs(px))) offenders.push(`${px}px（${value.trim()}）`);
     }
@@ -139,7 +157,8 @@ test("余白が DESIGN.md の 4px 格子の外へ出ていない", () => {
 
 test("角丸が DESIGN.md の二段だけである", () => {
   const offenders: number[] = [];
-  for (const value of declarations(/border-radius/)) {
+  // 長形（`border-top-left-radius`）も見る（CHANGE-029）。
+  for (const value of declarations(/border-[a-z-]*radius/)) {
     for (const px of pxIn(value)) if (!RADII.has(px)) offenders.push(px);
   }
   assert.deepEqual(offenders, [], `段に無い角丸: ${offenders.join(" / ")}`);
@@ -151,6 +170,20 @@ test("書体の大きさが DESIGN.md の段だけである", () => {
     for (const px of pxIn(value)) if (!FONT_SIZES.has(px)) offenders.push(px);
   }
   assert.deepEqual(offenders, [], `段に無い大きさ: ${offenders.join(" / ")}`);
+});
+
+test("行送りが DESIGN.md の段だけで、表の段がすべて使われている", () => {
+  // **両方向で見る**（CHANGE-029）。表に無い値を CSS に置かないこと、
+  // そして**表に在る段が全部使われていること**。
+  // 実測で、表は四段（1.3・1.4・1.5・1.6）を定めるのに CSS は三つしか持たず、
+  // 補助段の 1.5 が**表の中だけに在った**。表が実装より多くを名乗る状態である。
+  const used = [
+    ...new Set([...STYLE.matchAll(/line-height\s*:\s*([\d.]+)/g)].map((m) => Number(m[1]))),
+  ];
+  const strays = used.filter((v) => !LEADINGS.has(v));
+  assert.deepEqual(strays, [], `段に無い行送り: ${strays.join(" / ")}`);
+  const unused = [...LEADINGS].filter((v) => !used.includes(v));
+  assert.deepEqual(unused, [], `DESIGN.md の表に在るが CSS で使われていない行送り: ${unused.join(" / ")}`);
 });
 
 test("隣り合う書体の段の比が 1.15 を下回らない（段を名乗るだけの段を作らない）", () => {
@@ -269,10 +302,15 @@ test("読み幅が一つで、字の大きさに依らない単位で書かれ�
   const relative = [...STYLE.matchAll(/max-width:\s*[\d.]+(ch|em|rem)/g)].map((m) => m[0]);
   assert.deepEqual(relative, [], `読み幅が字の大きさに依存している: ${relative.join(" / ")}`);
   const widths = [...new Set([...STYLE.matchAll(/max-width:\s*(\d+)px/g)].map((m) => m[1]))];
-  assert.ok(widths.length <= 1, `読み幅が二つ以上ある: ${widths.join(" / ")}`);
   const declared = /読み幅は `(\d+)px`/.exec(section(8))?.[1];
   assert.ok(declared, "DESIGN.md 8 節に読み幅が無い");
-  if (widths.length === 1) assert.equal(widths[0], declared, "CSS の読み幅が DESIGN.md と違う");
+  // **零件を「一つ」と読まない**（ADR-023・CHANGE-029）。初版は `if (widths.length === 1)`
+  // で包んでいたので、CSS から `max-width` が消えた回に**何も検めずに通った**。
+  assert.deepEqual(
+    widths,
+    [declared],
+    `読み幅が一つでない（CSS: ${widths.join(" / ") || "無し"} / DESIGN.md: ${declared}）`,
+  );
 });
 
 test("幅ごとの分岐を一つも持たない（境目の前後で別の設計を保たない）", () => {
