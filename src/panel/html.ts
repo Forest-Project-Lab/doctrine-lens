@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // webview の器。内容セキュリティ方針を課し、外部からの読み込みを許さない（IMPL-001）。
 //
 // **寸法・色・書体の値の正本は `DESIGN.md` である（ADR-013）。**
@@ -255,3 +256,4 @@ button.ghost:focus-visible { outline: 1px solid var(--vscode-focusBorder); outli
 .foot .terms dt { font-weight: 600; margin: 8px 0 0; }
 .foot .terms dd { margin: 0; }
 `;
+// doctrine:end IMPL-001
