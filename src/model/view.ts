@@ -27,10 +27,20 @@ import type { Consequence, Reason, Row, Symbol } from "./consequence.js";
 export interface ViewStrings {
   /** `{0} 文書を直す ・ コード {1} か所` */
   readonly summaryCounts: string;
+  /** `直すことになる {0} 文書` */
+  readonly summaryDocuments: string;
+  /** `コード {0} か所`。範囲が取れていなければ出ない */
+  readonly summaryCodeRanges: string;
   /** 記号ごとの内訳。五つの和が文書数に一致する。`× {0} ・ + {1} ・ ? {2} ・ ! {3} ・ ~ {4}` */
   readonly summarySymbols: string;
   /** 事実ごとの件数。記号に負けたものも数える。`壊れている {0} ・ 足りない {1} ・ 範囲が無い {2}` */
   readonly summaryFacts: string;
+  /** `既に壊れている {0}`。所見が取れていなければ出ない */
+  readonly summaryFactBroken: string;
+  /** `足りない {0}`。逆孤児が取れていなければ出ない */
+  readonly summaryFactMissing: string;
+  /** `範囲が無い {0}`。範囲が取れていなければ出ない */
+  readonly summaryFactNoRange: string;
   /** 現行でない行の本数。判じられた回だけ出る。`非現行 {0}` */
   readonly summaryFactNotCurrent: string;
   /** 記号ごとの数と事実ごとの数が食い違う理由。脚注に置く */
@@ -59,6 +69,8 @@ export interface ViewStrings {
   readonly noOrigin: string;
   /** 起点が全く分からないとき（ファイルを開いていない） */
   readonly noOriginNoFile: string;
+  /** 範囲が取れていないので、カーソルからは起点を引けないときの一文 */
+  readonly noOriginRangesUnknown: string;
   /** `起点が前提にしている {0} 文書は出していない（この画面は逆向きに辿らない）` */
   readonly footPremises: string;
   /** `帰結にも前提にも繋がらない {0} 文書は出していない` */
@@ -73,6 +85,8 @@ export interface ViewStrings {
   readonly footAudit: string;
   /** 監査をまだ取っていないとき */
   readonly footAuditNever: string;
+  /** 時刻は在るが、走らせた検査の一覧が取れていない回 */
+  readonly footAuditNoChecks: string;
   /** `題名を取れなかった文書がある` */
   readonly footNoTitles: string;
   /** 行の右端の数が何かを言う一文 */
@@ -196,7 +210,8 @@ export function buildView(
     readonly auditAt: string;
     readonly titlesMissing: boolean;
     /** 上流が実際に走らせた検査の数。数えた数であって、代弁の語ではない（ADR-014）。 */
-    readonly checksRun: number;
+    /** 上流が走らせた検査の数。**取れていなければ `null`。** 0 と断定しない。 */
+    readonly checksRun: number | null;
     /** 木の用語辞書。取れなければ空。 */
     readonly glossary: Glossary;
   },
@@ -230,8 +245,14 @@ export function buildView(
   }));
 
   const s = consequence.summary;
+  // **取れていない数は、その場に出さない**（ADR-023）。0 と書くと「無い」に化ける。
+  // 取れなかったことは、部分失敗の通知が別に言っている（SPEC-005）。
+  const counts = [
+    fill(strings.summaryDocuments, String(s.documents)),
+    ...(s.codeRanges === null ? [] : [fill(strings.summaryCodeRanges, String(s.codeRanges))]),
+  ].join(" · ");
   const summary = [
-    fill(strings.summaryCounts, String(s.documents), String(s.codeRanges)),
+    counts,
     // 記号ごと。五つの和が documents に一致する（読み手が足し算できる）。
     fill(
       strings.summarySymbols,
@@ -245,12 +266,13 @@ export function buildView(
     // 非現行は記号を争わない。行から消した語を、この数が支える（ADR-021 決定 2）。
     // 判じられなかった回は数を出さない。0 と書くと「一つも無い」ことになる。
     [
-      fill(
-        strings.summaryFacts,
-        String(s.facts.broken),
-        String(s.facts.missing),
-        String(s.facts.noRange),
-      ),
+      ...(s.facts.broken === null ? [] : [fill(strings.summaryFactBroken, String(s.facts.broken))]),
+      ...(s.facts.missing === null
+        ? []
+        : [fill(strings.summaryFactMissing, String(s.facts.missing))]),
+      ...(s.facts.noRange === null
+        ? []
+        : [fill(strings.summaryFactNoRange, String(s.facts.noRange))]),
       ...(s.facts.notCurrent === null
         ? []
         : [fill(strings.summaryFactNotCurrent, String(s.facts.notCurrent))]),
@@ -293,25 +315,35 @@ export function buildView(
   //
   // **実際に食い違っている回だけ出す。** 一致している画面に置くと、説明だけが浮く
   // （SPEC-006 制約。右端の数が一つも無いときにその脚注を出さないのと同じ）。
+  // 取れていない事実は比べない。`null !== 0` を食い違いと読むと、
+  // 「取れなかったから食い違っている」という誤った理由が出る。
   if (
-    s.facts.broken !== s.bySymbol.broken ||
-    s.facts.missing !== s.bySymbol.missing ||
-    s.facts.noRange !== s.bySymbol.nowhere
+    (s.facts.broken !== null && s.facts.broken !== s.bySymbol.broken) ||
+    (s.facts.missing !== null && s.facts.missing !== s.bySymbol.missing) ||
+    (s.facts.noRange !== null && s.facts.noRange !== s.bySymbol.nowhere)
   ) {
     footnotes.push(strings.footHeaviest);
   }
   if (context.titlesMissing) footnotes.push(strings.footNoTitles);
+  // 検査の数が取れていない回に「0 検査を走らせた」と言わない（ADR-023）。
   footnotes.push(
     context.auditAt
-      ? fill(strings.footAudit, context.auditAt, String(context.checksRun))
+      ? context.checksRun === null
+        ? fill(strings.footAuditNoChecks, context.auditAt)
+        : fill(strings.footAudit, context.auditAt, String(context.checksRun))
       : strings.footAuditNever,
   );
 
   return {
     origin,
-    emptyReason: context.openFile
-      ? fill(strings.noOrigin, context.openFile)
-      : strings.noOriginNoFile,
+    // **起点が決まらない理由を、取り違えない。** 範囲が取れていない回に
+    // 「印を持つファイルを開け」と案内すると、既に開いている利用者へ嘘をつく
+    // （カーソルから起点を引くには範囲が要る。ADR-023）。
+    emptyReason: !context.openFile
+      ? strings.noOriginNoFile
+      : consequence.rangesKnown
+        ? fill(strings.noOrigin, context.openFile)
+        : fill(strings.noOriginRangesUnknown, context.openFile),
     summary,
     waves,
     cycles,

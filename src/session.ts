@@ -57,7 +57,8 @@ export interface SessionState {
    * そこから数えると、保存のたびに 0 へ落ちる（実際に起きた欠陥）。
    * 速い拍でも保たれる `staleIds` から数え、ここに載せる。
    */
-  readonly staleCount: number;
+  /** 指紋の食い違いの件数。**一度も取れていなければ `null`。** */
+  readonly staleCount: number | null;
 }
 
 const EMPTY_STATE: SessionState = {
@@ -69,7 +70,7 @@ const EMPTY_STATE: SessionState = {
   candidate: null,
   candidateCount: 0,
   auditAt: null,
-  staleCount: 0,
+  staleCount: null,
 };
 
 export class LensSession {
@@ -131,7 +132,9 @@ export class LensSession {
 
   /** 上流が指紋の食い違いを挙げた文書の id。判定は上流が済ませてある（ADR-005）。 */
   get staleIds(): ReadonlySet<string> {
-    return this.#carry.staleIds;
+    // 取れていない回は空で返す。**「食い違っている」と印を付ける先が無い**だけで、
+    // 「食い違いが無い」とは言わない。件数は `staleCount` が `null` で言う（ADR-023）。
+    return this.#carry.staleIds ?? new Set();
   }
 
   /** 統治木を持つ作業フォルダの候補（ADR-006）。 */
@@ -339,7 +342,7 @@ export class LensSession {
         ? {
             ...result.snapshot,
             findings: this.#carry.findings ? [...this.#carry.findings] : null,
-            checksRun: [...this.#carry.checksRun],
+            checksRun: this.#carry.checksRun ? [...this.#carry.checksRun] : null,
           }
         : result.snapshot;
       this.#emit({
@@ -351,7 +354,7 @@ export class LensSession {
         candidate: chosen,
         candidateCount: candidates.length,
         auditAt,
-        staleCount: this.#carry.staleIds.size,
+        staleCount: this.#carry.staleIds?.size ?? null,
       });
       // 見る木が決まった／変わったら、その木を監視し直す。
       if (this.#watchedRoot !== chosen.docsRoot) {

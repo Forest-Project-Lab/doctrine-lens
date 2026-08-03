@@ -107,7 +107,7 @@ test("001-10. 速い拍では前回の判定と時刻がそのまま保たれる
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "時刻が進まない");
-  assert.deepEqual([...next.staleIds], ["SPEC-001"], "食い違いの数が 0 へ落ちない");
+  assert.deepEqual([...(next.staleIds ?? [])], ["SPEC-001"], "食い違いの数が 0 へ落ちない");
 });
 
 test("001-10b. 監査を求めた回に判定が返れば、判定も時刻も入れ替わる", () => {
@@ -117,7 +117,7 @@ test("001-10b. 監査を求めた回に判定が返れば、判定も時刻も�
     () => LATER,
   );
   assert.equal(next.auditAt, LATER);
-  assert.deepEqual([...next.staleIds], ["SPEC-002"]);
+  assert.deepEqual([...(next.staleIds ?? [])], ["SPEC-002"]);
 });
 
 test("001-10c. 判定が空で返るのと、取れないのは別である", () => {
@@ -126,7 +126,7 @@ test("001-10c. 判定が空で返るのと、取れないのは別である", ()
     { withAudit: true, failed: false, staleIds: new Set() , findings: [], checksRun: []},
     () => LATER,
   );
-  assert.deepEqual([...cleared.staleIds], [], "食い違いが消えたなら消える");
+  assert.deepEqual([...(cleared.staleIds ?? [])], [], "食い違いが消えたなら消える");
   assert.equal(cleared.auditAt, LATER);
 });
 
@@ -139,7 +139,7 @@ test("001-10e. 取得が失敗した回は時刻を進めない", () => {
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "失敗した回に時刻を進めない");
-  assert.deepEqual([...next.staleIds], ["SPEC-001"], "前回の判定を保つ");
+  assert.deepEqual([...(next.staleIds ?? [])], ["SPEC-001"], "前回の判定を保つ");
 });
 
 test("001-10g. 監査を求めていない回は、判定が返っていても引き継がない", () => {
@@ -152,7 +152,7 @@ test("001-10g. 監査を求めていない回は、判定が返っていても�
     () => LATER,
   );
   assert.equal(next.auditAt, AT, "時刻を進めてはならない");
-  assert.deepEqual([...next.staleIds], ["SPEC-001"], "前回の判定を保つ");
+  assert.deepEqual([...(next.staleIds ?? [])], ["SPEC-001"], "前回の判定を保つ");
 });
 
 test("001-10f. session が引き継ぎを自前で書き直していない", () => {
@@ -186,7 +186,7 @@ test("001-10h. 引き継ぐのは判定そのものである（所見と検査�
     checksRun: ["trace_stale", "dead_link"],
   });
   assert.equal(audited.findings?.length, 1, "監査した回に所見を持たない");
-  assert.equal(audited.checksRun.length, 2, "監査した回に検査の一覧を持たない");
+  assert.equal(audited.checksRun?.length, 2, "監査した回に検査の一覧を持たない");
 
   // 速い拍（監査を求めない回）。事実は新しくても、判定は前回のまま残る。
   const fast = carryAudit(audited, {
@@ -197,9 +197,9 @@ test("001-10h. 引き継ぐのは判定そのものである（所見と検査�
     checksRun: [],
   });
   assert.equal(fast.findings?.length, 1, "速い拍で所見が落ちている");
-  assert.equal(fast.checksRun.length, 2, "速い拍で検査の一覧が落ちている");
+  assert.equal(fast.checksRun?.length, 2, "速い拍で検査の一覧が落ちている");
   assert.equal(fast.auditAt, audited.auditAt, "時刻だけが動いている");
-  assert.deepEqual([...fast.staleIds], ["SPEC-001"]);
+  assert.deepEqual([...(fast.staleIds ?? [])], ["SPEC-001"]);
 });
 
 test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査だけ落ちるが起きない）", () => {
@@ -236,3 +236,12 @@ test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査�
 function carry(auditAt: Date | null, staleIds: ReadonlySet<string>): AuditCarry {
   return { auditAt, staleIds, findings: staleIds.size >= 0 ? [] : null, checksRun: [] };
 }
+
+test("001-10j. 一度も監査していない引き継ぎが、空集合や空配列を持たない", () => {
+  // 空集合は「食い違いが一つも無い」、`null` は「まだ知らない」である。
+  // 空へ潰すと、起動直後の帯が「食い違い無し」と言ったことになる（ADR-023）。
+  assert.equal(NO_AUDIT.auditAt, null);
+  assert.equal(NO_AUDIT.staleIds, null, "一度も監査していない回に「食い違い無し」と言う形になっている");
+  assert.equal(NO_AUDIT.findings, null);
+  assert.equal(NO_AUDIT.checksRun, null, "一度も監査していない回に「0 検査を走らせた」と言う形になっている");
+});

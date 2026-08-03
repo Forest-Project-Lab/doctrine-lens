@@ -4,7 +4,16 @@
 // 2・6 は上流の CLI を実際に起こす。python か doctrine プラグインが無い環境では
 // その二つを飛ばす（無い環境で赤くしても、直せる欠陥を指していない）。
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { test } from "node:test";
@@ -27,6 +36,104 @@ const options = (cwd: string): RunOptions => ({
 function pluginRootOrSkip(): string | null {
   return locatePluginRoot(PROJECT);
 }
+
+/**
+ * 引数に `pattern` を含む呼び出しだけを落とす偽の python を作る。
+ *
+ * **一つの問い合わせだけを失敗させる**ための道具である。全部落とすと
+ * 「取れなかったものを `null` で保つ」ことを一つずつ検められない。
+ * それ以外の呼び出しは本物の python へそのまま渡す。
+ */
+function pythonFailingOn(pattern: string): { path: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-fakepy-"));
+  const path = join(dir, "python3");
+  writeFileSync(
+    path,
+    ["#!/bin/sh", 'for a in "$@"; do', `  case "$a" in *${pattern}*) exit 3;; esac`, "done", 'exec python3 "$@"', ""].join("\n"),
+    "utf8",
+  );
+  chmodSync(path, 0o755);
+  return { path, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+/** 標準出力へ決まった JSON だけを刷る偽の python を作る。 */
+function pythonPrinting(json: string): { path: string; cleanup: () => void } {
+  const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-fakepy-"));
+  const path = join(dir, "python3");
+  writeFileSync(path, ["#!/bin/sh", `cat <<'JSON'`, json, "JSON", ""].join("\n"), "utf8");
+  chmodSync(path, 0o755);
+  return { path, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
+}
+
+test("001-12. 逆孤児が取れない回を、空配列へ潰さない", async (t) => {
+  const pluginRoot = pluginRootOrSkip();
+  const docsRoot = locateDocsRoot(PROJECT);
+  if (!pluginRoot || !docsRoot) return t.skip("doctrine プラグインが無い");
+  const fake = pythonFailingOn("reverse-orphans");
+  try {
+    const outcome = await fetchSnapshot(PROJECT, docsRoot, pluginRoot, {
+      ...options(PROJECT),
+      pythonPath: fake.path,
+    });
+    assert.ok(outcome.ok, "他の取得まで巻き添えにしている");
+    assert.equal(
+      outcome.value.snapshot.reverseOrphans,
+      null,
+      "取れなかった逆孤児を空配列へ潰している（記号 + が永久に出ない）",
+    );
+    assert.ok(
+      outcome.value.partial.some((p) => p.what === "orphans"),
+      `取れなかったことを言っていない: ${JSON.stringify(outcome.value.partial)}`,
+    );
+  } finally {
+    fake.cleanup();
+  }
+});
+
+test("001-12b. 走らせた検査の一覧が取れない回を、空配列へ潰さない", async (t) => {
+  const pluginRoot = pluginRootOrSkip();
+  const docsRoot = locateDocsRoot(PROJECT);
+  if (!pluginRoot || !docsRoot) return t.skip("doctrine プラグインが無い");
+  const fake = pythonFailingOn("docs-audit");
+  try {
+    const outcome = await fetchSnapshot(PROJECT, docsRoot, pluginRoot, {
+      ...options(PROJECT),
+      pythonPath: fake.path,
+    });
+    assert.ok(outcome.ok);
+    assert.equal(outcome.value.snapshot.checksRun, null, "「0 検査を走らせた」と言う形になっている");
+    assert.equal(outcome.value.snapshot.findings, null);
+  } finally {
+    fake.cleanup();
+  }
+});
+
+test("001-13. 登録簿の形を検める（項を欠いた値を型として通さない）", async () => {
+  const 欠けた = pythonPrinting('{"types": ["SPEC"], "allStatuses": ["current"]}');
+  try {
+    const outcome = await fetchRegistry("/どこでもよい", {
+      ...options(PROJECT),
+      pythonPath: 欠けた.path,
+    });
+    assert.equal(outcome.ok, false, "currentStatuses を欠いた値を通している");
+    if (!outcome.ok) assert.match(outcome.detail, /currentStatuses/);
+  } finally {
+    欠けた.cleanup();
+  }
+
+  const 揃った = pythonPrinting(
+    '{"types": ["SPEC"], "currentStatuses": ["current"], "allStatuses": ["current"]}',
+  );
+  try {
+    const outcome = await fetchRegistry("/どこでもよい", {
+      ...options(PROJECT),
+      pythonPath: 揃った.path,
+    });
+    assert.ok(outcome.ok, "揃った値まで弾いている");
+  } finally {
+    揃った.cleanup();
+  }
+});
 
 test("1. 統治木を持たないフォルダでは不在が返り、例外が出ない", () => {
   const dir = mkdtempSync(join(tmpdir(), "doctrine-lens-"));

@@ -196,15 +196,16 @@ export class LensPanel {
       const { id, openFile } = this.#originId();
       const auditAt = state.auditAt ? formatTime(state.auditAt) : "";
       // 鍵は「答えを変えうるもの」だけで組む。取得は同一性で見る（中身は不変である）。
-      const key = JSON.stringify([id, openFile, auditAt, snapshot.checksRun.length, snapshot.glossary.size]);
+      const key = JSON.stringify([id, openFile, auditAt, snapshot.checksRun?.length ?? null, snapshot.glossary.size]);
       if (this.#last?.key === key && this.#lastSnapshot === snapshot) {
         this.#post(this.#last.view);
       } else {
         const consequence = buildConsequence(snapshot.graph, id, {
-          findings: snapshot.findings ?? [],
+          // 素通しする。取れなかったかどうかの扱いは模型が持つ（ADR-021 決定 4）。
+          findings: snapshot.findings,
           // 取れなかったときは null のまま渡す。空配列に潰すと「無い」と断定する。
           ranges: snapshot.ranges,
-          reverseOrphans: new Set(snapshot.reverseOrphans),
+          reverseOrphans: snapshot.reverseOrphans ? new Set(snapshot.reverseOrphans) : null,
           // 素通しする。取れなかったかどうかの扱いは模型が持つ（試験が届く層）。
           registry: snapshot.registry,
         });
@@ -218,7 +219,8 @@ export class LensPanel {
             titlesMissing: snapshot.graph.nodes.some(
               (n) => !snapshot.docMeta.get(n.id)?.title?.trim(),
             ),
-            checksRun: snapshot.checksRun.length,
+            // 取れていなければ null を渡す。0 と渡すと「0 検査を走らせた」になる。
+            checksRun: snapshot.checksRun?.length ?? null,
             glossary: snapshot.glossary,
           }),
         };

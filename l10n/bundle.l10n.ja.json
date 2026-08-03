@@ -79,5 +79,12 @@
   "{0}:{1}-{2}": "{0}:{1}-{2}",
   "~ review": "~ 見直す",
   "× broken": "× 壊れている",
-  "× {0} · + {1} · ? {2} · ! {3} · ~ {4}": "× {0} ・ + {1} ・ ? {2} ・ ! {3} ・ ~ {4}"
+  "× {0} · + {1} · ? {2} · ! {3} · ~ {4}": "× {0} ・ + {1} ・ ? {2} ・ ! {3} ・ ~ {4}",
+  "{0} documents to fix": "直すことになる {0} 文書",
+  "{0} code ranges": "コード {0} か所",
+  "already broken {0}": "既に壊れている {0}",
+  "missing {0}": "足りない {0}",
+  "no code range {0}": "範囲が無い {0}",
+  "Upstream docs-audit ran at {0} (which checks ran is not known)": "上流の docs-audit を {0} に実行（どの検査が走ったかは取れていない）",
+  "The code ranges could not be fetched, so the cursor in {0} cannot resolve to a document. This is not \"no origin\" — it is \"not known yet\".": "コード範囲が取れていないので、{0} のカーソルからは文書を引けない。これは「起点が無い」ではなく「まだ分からない」である。"
 }

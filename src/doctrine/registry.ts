@@ -9,7 +9,7 @@
 import { join } from "node:path";
 
 import { runJson, type RunOptions } from "./cli.js";
-import type { Outcome, Registry } from "./model.js";
+import { fail, ok, type Outcome, type Registry } from "./model.js";
 
 /**
  * 上流の登録簿を読んで JSON を出す問い合わせ。値の正本は上流にある。
@@ -42,6 +42,29 @@ export async function fetchRegistry(
   pluginRoot: string,
   options: RunOptions,
 ): Promise<Outcome<Registry>> {
-  return runJson<Registry>(["-c", PROBE, join(pluginRoot, "scripts")], options);
+  const outcome = await runJson<unknown>(["-c", PROBE, join(pluginRoot, "scripts")], options);
+  if (!outcome.ok) return outcome;
+
+  // **形を検める。** グラフ・範囲・所見・逆孤児はいずれも検めており、ここだけが
+  // 素通しだった。項を一つ欠いた値が返ると `new Set(undefined)` が空集合になり、
+  // 「現行が一語も無い」＝全行が非現行、に化ける（ADR-023）。
+  const value = outcome.value;
+  if (!value || typeof value !== "object") {
+    return fail<Registry>("bad-json", "the registry is not an object");
+  }
+  const record = value as Record<string, unknown>;
+  const lists: Record<string, string[]> = {};
+  for (const key of ["types", "currentStatuses", "allStatuses"]) {
+    const raw = record[key];
+    if (!Array.isArray(raw) || !raw.every((v) => typeof v === "string")) {
+      return fail<Registry>("bad-json", `the registry has no string list "${key}"`);
+    }
+    lists[key] = raw as string[];
+  }
+  return ok<Registry>({
+    types: lists["types"] as string[],
+    currentStatuses: lists["currentStatuses"] as string[],
+    allStatuses: lists["allStatuses"] as string[],
+  });
 }
 // doctrine:end SPEC-001
