@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // 本体と webview のあいだで取り決めた形（IMPL-001）。
 //
 // webview は子プロセスを起こさない。上流の CLI を呼ぶのは本体だけである。
@@ -162,3 +163,4 @@ export type ToHost =
       readonly beginLine: number;
       readonly endLine: number;
     };
+// doctrine:end IMPL-001

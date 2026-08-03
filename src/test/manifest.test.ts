@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // TEST-001 の追補 — 配布 manifest の性質を字面で凍結する。
 //
 // ここで守るのは、公開前監査が実害を確かめた三つの決定である。
@@ -211,3 +212,4 @@ test(".vsix に入る一覧が凍結してある（作業中のファイルが�
   const main = manifest.main.replace(/^\.\//, "");
   assert.ok(shipped.includes(main), `main（${main}）が配布物に入らない`);
 });
+// doctrine:end IMPL-001

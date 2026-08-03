@@ -2,7 +2,6 @@
   "trace_exempt": {
     "oreilly_ddd_ja/": "一次資料。読むだけで、統治の対象にしない（_system/.md-intake に記録）",
     "oreilly_datamgmt_en/": "一次資料。読むだけで、統治の対象にしない（_system/.md-intake に記録）",
-    "tools/doc-manager/": "claude-harness キットから持ち込んだ道具。lens ドメインの実装ではない",
     "tools/doctrine-path.mjs": "claude-harness キットから持ち込んだ道具。lens ドメインの実装ではない",
     "tools/preview-webview.mjs": "claude-harness キットから持ち込んだ道具。lens ドメインの実装ではない",
     "tools/run-vscode-test.mjs": "claude-harness キットから持ち込んだ道具。lens ドメインの実装ではない",

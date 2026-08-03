@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // 状態の帯 — 取得の様子を地図の外でも伝える。
 //
 // なぜ要るか: 統治木も python も無い環境では、地図を開かない限り何も起きない。
@@ -86,3 +87,4 @@ function tooltipFor(state: SessionState): string {
   );
   return lines.filter(Boolean).join("\n");
 }
+// doctrine:end IMPL-001

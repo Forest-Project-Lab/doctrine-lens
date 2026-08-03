@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // 入口 — 起動、命令の登録、画面と面の生成（IMPL-001）。
 import * as vscode from "vscode";
 
@@ -199,3 +200,4 @@ function activeDocumentId(session: LensSession): string | null {
   }
   return null;
 }
+// doctrine:end IMPL-001

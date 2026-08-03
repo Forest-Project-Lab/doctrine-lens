@@ -176,8 +176,9 @@ claude plugin install doctrine@forest-project-lab --scope project
 ```
 
 Without Claude Code, clone it anywhere and point `doctrineLens.pluginPath` at
-the **`plugin/` directory inside the clone** — not at the clone itself. The
-repository root has its own `scripts/`, which is not the plugin.
+the **`plugin/` directory inside the clone**. Pointing at the clone root also
+works — the extension notices that the root's own `scripts/` is not the plugin
+and descends into `plugin/` for you — but naming `plugin/` says what you mean.
 
 ```bash
 git clone https://github.com/Forest-Project-Lab/doctrine.git ~/doctrine
@@ -467,9 +468,8 @@ host instead.
 
 This repository sits on the claude-harness kit: the
 [doctrine plugin](https://github.com/Forest-Project-Lab/doctrine) (typed document
-governance, installed from its marketplace), `tools/doc-manager/` (fetches
-primary sources and pins them by sha256), and `.devcontainer/` (Node 22, Python 3,
-Playwright, Claude Code).
+governance, installed from its marketplace) and `.devcontainer/` (Node 22,
+Python 3, Playwright, Claude Code).
 
 ---
 

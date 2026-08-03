@@ -171,6 +171,41 @@ test("主張を一つも持たない試験が無い（零件の主張で通さ�
   assert.deepEqual(bare, [], "主張を一つも持たない試験が在る");
 });
 
+test("部品の表が名指す実装が、すべて印で囲まれている", () => {
+  // **表の名指しは、指紋を作らない**（CHANGE-022）。実測で、`IMPL-001` が
+  // 名指す 25 ファイルのうち 7 つ（1747 行）が印を持たず、
+  // どれだけ書き換えても `trace_stale` が鳴らなかった。
+  //
+  // 表に足して印を忘れる／印を打って表に載せ忘れる、の両方をここで捕まえる。
+  const impl = readFileSync(
+    join(PROJECT, "doctrine_docs", "lens", "implementation", "IMPL-001-extension-layout.md"),
+    "utf8",
+  );
+  const listed = [...new Set([...impl.matchAll(/`(src\/[a-zA-Z/.]+\.ts)`/g)].map((m) => m[1] as string))];
+  assert.ok(listed.length > 15, `部品の表を読み取れていない（${listed.length} 件）`);
+
+  const unmarked = listed
+    .filter((rel) => existsSync(join(PROJECT, rel)))
+    .filter((rel) => !markerLine("").test(readFileSync(join(PROJECT, rel), "utf8")));
+  assert.deepEqual(unmarked, [], "部品の表が名指すのに、印で囲まれていない実装が在る");
+
+  // 逆向き。`IMPL-001` の印を持つファイルは、表にも載っていること。
+  const marked: string[] = [];
+  for (const dir of ["src", "src/panel", "src/shared", "src/test", "src/doctrine", "src/model"]) {
+    const full = join(PROJECT, dir);
+    if (!existsSync(full)) continue;
+    for (const name of readdirSync(full)) {
+      if (!name.endsWith(".ts")) continue;
+      const rel = `${dir}/${name}`;
+      if (markerLine("IMPL-001").test(readFileSync(join(PROJECT, rel), "utf8"))) {
+        marked.push(rel);
+      }
+    }
+  }
+  const orphaned = marked.filter((rel) => !listed.includes(rel));
+  assert.deepEqual(orphaned, [], "IMPL-001 の印を持つのに、部品の表に載っていない実装が在る");
+});
+
 test("試験の名が重複していない（潰しの報告が、どれが捕まえたかを名で言う）", () => {
   // `tools/mutate-verdict.mjs` の `namesOfFailed` は `not ok N - <名>` から
   // **名前だけ**を取る。同じ名の試験が二つ在ると、報告のどちらを指しているかが
@@ -193,6 +228,18 @@ test("試験の名が重複していない（潰しの報告が、どれが捕�
   const duplicated = [...seen.entries()].filter(([, n]) => n > 1).map(([name, n]) => `${name} ×${n}`);
   assert.deepEqual(duplicated, [], "同じ名の試験が在る");
 });
+
+/**
+ * 行頭の印を探す正規表現。**印の綴りを字面に持たない。**
+ *
+ * 「その語を含むか」で数えると、**この門の注釈が印として数えられる**（実測でそうなった）。
+ * 上流の監査も同じものを `trace_marker_suspect` として挙げた。
+ * だから綴りを組み立てて作り、この文書のどこにも印の形を書かない（CHANGE-022）。
+ */
+function markerLine(id: string): RegExp {
+  const word = ["doctrine", "begin"].join(":");
+  return new RegExp(`^// ${word} ${id}`, "m");
+}
 
 /** `src/test` 直下の `*.test.ts` を集める。 */
 function testSources(dir: string): string[] {

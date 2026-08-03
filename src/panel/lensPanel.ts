@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // 画面の器 — webview の生成と受け渡し（IMPL-001）。
 //
 // 取得そのものは LensSession が持つ。ここはその読み手の一つである。
@@ -327,3 +328,4 @@ export async function openRange(
     preview: false,
   });
 }
+// doctrine:end IMPL-001

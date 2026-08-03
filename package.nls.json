@@ -9,7 +9,7 @@
   "cmd.revealById": "Show what a document changes, by id",
   "cmd.explainStale": "Explain the fingerprint mismatch",
   "cmd.selectFolder": "Choose which doctrine tree to show",
-  "cfg.pythonPath": "The python executable that runs the doctrine CLI. Defaults to `python3`.",
+  "cfg.pythonPath": "The python executable that runs the doctrine CLI. Must be an absolute path, a \"~/\" path, or a bare command name — a relative path such as `.venv/bin/python` is refused, because it would resolve differently depending on where the extension host happens to be. Defaults to `python3`.",
   "cfg.docsRoot": "Path to the doctrine tree, relative to the workspace folder. Empty means look for `doctrine_docs/` first, then a `docs/` that has `_system/`.",
   "cfg.pluginPath": "Path to the doctrine plugin. Empty means resolve it from the install ledger and cache.",
   "cfg.timeoutMs": "Upper bound on one CLI call, in milliseconds.",

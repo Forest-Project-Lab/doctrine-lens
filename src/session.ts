@@ -1,3 +1,4 @@
+// doctrine:begin IMPL-001
 // 取得の共有 — 地図・見出し・帯・命令が同じひと揃いを見るための層。
 //
 // なぜ要るか: コード側の面（SPEC-005）は地図を開いていなくても効く。
@@ -493,3 +494,4 @@ export class LensSession {
     }, auditDelay);
   }
 }
+// doctrine:end IMPL-001
