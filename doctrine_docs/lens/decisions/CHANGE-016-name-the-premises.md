@@ -3,7 +3,7 @@ id: CHANGE-016
 title: 前提の数だけを出して、行き先を出していない
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-03
 updated: 2026-08-03
@@ -63,7 +63,7 @@ ADR-012 ADR-013 REQ-001 REQ-002 SPEC-001 SPEC-004 SPEC-005
 
 **これが「そうなるまでの変異」の入口である。**
 
-## この変更でやること
+## 変更内容
 
 1. **直の前提の id を、押せる形で脚注に出す。** 所見の行き先と同じ扱いにする。
 2. **推移の数はそのまま数で言う。** 「39 文書」は隠さない。並べるのは直の 7 だけである。
@@ -85,7 +85,7 @@ ADR-012 ADR-013 REQ-001 REQ-002 SPEC-001 SPEC-004 SPEC-005
 - **CHANGELOG へ誘導する。** 時系列は `CHANGELOG.md` に在る（13 版・27 本の決定を参照）。
   だが `CHANGELOG` は**体系外のビュー**であり、木の中から辿る先ではない。
 
-## 要求元
+## 理由（要求元）
 
 `ADR-019`「数を出したら行き先も出す」——自分で決めた規律の、当てていなかった箇所。
 

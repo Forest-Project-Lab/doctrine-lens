@@ -3,7 +3,7 @@ id: CHANGE-006
 title: どちらの向きに辿ったかを言う。捨てた事実を数える
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -82,7 +82,7 @@ broken 1 · missing 0 · cycles 0
 `documents = broken + missing + nowhere + fix + review` が常に成立する。
 **和が一致する形で出す。** 循環は文書の内数ではないので別行に置く。
 
-## 理由
+## 理由（要求元）
 
 四つとも同じ規律の破れである。`SPEC-006` の制約と `ADR-014` の決定に既に書いてある。
 
@@ -104,7 +104,7 @@ broken 1 · missing 0 · cycles 0
 この製品の主張は「推測せず、宣言された辺だけを読む」である。
 その製品が、**宣言された辺を持つ 10 件を「繋がらない」と言っている。**
 
-## 要求元
+### 要求元
 
 `REQ-002`「一つの画面は一つの問いだけに答える」。
 **画面は増やさない。** 前提の側を出す画面は作らず、件数と理由だけを脚注で言う。

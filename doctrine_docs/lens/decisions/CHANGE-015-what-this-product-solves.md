@@ -3,7 +3,7 @@ id: CHANGE-015
 title: この製品が何を解くかを、木の中に置く
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-03
 updated: 2026-08-03
@@ -56,7 +56,7 @@ llm_context: task
 REQ の置き場所: ['<domain>/', '_system/']    ← 0.8.0 は ['<domain>/'] のみ
 ```
 
-## この変更でやること
+## 変更内容
 
 1. `_system/` へ製品の粒度の要求を書く。**粒度は置き場所が言う。**
 2. 内容は `README.md` から移す。**新しく考えない**——既に在るものへ正本を与える。
@@ -80,7 +80,7 @@ REQ の置き場所: ['<domain>/', '_system/']    ← 0.8.0 は ['<domain>/'] �
 **`README` を正本にしない。** 内容を移しても `README` から消さない——
 `README` は利用者が最初に読む面であり、**ビューが正本を写すのは正しい**（上流の刻印がその印）。
 
-## 要求元
+## 理由（要求元）
 
 `REQ-003`「統治の規則を二重定義しない」の裏返しである。
 規則の正本を上流に置くのと同じ理由で、**目的の正本も木の中に置く。**

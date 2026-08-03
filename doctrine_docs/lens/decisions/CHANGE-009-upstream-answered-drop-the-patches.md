@@ -3,7 +3,7 @@ id: CHANGE-009
 title: 上流が答えたので、継ぎを捨てる
 type: CHANGE
 domain: lens
-status: accepted
+status: current
 owner: doctrine-lens-maintainer
 created: 2026-08-02
 updated: 2026-08-02
@@ -24,7 +24,7 @@ doctrine 0.8.0 が、こちらから出した三本に答えた。実測で確�
 | # | 何が変わったか | 実測 |
 |---|---|---|
 | [#149](https://github.com/Forest-Project-Lab/doctrine/issues/149) | 節点が 8 項から **14 項**へ。`title` `updated` `superseded_by` `review_by` `llm_context` が載る | `title: 'グラフの取得を doctrine の Python CLI に委ねる'` |
-| [#150](https://github.com/Forest-Project-Lab/doctrine/issues/150) | `trace-index.py` が git に訊く（上流の決定。doctrine 側の記録） | 範囲 30 → **23 件**、`.gitignore` 配下が **0** |
+| [#150](https://github.com/Forest-Project-Lab/doctrine/issues/150) | `trace-index.py` が git に訊く（上流の決定。上流の記録） | 範囲 30 → **23 件**、`.gitignore` 配下が **0** |
 | [#151](https://github.com/Forest-Project-Lab/doctrine/issues/151) | 辺に `mirrored`（両端書きの印。上流の決定） | 辺 104 本のうち **20 本** |
 
 **上流は白名簿そのものを捨てた**（上流の決定）。こちらは「`title` を足してほしい」と頼んだが、
@@ -70,7 +70,7 @@ doctrine 0.8.0 が、こちらから出した三本に答えた。実測で確�
 `trace_exempt` は「git には入れるが統治の対象にしない」ためのものとして残る
 （`oreilly_ddd_ja/` `tools/` はそのまま）。
 
-## 理由
+## 理由（要求元）
 
 **継ぎは、上流が答えた時点で負債になる。** 残しておくと、
 
@@ -80,7 +80,7 @@ doctrine 0.8.0 が、こちらから出した三本に答えた。実測で確�
 
 `ADR-018` が「届いたらこの層は捨てる」と予告している。予告を実行する。
 
-## 要求元
+### 要求元
 
 `REQ-003`「統治の規則を二重定義しない」。判断の根拠を上流へ返す。
 
