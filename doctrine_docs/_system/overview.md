@@ -50,6 +50,7 @@ sources: []
 | ADR-022 | ADR | lens | 番号は飾りではない。突き合わせを門にする |
 | ADR-023 | ADR | lens | 取れていない数を、その場に出さない |
 | ADR-024 | ADR | lens | 発火していない門を、緑と呼ばない |
+| ADR-025 | ADR | lens | 自分で作った語を、辞書へ足す |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -63,6 +64,7 @@ sources: []
 | CHANGE-011 | CHANGE | lens | 受入の番号が、仕様と試験でずれている |
 | CHANGE-012 | CHANGE | lens | 「取れなかった」を「無い」と言っている箇所が、まだ六つ在る |
 | CHANGE-013 | CHANGE | lens | 発火していない門が、まだ三つ在る |
+| CHANGE-014 | CHANGE | lens | 自分で作った語が、辞書に無い |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -76,6 +78,7 @@ sources: []
 | IMPACT-011 | IMPACT | lens | 受入の番号を揃えることの影響 |
 | IMPACT-012 | IMPACT | lens | 「取れなかった」を保つことの影響 |
 | IMPACT-013 | IMPACT | lens | 発火していない門を塞ぐことの影響 |
+| IMPACT-014 | IMPACT | lens | 四語を辞書へ足すことの影響 |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |
