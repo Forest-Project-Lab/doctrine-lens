@@ -87,6 +87,13 @@ const state = async () => ({
   // 行から語を消したので、数だけが「隠していない」ことの証になる。
   // 数と行が食い違えば、消しすぎているか、数え違えている。
   statusRows: await page.locator(".row .status").count(),
+  // 通知が**実際に出たか**。否定だけを検めると、通知の描画を殺しても
+  // 「溢れていない・差し込みの跡が無い」で通ってしまう（ADR-017）。
+  notice: await page.evaluate(() => {
+    const node = document.querySelector("#notice");
+    if (!node || node.hidden) return null;
+    return { text: (node.innerText ?? "").trim(), error: node.classList.contains("error") };
+  }),
   notCurrent: await page.evaluate(() => {
     const line = [...(document.querySelector(".origin .summary")?.innerText ?? "").split("\n")]
       .find((l) => /\d/.test(l) && /current/.test(l));
@@ -252,14 +259,40 @@ await page.evaluate(() => {
     "*",
   );
 });
-await record("長い通知（280px）", "07-notice", { overflow: [], placeholders: [] });
+const notice = await record("長い通知（280px）", "07-notice", {
+  overflow: [],
+  placeholders: [],
+  // **出たことを主張する。** 出ていないなら、この段は何も試していない。
+  notice: (v) => v !== null && v.text.length > 0 && v.error === true,
+});
+// 上流の文を書き直さない（SPEC-006 制約）。送った文が字面で残っていること。
+if (!notice.notice || !notice.notice.text.includes("The doctrine CLI failed.")) {
+  failures.push(`通知の文が画面に出ていない: ${JSON.stringify(notice.notice)}`);
+}
+if (!notice.notice || !notice.notice.text.includes("Traceback (most recent call last):")) {
+  failures.push("上流の traceback が画面から消えている（要約も切り詰めもしない）");
+}
+
+// 中身の無い通知は「消せ」の意味である。次の段で消えることまで見る。
+await page.evaluate(() => {
+  window.postMessage({ kind: "notice", tone: "info", text: "", detail: "" }, "*");
+});
+const cleared = await record("通知を消した（280px）", "08-notice-cleared", {
+  overflow: [],
+  placeholders: [],
+  notice: null,
+});
+if (cleared.notice !== null) {
+  failures.push(`空の通知で消えていない: ${JSON.stringify(cleared.notice)}`);
+}
 
 await browser.close();
 
 for (const step of steps) {
   console.log(
     `${step.label}: 波 ${step.waves}・行 ${step.rows}・範囲 ${step.ranges}・` +
-      `記号 ${step.marks.join("")}・語 ${step.terms}・非現行 ${step.notCurrent}/${step.statusRows}・svg ${step.svg}・` +
+      `記号 ${step.marks.join("")}・語 ${step.terms}・非現行 ${step.notCurrent}/${step.statusRows}・` +
+      `通知 ${step.notice ? "出" : "無"}・svg ${step.svg}・` +
       `差し込みの跡 ${step.placeholders.length}`,
   );
 }

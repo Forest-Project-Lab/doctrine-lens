@@ -150,13 +150,19 @@ test("symlink で作業フォルダの外へ抜けられない", () => {
     // 作業フォルダの中から外の木へ張った繋ぎ。字面の前方一致だけでは通ってしまう。
     symlinkSync(join(dir, "outside", "doctrine_docs"), join(ws, "doctrine_docs"), "dir");
 
+    // **零件の主張で通さない。** 以前はここが `if (found !== null)` の中だけに
+    // 主張を置いており、この環境では `null` が返るので**本体が一度も走らなかった**。
+    // 通らない道を通ったことにする門は、落ちないので気づかれない（ADR-024）。
     const found = locateDocsRoot(ws);
-    if (found !== null) {
-      assert.ok(
-        resolvePath(realpathSync(found)).startsWith(resolvePath(ws)),
-        `実体が作業フォルダの外に在る: ${realpathSync(found)}`,
-      );
+    if (found === null) {
+      // 繋ぎの先が外なので、そもそも統治木として認めない。これが期待する形である。
+      assert.equal(found, null);
+      return;
     }
+    assert.ok(
+      resolvePath(realpathSync(found)).startsWith(resolvePath(ws)),
+      `実体が作業フォルダの外に在る: ${realpathSync(found)}`,
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -234,7 +234,10 @@ test("001-10i. 三つ組が別々に動かない（時刻だけ進む・検査�
 
 /** 見本の引き継ぎ。判定そのものを持つ形に揃える（ADR-017）。 */
 function carry(auditAt: Date | null, staleIds: ReadonlySet<string>): AuditCarry {
-  return { auditAt, staleIds, findings: staleIds.size >= 0 ? [] : null, checksRun: [] };
+  // 以前は `staleIds.size >= 0 ? [] : null` と書いていた。`Set.size` は負にならないので
+  // **常に真**であり、両方の場合を踏んでいるように読めて片方しか作らなかった（ADR-024）。
+  // 判定が返った回は所見も返っている——それがこの見本の意味である。
+  return { auditAt, staleIds, findings: [], checksRun: [] };
 }
 
 test("001-10j. 一度も監査していない引き継ぎが、空集合や空配列を持たない", () => {
