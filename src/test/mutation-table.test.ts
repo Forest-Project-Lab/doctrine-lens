@@ -140,6 +140,30 @@ test("仕様の受入がすべて、番号つきの試験か「画面側」の�
   assert.deepEqual(strays, [], "仕様に無い受入番号を名乗る試験が在る");
 });
 
+test("主張を一つも持たない試験が無い（零件の主張で通さない）", () => {
+  // 通らない道を通ったことにする門は、落ちないので気づかれない。
+  // 実測で三つ在った——`symlink` の試験は `if (found !== null)` の中だけに主張を置き、
+  // この環境では `null` が返るので**本体が一度も走らなかった**。
+  //
+  // **括弧の数で本体を切らない。** 最初にそうしたら、正規表現リテラル `/[{;]/` の
+  // `{` に騙されて、主張を持つ試験を三本「持たない」と報せた。
+  // **門を作るときに、門が嘘をついた。** 行頭の `test(` で区切る。
+  const bare: string[] = [];
+  for (const file of testSources(join(PROJECT, "src", "test"))) {
+    const text = readFileSync(file, "utf8");
+    const starts = [...text.matchAll(/^test\(\s*"((?:[^"\\]|\\.)*)"/gm)];
+    for (const [index, match] of starts.entries()) {
+      const from = match.index ?? 0;
+      const to = starts[index + 1]?.index ?? text.length;
+      const body = text.slice(from, to);
+      if (!body.includes("assert") && !body.includes("t.skip")) {
+        bare.push(`${file.slice(PROJECT.length + 1)}: ${match[1]}`);
+      }
+    }
+  }
+  assert.deepEqual(bare, [], "主張を一つも持たない試験が在る");
+});
+
 test("試験の名が重複していない（潰しの報告が、どれが捕まえたかを名で言う）", () => {
   // `tools/mutate-verdict.mjs` の `namesOfFailed` は `not ok N - <名>` から
   // **名前だけ**を取る。同じ名の試験が二つ在ると、報告のどちらを指しているかが
