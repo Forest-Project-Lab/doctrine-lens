@@ -7,6 +7,7 @@
   "required": [
     "schema",
     "target",
+    "system",
     "elements",
     "flows",
     "contracts",
@@ -49,6 +50,32 @@
       "type": "array",
       "items": {
         "$ref": "#/$defs/TraceAnchor"
+      }
+    },
+    "system": {
+      "type": "object",
+      "description": "対象全体の目的と境界(§7.1。所有者指摘 2026-08-04 で必須化)",
+      "required": [
+        "purpose",
+        "boundary",
+        "provenance",
+        "review_status"
+      ],
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "description": "この系は何のために在るか(二文以内)"
+        },
+        "boundary": {
+          "type": "string",
+          "description": "境界の内側と外側を一文ずつ"
+        },
+        "provenance": {
+          "$ref": "#/$defs/Provenance"
+        },
+        "review_status": {
+          "$ref": "#/$defs/ReviewStatus"
+        }
       }
     }
   },

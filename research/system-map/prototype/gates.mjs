@@ -9,8 +9,10 @@
 // - 操作数は実際の UI の操作構造(uiStructure)から数える。負の試験は同じ計算経路に
 //   「変更した画面遷移」を与えて落とす(判定器へ結果を直接渡さない)。
 
-/** 実 UI の操作構造。index.html の画面遷移と一致させること(変えたらここも変える)。 */
+/** 実 UI の操作構造。index.html の画面遷移と一致させること(変えたらここも変える)。
+ *  一致することは test-m14-browser.mjs が「実ブラウザの操作数」と突き合わせて確かめる。 */
 export const UI_STRUCTURE = {
+  drillOps: 1,     // 子要素は「内部を見る」で階層を降りてから選ぶ(親要素は 0)
   selectOps: 1,    // 図の箱を選ぶ → 詳細パネルが開く
   extraExpands: 0, // パネル内でリンクが見えるまでに要する展開の数(現 UI は 0 — 12 節は常時展開)
   linkClickOps: 1, // パネル内のリンクを開く
@@ -50,7 +52,10 @@ export function computeOpsRows(models, ui = UI_STRUCTURE) {
       if (d.kind === "na") rows.push({ target: m.target, element: e.id, status: "not_applicable", ops: null, note: d.reason });
       else if (d.kind === "broken") rows.push({ target: m.target, element: e.id, status: "broken", ops: null, note: d.detail });
       else if (d.kind === "unregistered") rows.push({ target: m.target, element: e.id, status: "unregistered", ops: null, note: "実現・証拠が未登録(provenance は代用にならない)" });
-      else rows.push({ target: m.target, element: e.id, status: "reachable", ops: ui.selectOps + ui.extraExpands + ui.linkClickOps, note: d.links[0] });
+      else {
+        const drill = (e.parent ?? null) !== null ? ui.drillOps : 0; // 実操作: 子は先に内部へ降りる
+        rows.push({ target: m.target, element: e.id, status: "reachable", ops: drill + ui.selectOps + ui.extraExpands + ui.linkClickOps, note: d.links[0] });
+      }
     }
   }
   return rows;

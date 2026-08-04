@@ -28,23 +28,32 @@ const expectThrow = (fn, name) => {
 };
 
 // ---- 正: 現物 ----
-t("正: 現物の四対象は実 UI 構造(選ぶ+開く=2 操作)で全て到達・NA・超過なし", () => {
-  const { max, reachable, na } = assertM14(computeOpsRows(realModels), 3);
+t("正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選ぶ+開く=3)で全て到達・NA・超過なし", () => {
+  const rows = computeOpsRows(realModels);
+  const { max, reachable, na } = assertM14(rows, 3);
   if (max > 3) throw new Error("max=" + max);
+  const child = rows.find((r) => r.element === "lens.model");
+  if (child.ops !== 3) throw new Error("子要素の実操作が 3 でない: " + child.ops);
+  const top = rows.find((r) => r.element === "lens" && r.target === "doctrine-and-lens");
+  if (top.ops !== 2) throw new Error("親要素の実操作が 2 でない: " + top.ops);
   if (reachable === 0) throw new Error("到達可能な要素が零(配線が死んでいる)");
   if (na === 0) throw new Error("明示 NA が零(人・外部系の NA が消えた)");
 });
 
 // ---- 負: 画面遷移を深くする(同じ計算経路) ----
-t("負: 展開を 2 段挟む画面遷移(計 4 操作)にすると落ちる", () => {
-  const deepUi = { ...UI_STRUCTURE, extraExpands: 2 };
+t("負: 展開を 1 段挟む画面遷移にすると子が 4 操作になり落ちる", () => {
+  const deepUi = { ...UI_STRUCTURE, extraExpands: 1 };
   const msg = expectThrow(() => assertM14(computeOpsRows(realModels, deepUi), 3), "M-14(4 操作)");
   if (!/操作超過/.test(msg)) throw new Error("落ちた理由が操作超過でない: " + msg);
 });
 
-t("負: 境界 — 展開 1 段(計 3 操作)は通り、2 段(4 操作)は落ちる", () => {
-  assertM14(computeOpsRows(realModels, { ...UI_STRUCTURE, extraExpands: 1 }), 3);
-  expectThrow(() => assertM14(computeOpsRows(realModels, { ...UI_STRUCTURE, extraExpands: 2 }), 3), "境界");
+t("負: 境界 — 親のみの最小モデルで展開 1 段(計 3)は通り、2 段(計 4)は落ちる", () => {
+  const mini = [{
+    target: "mini", elements: [{ id: "top", parent: null, realized_by: ["a"] }],
+    contracts: [], anchors: [{ id: "a", url: "https://example.com/x" }],
+  }];
+  assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 1 }), 3);
+  expectThrow(() => assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 2 }), 3), "境界");
 });
 
 // ---- 負: モデルを実際に壊す(同じ計算経路) ----

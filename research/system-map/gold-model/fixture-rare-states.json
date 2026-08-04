@@ -380,5 +380,18 @@
       "observed_at": "2026-08-04",
       "authority": "gold_model"
     }
-  ]
+  ],
+  "system": {
+    "purpose": "(架空)毎営業日の夜間に帳票を作り、朝の点検へ渡す。H 層 T6(希少状態の読み分け)の練習用。",
+    "boundary": "(架空)境界の内側は起動器と生成器。運用者は境界の外の人。",
+    "provenance": [
+      {
+        "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+        "locator": "架空の例(この文書自身)",
+        "checked_at": "2026-08-04",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
 }

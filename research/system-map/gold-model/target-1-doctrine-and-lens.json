@@ -802,5 +802,24 @@
       "authority": "gold_model",
       "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd/plugin"
     }
-  ]
+  ],
+  "system": {
+    "purpose": "統治木(doctrine_docs)を持つ開発を、規則の検査(doctrine)と帰結の表示(doctrine-lens)の一組で支える。",
+    "boundary": "境界の内側は二製品(doctrine と doctrine-lens)。保守者は利用者として、VS Code は実行環境として、境界の外に居る。",
+    "provenance": [
+      {
+        "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+        "locator": "要求文",
+        "checked_at": "2026-08-03",
+        "verdict": "present"
+      },
+      {
+        "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+        "locator": "本文 §4(二製品の役割分担)",
+        "checked_at": "2026-08-03",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
 }

@@ -1,6 +1,6 @@
 # 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit `4e9d210`(experiment/system-map)・2026-08-04。
+撮影時点: commit `0f82792`(experiment/system-map)・2026-08-04。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 
 - `01-system-t1.png` — 対象1 全体 — 縦積みの構成図(1440×900・100% 相当)

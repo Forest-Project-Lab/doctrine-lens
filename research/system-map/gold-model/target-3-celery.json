@@ -498,5 +498,18 @@
       "authority": "gold_model",
       "url": "https://docs.celeryq.dev/en/stable/faq.html"
     }
-  ]
+  ],
+  "system": {
+    "purpose": "時間のかかる仕事を非同期のタスクとして預け、後で実行して結果を返す(分散タスクキュー)。",
+    "boundary": "境界の内側は producer・broker・worker・result-backend の四部品。運用者は境界の外の人。",
+    "provenance": [
+      {
+        "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+        "locator": "タスクの実行モデル",
+        "checked_at": "2026-08-03",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
 }

@@ -239,7 +239,7 @@ function diagram(tops, flows) {
   // 箱の幅は行内の箱数に適応させ、幅方向の未使用領域を減らす。
   const maxRow = Math.max(...cols.map((c) => c.length));
   const BW = maxRow === 1 ? 460 : maxRow === 2 ? 360 : 300;
-  const BH = 175, GXROW = 44, GYLAYER = 72, PAD = 16, LANE = 240;
+  const BH = 175, GXROW = 44, GYLAYER = 90, PAD = 16, LANE = 260;
   const rowW = maxRow * BW + (maxRow - 1) * GXROW;
   const pos = {};
   cols.forEach((col, li) => {
@@ -289,13 +289,15 @@ function diagram(tops, flows) {
     const fb = !!f.feedback_for;
     const down = a.y < b.y, sameLayer = a.y === b.y;
     const span = Math.abs(Math.round((b.y - a.y) / (BH + GYLAYER)));
+    // ラベルは二行(1行目=名前、2行目=種類)で全文を出す。切り詰めない(所有者指摘: 完全可読)。
     const full = (fb ? "↩ " : "") + f.label + "(" + f.kind + ")";
-    let label = full.length > 20 ? full.slice(0, 19) + "…" : full;
+    const line1 = (fb ? "↩ " : "") + f.label;
+    const line2 = "(" + f.kind + ")";
     let path, lx, ly, anchorAttr = 'text-anchor="middle"';
     if (sameLayer) {
       const x1 = a.x + BW, x2 = b.x, ym = a.y + BH / 2 + off;
       path = \`M \${x1} \${ym} C \${(x1 + x2) / 2} \${ym - 30}, \${(x1 + x2) / 2} \${ym - 30}, \${x2} \${ym}\`;
-      lx = (x1 + x2) / 2; ly = ym - 34;
+      lx = (x1 + x2) / 2; ly = ym - 50;
     } else if (fb || span >= 2) {
       // 右レーンで迂回し、到達先の上の隙間から入る(他の箱を横切らない)
       const x1 = a.x + BW, y1 = a.y + BH / 2 + off;
@@ -303,18 +305,17 @@ function diagram(tops, flows) {
       const yTop = b.y - 26 - off / 2;
       const xEnd = b.x + BW * 0.72 + off;
       path = \`M \${x1} \${y1} C \${xl} \${y1}, \${xl} \${y1}, \${xl} \${yTop} L \${xEnd} \${yTop} L \${xEnd} \${b.y}\`;
-      label = full.length > 14 ? full.slice(0, 13) + "…" : full;
-      lx = xl + 6; ly = (y1 + yTop) / 2; anchorAttr = 'text-anchor="start"';
+      lx = xl + 6; ly = (y1 + yTop) / 2 - 8; anchorAttr = 'text-anchor="start"';
     } else {
       // 隣接層への縦の流れ。ラベルは到達先の直前(到達先ごとに散り、衝突しない)
       const x1 = a.x + BW / 2 + off, x2 = b.x + BW / 2 + off;
       const y1 = down ? a.y + BH : a.y, y2 = down ? b.y : b.y + BH;
       const my = (y1 + y2) / 2;
       path = \`M \${x1} \${y1} C \${x1} \${my}, \${x2} \${my}, \${x2} \${y2}\`;
-      lx = x2; ly = down ? y2 - 8 : y2 + 17;
+      lx = x2; ly = down ? y2 - 24 : y2 + 17;
     }
     return \`<path d="\${path}" fill="none" stroke="#444" stroke-width="1.4" \${fb ? 'stroke-dasharray="5 4"' : ""} marker-end="url(#arr)"><title>\${esc(full)}</title></path>
-      <text x="\${lx}" y="\${ly}" font-size="13" \${anchorAttr} fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4"><title>\${esc(full)}</title>\${esc(label)}</text>\`;
+      <text x="\${lx}" y="\${ly}" font-size="13" \${anchorAttr} fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4"><title>\${esc(full)}</title><tspan x="\${lx}" dy="0">\${esc(line1)}</tspan><tspan x="\${lx}" dy="15">\${esc(line2)}</tspan></text>\`;
   }).join("");
 
   return \`<svg viewBox="0 0 \${W} \${H}" width="\${W}" style="max-width:100%; height:auto; border:1px solid #ddd; background:#fff; display:block; margin:0 auto">
@@ -347,8 +348,16 @@ function viewSystem() {
       <table><tr><th>から</th><th>何を(種類)</th><th>へ</th><th>成立条件</th></tr>
       \${crossFlows.map((f) => \`<tr><td>\${esc(el(f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td>\${esc(el(f.to).name)}</td><td class="small">\${esc(f.condition)}</td></tr>\`).join("")}</table>\`
     : "";
+  const sys = M().system;
+  const externals = M().elements.filter((e) => (e.parent ?? null) === null && (e.kind === "external_system" || e.kind === "person"));
+  const sysHeader = drill ? "" : \`<div style="border:2px solid #222; padding:.5rem .8rem; margin-bottom:.6rem; background:#fafafa">
+      <div><b>目的</b> \${esc(sys.purpose)}</div>
+      <div><b>境界</b> \${esc(sys.boundary)}</div>
+      <div class="small">境界の外: \${externals.map((e) => esc(e.name) + "(" + (e.kind === "person" ? "人" : "外部システム") + ")").join("、") || "—"} / \${provRows(sys.provenance)}</div>
+    </div>\`;
   return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
     \${crumb}
+    \${sysHeader}
     \${diagram(tops, flows)}
     \${flows.length === 0 ? '<p class="small">この階層の内側に閉じた流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
     \${crossTable}\`;

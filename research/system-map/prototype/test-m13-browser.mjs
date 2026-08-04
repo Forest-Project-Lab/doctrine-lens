@@ -37,21 +37,30 @@ async function sweep(url, { offline = false, interact = true } = {}) {
   p.on("pageerror", (e) => pageErrors.push(e.message));
   if (offline) await ctx.setOffline(true);
   await p.goto(url, { waitUntil: "load" }).catch((e) => pageErrors.push("goto: " + e.message));
+  const proof = {};
   if (interact) {
     for (const tiv of ["0", "1", "2", "3"]) {
       await p.selectOption("#target", tiv).catch(() => {});
       await p.locator("svg g[data-el]").first().click().catch(() => {});
     }
     await p.selectOption("#target", "0").catch(() => {});
-    const drill = p.locator("[data-drill]").first();
-    if (await drill.count()) await drill.click().catch(() => {});
+    // 操作の「成立」を状態で確かめる(押せた、ではなく、期待の画面になった)
+    proof.boxes = await p.locator("svg g[data-el]").count().catch(() => 0);
+    await p.locator('svg g[data-el="lens"]').click().catch(() => {});
+    proof.panelSections = await p.locator("#detail h3").count().catch(() => 0);
+    proof.panelLinks = await p.locator("#detail a").count().catch(() => 0);
+    await p.locator('[data-drill="doctrine"]').click().catch(() => {});
+    proof.crumb = await p.locator(".crumb").count().catch(() => 0);
+    proof.drillBoxes = await p.locator("svg g[data-el]").count().catch(() => 0);
+    await p.locator("#up").click().catch(() => {});
     for (const v of ["scenario", "assurance", "impact", "inspect"]) {
       await p.locator(`nav button[data-v="${v}"]`).click().catch(() => {});
     }
+    proof.inspectRows = await p.locator("#left table tr").count().catch(() => 0);
   }
-  const boxes = await p.locator("nav button").count().catch(() => 0);
   await ctx.close();
-  return { external, pageErrors, uiAlive: boxes === 5 };
+  const uiProven = !interact || (proof.boxes >= 4 && proof.panelSections === 12 && proof.panelLinks >= 1 && proof.crumb === 1 && proof.drillBoxes >= 3 && proof.inspectRows > 20);
+  return { external, pageErrors, uiProven, proof };
 }
 
 // ---- 正: 現物・オンライン ----
@@ -59,12 +68,13 @@ async function sweep(url, { offline = false, interact = true } = {}) {
   const r = await sweep("file://" + indexPath);
   report(r.external.length === 0, "正: 全操作で外部リクエスト 0 件", r.external.slice(0, 3).join(", "));
   report(r.pageErrors.length === 0, "正: JS エラー零", r.pageErrors[0]);
+  report(r.uiProven, "正: 操作が状態として成立(図・12 節・リンク・ドリル・検査表)", JSON.stringify(r.proof));
 }
 
 // ---- 正: オフライン ----
 {
   const r = await sweep("file://" + indexPath, { offline: true });
-  report(r.pageErrors.length === 0 && r.uiAlive, "正: オフラインでも主要操作が成立", r.pageErrors[0]);
+  report(r.pageErrors.length === 0 && r.uiProven, "正: オフラインでも同じ操作が同じ状態で成立", r.pageErrors[0] ?? JSON.stringify(r.proof));
 }
 
 // ---- 負: 外部資源を仕込んだ変種が検出される ----

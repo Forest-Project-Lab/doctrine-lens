@@ -540,5 +540,24 @@
       "authority": "doctrine",
       "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md"
     }
-  ]
+  ],
+  "system": {
+    "purpose": "門を通過した拡張機能を、手動の公開経路で利用者の手元へ届ける。",
+    "boundary": "境界の内側は保守者のリリース手順と束ねの道具。Marketplace・GitHub は外部システム、利用者は境界の外の人。",
+    "provenance": [
+      {
+        "source": "doctrine-lens: CHANGELOG.md",
+        "locator": "L162-163(公開経路)",
+        "checked_at": "2026-08-04",
+        "verdict": "present"
+      },
+      {
+        "source": "doctrine-lens: doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md",
+        "locator": "理由(配れる状態にする)",
+        "checked_at": "2026-08-04",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
 }
