@@ -3,7 +3,7 @@
 name: system-map verify
 on:
   push:
-    branches: ["experiment/system-map"]
+    branches: ["experiment/system-map", "main"]
     paths: ["research/system-map/**", ".github/workflows/system-map.yml"]
 jobs:
   verify:

@@ -88,6 +88,8 @@ export const messages = {
     t("There is only one doctrine tree, so there is nothing to choose: {0}", path),
 
   pickFolderTitle: (): string => t("Which doctrine tree should this read?"),
+
+  systemMapTitle: (): string => t("System Map (experiment)"),
   lineRange: (begin: number, end: number): string =>
     t("lines {0}–{1}", String(begin), String(end)),
 

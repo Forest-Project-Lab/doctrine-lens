@@ -11,6 +11,7 @@ import { rangeAtLine, rangesForDocument } from "./model/trace.js";
 import { LensPanel, openOrExplain, openRange } from "./panel/lensPanel.js";
 import { LensSession } from "./session.js";
 import { LensStatusBar } from "./statusbar.js";
+import { registerSystemMap } from "./systemMap.js";
 
 export function activate(context: vscode.ExtensionContext): void {
   const session = new LensSession(context.workspaceState);
@@ -29,6 +30,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand("doctrineLens.open", () => {
       LensPanel.show(context, session);
     }),
+
+    // System Map(実験)。明示の命令でだけ開く読み取り専用の画面(2026-08-04 所有者判断)。
+    registerSystemMap(context),
 
     vscode.commands.registerCommand("doctrineLens.refresh", async () => {
       LensPanel.show(context, session);

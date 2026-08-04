@@ -16,5 +16,6 @@
   "cfg.autoRefresh": "Refresh when a governed `.md` or a marked source file is saved.",
   "cfg.auditDebounceMs": "How long to wait after a change before running the full audit that decides fingerprint mismatches, in milliseconds. `0` runs it only on an explicit refresh.",
   "cap.untrusted": "Doctrine Lens runs the doctrine CLI with the configured Python interpreter, so it only works in a trusted folder.",
-  "cap.virtual": "Doctrine Lens runs a local Python CLI against files on disk, so it needs a real filesystem."
+  "cap.virtual": "Doctrine Lens runs a local Python CLI against files on disk, so it needs a real filesystem.",
+  "cmd.openSystemMap": "Open System Map (experiment)"
 }

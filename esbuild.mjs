@@ -18,6 +18,9 @@ const extensionBuild = {
   target: "node20",
   // vscode は実行時に編集器が渡す。束ねてはならない。
   external: ["vscode"],
+  // System Map(実験)の画面は自己完結 HTML を文字列として内蔵する。
+  // 配布物へ新しいファイルを足さない(.vscodeignore の allowlist と manifest 凍結試験を崩さない)。
+  loader: { ".html": "text" },
   // 配布物に .map を入れないので、参照だけ残さない（404 を招く）。
   sourcemap: false,
   logLevel: "info",

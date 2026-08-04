@@ -16,5 +16,6 @@
   "cfg.autoRefresh": "統治木の `.md` か、印を持つ原本を保存したとき、取り直す。",
   "cfg.auditDebounceMs": "変更のあと、指紋の食い違いを判じる全件監査を走らせるまでの待ち（ミリ秒）。`0` なら明示の取り直しのときだけ走らせる。",
   "cap.untrusted": "Doctrine Lens は設定した python で doctrine の CLI を走らせるため、信頼した作業フォルダでだけ動く。",
-  "cap.virtual": "Doctrine Lens はディスク上のファイルに対して手元の Python を走らせるので、実体のあるファイル体系が要る。"
+  "cap.virtual": "Doctrine Lens はディスク上のファイルに対して手元の Python を走らせるので、実体のあるファイル体系が要る。",
+  "cmd.openSystemMap": "System Map(実験)を開く"
 }
