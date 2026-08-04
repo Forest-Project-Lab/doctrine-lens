@@ -2,13 +2,16 @@
 //
 //   node build.mjs   →  index.html を生成
 //
-// 三対象の JSON を build 時に埋め込む。実行時の外部読み取りは零
-// (M-13: 道具が読むのは固定された検証用 JSON だけ。fetch/XHR を書かない)。
-// 画面は台帳 v3.2 B 節 P1 の区分に従う: システム / シナリオ / 保証 / 変更影響。
-// 詳細パネルの一問は「契約充足の評価」。一画面一問(v3.2-6)。
 // システム画面は構成図(所有者判断 2026-08-04 で採用。DESIGN-001)。
 // 配置は意味からだけ導く(層 = Flow 方向の最長距離)。辺は正本の Flow と一対一。
 // 旧地図の失敗要因(無意味な軸・同一事実の二重描画)は持ち込まない。
+//
+// 可読性の規律(所有者指示 2026-08-04 §4):
+// - 1440×900・100% で主要情報が読める。本文の最小文字は 14px。
+// - カードの常時表示は 名称・目的1文・主要 IN/OUT・保証状態の要約 まで。
+// - proposed などの管理情報は上部に一度だけ。
+// - 選択時は右側の詳細パネル(図を消さない・押し出さない)。12 節の固定順。
+// - ドリルダウン中も親の目的・境界・現在位置を保ち、戻りで配置と選択を復元する。
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,13 +27,12 @@ const models = [
 ];
 
 // ---- M-14 の機械判定(build 時) ----
-// 判定器は gates.mjs。発火することは test-gates.mjs の負の試験が確かめる
-// (所有者判断 2026-08-04:「M-13/M-14 の発火可能な負の試験」)。
+// 判定器は gates.mjs。発火することは test-gates.mjs の負の試験が確かめる。
 const m14 = computeOpsRows(models);
 const { max: m14max } = assertM14(m14, 3);
 
 const DATA = JSON.stringify(models);
-const M14 = JSON.stringify({ rows: m14, max: m14max, checked_at: "build 時" });
+const M14 = JSON.stringify({ rows: m14, max: m14max });
 
 const html = `<!DOCTYPE html>
 <html lang="ja">
@@ -38,78 +40,75 @@ const html = `<!DOCTYPE html>
 <meta charset="utf-8">
 <title>system-map 静的プロトタイプ(Phase 1・候補)</title>
 <style>
-  :root { --ink:#222; --dim:#666; --line:#ccc; --bg:#fff; --mark:#fff3cd; }
-  body { font-family: system-ui, sans-serif; color: var(--ink); background: var(--bg); margin: 0; }
-  header { padding: .6rem 1rem; border-bottom: 2px solid var(--line); }
-  .banner { background: var(--mark); padding: .4rem 1rem; font-size: .85rem; }
-  nav button { margin-right: .4rem; padding: .35rem .8rem; font-size: 1rem; cursor: pointer; }
-  nav button[aria-pressed="true"] { font-weight: 700; border: 2px solid var(--ink); }
-  select { font-size: 1rem; padding: .2rem; }
-  main { padding: 1rem; max-width: 72rem; }
-  .q { color: var(--dim); font-size: .9rem; margin: .2rem 0 1rem; }
-  .crumb { font-size: .85rem; color: var(--dim); margin-bottom: .6rem; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; color: #222; background: #fff; margin: 0; font-size: 15px; }
+  .banner { background: #fff3cd; padding: .35rem 1rem; font-size: 14px; }
+  header { display: flex; align-items: center; gap: .5rem; padding: .5rem 1rem; border-bottom: 2px solid #ccc; flex-wrap: wrap; }
+  nav button { padding: .35rem .9rem; font-size: 15px; cursor: pointer; }
+  nav button[aria-pressed="true"] { font-weight: 700; border: 2px solid #222; }
+  select { font-size: 15px; padding: .2rem; }
+  .wrap { display: flex; gap: 1rem; align-items: flex-start; padding: .8rem 1rem; }
+  #left { flex: 1 1 auto; min-width: 0; }
+  #detail { flex: 0 0 30rem; max-width: 30rem; border: 2px solid #222; position: sticky; top: .5rem;
+            max-height: calc(100vh - 1.5rem); overflow-y: auto; padding: .7rem .9rem; background: #fff; }
+  #detail h2 { margin: 0 0 .2rem; font-size: 17px; padding-right: 1.6rem; }
+  #detail h3 { margin: .7rem 0 .2rem; font-size: 14px; border-bottom: 1px solid #ddd; padding-bottom: .1rem; }
+  #detail ul { margin: .2rem 0; padding-left: 1.2rem; }
+  #detail li, #detail p, #detail td { font-size: 14px; }
+  #close { position: absolute; top: .3rem; right: .4rem; font-size: 16px; cursor: pointer; border: 1px solid #999; background: #fff; }
+  .q { color: #555; font-size: 14px; margin: .2rem 0 .5rem; }
+  .crumb { font-size: 14px; margin-bottom: .3rem; }
   .crumb a { cursor: pointer; text-decoration: underline; }
-  .boxes { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
-  .box { border: 1.5px solid var(--ink); padding: .5rem .7rem; min-width: 13rem; max-width: 18rem; cursor: pointer; }
-  .box.ext { border-style: dashed; }
-  .box h3 { margin: 0 0 .2rem; font-size: 1rem; }
-  .box .kind { font-size: .72rem; color: var(--dim); }
-  .box .purpose { font-size: .82rem; margin: .2rem 0; }
-  .box .owner { font-size: .75rem; color: var(--dim); }
-  table { border-collapse: collapse; width: 100%; margin-bottom: 1rem; font-size: .85rem; }
-  th, td { border: 1px solid var(--line); padding: .3rem .5rem; text-align: left; vertical-align: top; }
+  .parentline { font-size: 14px; color: #555; margin-bottom: .5rem; }
+  table { border-collapse: collapse; width: 100%; margin: .4rem 0 .8rem; font-size: 14px; }
+  th, td { border: 1px solid #ccc; padding: .3rem .5rem; text-align: left; vertical-align: top; }
   th { background: #f4f4f4; }
-  .st { display: inline-block; padding: 0 .4rem; border: 1px solid var(--ink); font-size: .78rem; }
-  .st-unknown { background: #eee; }
-  .st-claimed { background: #fff; }
-  .st-planned { background: #eef; }
-  .st-verified { background: #e6f4e6; }
-  .st-failed { background: #f8d7da; }
-  .st-stale { background: #ffe8cc; }
-  .st-not_applicable { background: #f0f0f0; color: var(--dim); }
-  .proposed { font-size: .7rem; border: 1px dashed var(--dim); color: var(--dim); padding: 0 .3rem; }
-  .panel { border: 2px solid var(--ink); padding: .8rem; margin-top: 1rem; }
-  .panel h2 { margin-top: 0; font-size: 1.05rem; }
-  details { margin: .3rem 0; }
+  .st { display: inline-block; padding: 0 .35rem; border: 1px solid #222; font-size: 13px; }
+  .st-unknown { background: #eee; } .st-claimed { background: #fff; } .st-planned { background: #e8ecff; }
+  .st-verified { background: #dff2df; } .st-failed { background: #f8d7da; } .st-stale { background: #ffe8cc; }
+  .st-not_applicable { background: #f0f0f0; color: #666; }
+  .small { font-size: 13px; color: #555; }
   .neg { color: #8a6d3b; }
-  .opcount { position: fixed; right: .8rem; bottom: .8rem; background: #f4f4f4; border: 1px solid var(--line); padding: .3rem .6rem; font-size: .8rem; }
-  .small { font-size: .8rem; color: var(--dim); }
-  footer { padding: 1rem; border-top: 1px solid var(--line); font-size: .78rem; color: var(--dim); }
+  .legend { font-size: 14px; color: #555; margin-top: .3rem; }
+  .opcount { position: fixed; right: .8rem; bottom: .8rem; background: #f4f4f4; border: 1px solid #ccc; padding: .25rem .6rem; font-size: 13px; }
+  footer { padding: .6rem 1rem; border-top: 1px solid #ccc; font-size: 13px; color: #666; }
+  a { color: #0b57a4; }
 </style>
 </head>
 <body>
-<div class="banner">全値は候補(<b>proposed</b>)であり正本表示ではない。正本は issue 204 の合意台帳 v3.2 と各値の出所。tag: system-map/phase-0 起点。</div>
+<div class="banner">全値は候補(<b>proposed</b>)であり正本表示ではない — この注記が全項に適用される(各項では繰り返さない)。正本は issue 204 の合意台帳と各値の出所。</div>
 <header>
+  <label>対象: <select id="target"></select></label>
   <nav>
-    <label>対象:
-      <select id="target"></select>
-    </label>
     <button data-v="system" aria-pressed="true">システム</button>
     <button data-v="scenario" aria-pressed="false">シナリオ</button>
     <button data-v="assurance" aria-pressed="false">保証</button>
     <button data-v="impact" aria-pressed="false">変更影響</button>
-    <button data-v="inspect" aria-pressed="false" class="small">検査(M 層)</button>
+    <button data-v="inspect" aria-pressed="false">検査(M 層)</button>
   </nav>
 </header>
-<main id="main"></main>
-<div class="opcount">操作数: <span id="ops">0</span> <button id="opreset" class="small">0 に戻す</button></div>
+<div class="wrap">
+  <section id="left"></section>
+  <aside id="detail" hidden></aside>
+</div>
+<div class="opcount">操作数: <span id="ops">0</span> <button id="opreset">0 に戻す</button></div>
 <footer>
-  一画面一問(台帳 v3.2-6)。対象の切替と画面の移動は「別の問いへ行く」操作であり、同じ問いの見え方を変える操作子は置いていない。
-  1操作の定義は台帳 v3.2-16(明示的な起動を各 1。スクロール・ホバーは数えない)。
+  一画面一問(台帳 v3.2-6)。対象の切替と画面の移動は「別の問いへ行く」操作。1操作 = 明示的な起動を各 1(台帳 v3.2-16。スクロール・ホバーは数えない)。
 </footer>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
 let ti = 0, view = "system", focusEl = null, drill = null;
+const drillStack = [];
 let ops = 0;
 const bump = () => { ops++; document.getElementById("ops").textContent = ops; };
 document.getElementById("opreset").onclick = () => { ops = 0; document.getElementById("ops").textContent = 0; };
 
 const tsel = document.getElementById("target");
 MODELS.forEach((m, i) => tsel.add(new Option(m.target, i)));
-tsel.onchange = () => { ti = +tsel.value; focusEl = null; drill = null; bump(); render(); };
+tsel.onchange = () => { ti = +tsel.value; focusEl = null; drill = null; drillStack.length = 0; bump(); render(); };
 document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
-  view = b.dataset.v; focusEl = null; drill = null; bump();
+  view = b.dataset.v; focusEl = null; drill = null; drillStack.length = 0; bump();
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-pressed", x === b));
   render();
 });
@@ -117,8 +116,9 @@ document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const M = () => MODELS[ti];
 const el = (id) => M().elements.find((e) => e.id === id);
+const anchor = (id) => (M().anchors ?? []).find((a) => a.id === id);
 const stBadge = (s) => '<span class="st st-' + s + '">' + s + "</span>";
-const prop = (x) => x.review_status === "proposed" ? ' <span class="proposed">proposed</span>' : "";
+const firstSentence = (s) => { const t = String(s ?? ""); const i = t.indexOf("。"); return i >= 0 ? t.slice(0, i + 1) : t; };
 
 function provRows(ps) {
   return (ps ?? []).map((p) =>
@@ -129,56 +129,63 @@ function provRows(ps) {
 
 function evRows(evs) {
   if (!evs || !evs.length) return "<div class='small'>証拠: 無し</div>";
-  return evs.map((e) =>
-    "<div class='small'>証拠: " + esc(e.ref) + " / 環境 " + esc(e.environment) +
-    " / 版 " + esc(e.version) + " / 終了 " + esc(e.exit_status) + " / 観測 " + esc(e.observed_at) +
-    (e.fingerprint ? " / 指紋 " + esc(e.fingerprint) : "") + "</div>").join("");
+  return evs.map((e) => {
+    const ref = /^https?:/.test(e.ref) ? '<a href="' + esc(e.ref) + '" target="_blank">' + esc(e.ref) + "</a>" : esc(e.ref);
+    return "<div class='small'>証拠: " + ref + " / 環境 " + esc(e.environment) +
+      " / 版 " + esc(e.version) + " / 終了 " + esc(e.exit_status) + " / 観測 " + esc(e.observed_at) +
+      (e.fingerprint ? " / 指紋 " + esc(e.fingerprint) : "") + "</div>";
+  }).join("");
 }
 
+// 詳細パネル — 12 節の固定順(所有者指示 §4)
 function detailPanel(id) {
   const e = el(id);
   const cs = M().contracts.filter((c) => c.subject === id);
-  const io = M().flows.filter((f) => f.from === id || f.to === id);
-  return \`<div class="panel">
-    <h2>詳細: \${esc(e.name)}\${prop(e)}</h2>
-    <div class="q">この画面の一問: この要素の責務と契約は何で、その充足をどの根拠が支えているか(契約充足の評価)</div>
-    <p><b>目的</b> \${esc(e.purpose)}</p>
-    <p><b>担うこと</b></p><ul>\${e.responsibilities.map((r) => "<li>" + esc(r) + "</li>").join("")}</ul>
-    \${e.not_responsible_for ? "<p><b>担わないこと</b></p><ul>" + e.not_responsible_for.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" : ""}
-    <p><b>所有者</b> \${esc(e.owner)}</p>
-    \${provRows(e.provenance)}
-    <h3>接続(IN/OUT の詳細 — 図と同じ Flow 正本から)</h3>
-    \${io.length ? \`<table><tr><th>向き</th><th>相手</th><th>何を(種類)</th><th>成立条件</th></tr>
-      \${io.map((f) => {
-        const isOut = f.from === id;
-        return \`<tr><td>\${isOut ? "OUT →" : "← IN"}\${f.feedback_for ? " ↩" : ""}</td><td>\${esc(el(isOut ? f.to : f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td class="small">\${esc(f.condition)}</td></tr>\`;
-      }).join("")}</table>\` : '<p class="small">この要素に結ばれた流れは記録されていない。</p>'}
-    <h3>契約(\${cs.length})</h3>
-    \${cs.length ? cs.map((c) => \`
-      <details><summary>\${stBadge(c.verification_status)} \${esc(c.guarantee)}\${prop(c)}</summary>
-        <p class="small">前提: \${c.assumptions.map(esc).join(" / ")}</p>
-        <p class="small">測り方: \${esc(c.response_measure)}</p>
-        \${c.na_reason ? '<p class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</p>" : ""}
-        \${c.failure_effect ? '<p class="small">破られたら: ' + esc(c.failure_effect) + "</p>" : ""}
-        \${c.verification_method ? '<p class="small">検証方法: ' + esc(c.verification_method) + "</p>" : ""}
-        \${evRows(c.evidence)}
-        \${provRows(c.provenance)}
-      </details>\`).join("") : "<p class='small'>この要素を対象にした契約は記録されていない(不明であって「無し」ではない)。</p>"}
-  </div>\`;
+  const flowsIn = M().flows.filter((f) => f.to === id);
+  const flowsOut = M().flows.filter((f) => f.from === id);
+  const fbFlows = M().flows.filter((f) => f.feedback_for && (f.from === id || f.to === id));
+  const assumptions = cs.flatMap((c) => c.assumptions.map((a) => ({ a, cid: c.id })));
+  const failures = cs.filter((c) => c.failure_effect);
+  const flowRow = (f, dir) => \`<tr><td>\${dir}\${f.feedback_for ? " ↩" : ""}</td><td>\${esc(el(dir === "IN" ? f.from : f.to).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td class="small">\${esc(f.condition)}</td></tr>\`;
+  const none = '<p class="small">記録なし</p>';
+  const realizedLinks = (e.realized_by ?? []).map((aid) => {
+    const a = anchor(aid);
+    if (!a) return '<li class="neg">壊れた参照: ' + esc(aid) + "</li>";
+    const label = esc(a.target) + "(" + esc(a.source_revision).slice(0, 12) + ")";
+    return a.url ? '<li><a href="' + esc(a.url) + '" target="_blank">' + label + "</a></li>" : "<li>" + label + "(url なし)</li>";
+  }).join("");
+  const evidenceLinks = cs.flatMap((c) => (c.evidence ?? []).map((ev) => ({ c, ev })));
+  return \`<button id="close" title="閉じる">×</button>
+    <h2>\${esc(e.name)}</h2>
+    <div class="q">この要素の責務と契約は何で、その充足をどの根拠が支えているか(契約充足の評価)</div>
+    <h3>1. 目的</h3><p>\${esc(e.purpose)}</p>
+    <h3>2. 担うこと</h3><ul>\${e.responsibilities.map((r) => "<li>" + esc(r) + "</li>").join("")}</ul>
+    <h3>3. 担わないこと</h3>\${e.not_responsible_for ? "<ul>" + e.not_responsible_for.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" : none}
+    <h3>4. 所有者</h3><p>\${esc(e.owner)} <span class="small">(種別: \${esc(e.kind)})</span></p>
+    <h3>5. IN(受けるもの)</h3>\${flowsIn.length ? "<table><tr><th>向き</th><th>相手</th><th>何を(種類)</th><th>成立条件</th></tr>" + flowsIn.map((f) => flowRow(f, "IN")).join("") + "</table>" : none}
+    <h3>6. OUT(返すもの)</h3>\${flowsOut.length ? "<table><tr><th>向き</th><th>相手</th><th>何を(種類)</th><th>成立条件</th></tr>" + flowsOut.map((f) => flowRow(f, "OUT")).join("") + "</table>" : none}
+    <h3>7. Control / Assumption(前提)</h3>\${assumptions.length ? "<ul>" + assumptions.map((x) => "<li>" + esc(x.a) + ' <span class="small">(' + esc(x.cid) + ")</span></li>").join("") + "</ul>" : none}
+    <h3>8. Feedback(戻り)</h3>\${fbFlows.length ? "<ul>" + fbFlows.map((f) => "<li>↩ " + esc(f.label) + ' <span class="small">— ' + esc(el(f.from).name) + " → " + esc(el(f.to).name) + "(" + esc(f.feedback_for) + " への戻り)</span></li>").join("") + "</ul>" : none}
+    <h3>9. Guarantee と状態</h3>\${cs.length ? cs.map((c) => \`
+      <p>\${stBadge(c.verification_status)} \${esc(c.guarantee)}</p>
+      <p class="small">測り方: \${esc(c.response_measure)}</p>
+      \${c.na_reason ? '<p class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</p>" : ""}
+      \${evRows(c.evidence)}
+      \${provRows(c.provenance)}\`).join("<hr>") : '<p class="small">この要素を対象にした契約は記録されていない(不明であって「無し」ではない)。</p>'}
+    <h3>10. Failure effect(破られたら)</h3>\${failures.length ? "<ul>" + failures.map((c) => "<li>" + esc(c.failure_effect) + ' <span class="small">(' + esc(c.id) + ")</span></li>").join("") + "</ul>" : none}
+    <h3>11. Requirement / Rationale(要求と根拠)</h3>
+    \${(e.requirements ?? []).length ? "<ul>" + e.requirements.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" : ""}
+    \${provRows(e.provenance) || none}
+    <h3>12. Code / Test / Evidence(実現と証拠)</h3>
+    \${e.realization ? '<p class="small">対象外: ' + esc(e.realization.reason) + "</p>" : ""}
+    \${realizedLinks ? "<ul>" + realizedLinks + "</ul>" : ""}
+    \${evidenceLinks.length ? evidenceLinks.map((x) => evRows([x.ev])).join("") : ""}
+    \${!e.realization && !realizedLinks && !evidenceLinks.length ? none : ""}\`;
 }
 
-function scopeTops() { return M().elements.filter((e) => (drill ? e.parent === drill : (e.parent ?? null) === null)); }
-function scopeFlows(tops) {
-  const ids = new Set(tops.map((e) => e.id));
-  return M().flows.filter((f) => ids.has(f.from) && ids.has(f.to));
-}
-
-// 構成図(主画面。所有者判断 2026-08-04 で採用)。配置は意味から導く — 層 = フィードバックを除く Flow の最長距離。
-// 辺は正本の Flow のみ。無名の辺・意味の無い軸を作らない。
-function viewSystemB(tops, flows) {
+// 構成図。層はフィードバックと宣言順循環切りを除いた Flow の最長距離。
+function diagram(tops, flows) {
   const ids = tops.map((e) => e.id);
-  // 層計算に使う辺: フィードバックを除き、さらに宣言順で見て「循環を閉じる辺」を除く
-  // (除いた辺も描画はされる。層は意味から導くが、循環は宣言順という決定的な規則で切る)
   const adj = Object.fromEntries(ids.map((i) => [i, []]));
   const reaches = (from, to, seen = new Set()) => {
     if (from === to) return true;
@@ -188,7 +195,7 @@ function viewSystemB(tops, flows) {
   };
   const layerFlows = [];
   for (const f of flows.filter((f) => !f.feedback_for && f.from !== f.to)) {
-    if (reaches(f.to, f.from)) continue; // この辺を足すと循環する — 層計算からは外す
+    if (reaches(f.to, f.from)) continue;
     adj[f.from].push(f.to);
     layerFlows.push(f);
   }
@@ -204,84 +211,108 @@ function viewSystemB(tops, flows) {
   const cols = Array.from({ length: nLayers }, () => []);
   for (const e of tops) cols[dist[e.id]].push(e);
 
-  const BW = 240, BH = 195, GX = 185, GY = 30, PAD = 16;
+  // 縦積み(上→下 = Flow の向き)。1440×900 で読める大きさを保つ。
+  // 箱の幅は行内の箱数に適応させ、幅方向の未使用領域を減らす。
+  const maxRow = Math.max(...cols.map((c) => c.length));
+  const BW = maxRow === 1 ? 460 : maxRow === 2 ? 360 : 300;
+  const BH = 175, GXROW = 44, GYLAYER = 72, PAD = 16, LANE = 240;
+  const rowW = maxRow * BW + (maxRow - 1) * GXROW;
   const pos = {};
-  cols.forEach((col, ci) => col.forEach((e, ri) => {
-    pos[e.id] = { x: PAD + ci * (BW + GX), y: PAD + ri * (BH + GY) };
-  }));
-  const W = PAD * 2 + nLayers * BW + (nLayers - 1) * GX;
-  const H = PAD * 2 + Math.max(...cols.map((c) => c.length)) * (BH + GY) + 70;
+  cols.forEach((col, li) => {
+    const colW = col.length * BW + (col.length - 1) * GXROW;
+    const x0 = PAD + (rowW - colW) / 2; // 各層を中央寄せ
+    col.forEach((e, ri) => {
+      pos[e.id] = { x: x0 + ri * (BW + GXROW), y: PAD + li * (BH + GYLAYER) };
+    });
+  });
+  const W = PAD * 2 + rowW + LANE;
+  const H = PAD * 2 + nLayers * BH + (nLayers - 1) * GYLAYER;
 
+  const ioSummary = (eid) => {
+    const ins = flows.filter((f) => f.to === eid), outs = flows.filter((f) => f.from === eid);
+    const fmt = (a, tag) => a.length ? tag + " " + a.length + ": " + a.slice(0, 2).map((f) => esc(f.label)).join("、") + (a.length > 2 ? " 他" : "") : "";
+    return [fmt(ins, "IN"), fmt(outs, "OUT")].filter(Boolean).join("<br>");
+  };
   const stChips = (eid) => {
     const cs = M().contracts.filter((c) => c.subject === eid);
-    return cs.map((c) => '<span class="st st-' + c.verification_status + '">' + c.verification_status + "</span>").join(" ") || '<span class="small">契約: 記録なし</span>';
-  };
-  const ioList = (eid) => {
-    const ins = flows.filter((f) => f.to === eid), outs = flows.filter((f) => f.from === eid);
-    const fmt = (a, tag) => a.length ? tag + ": " + a.slice(0, 2).map((f) => esc(f.label)).join("、") + (a.length > 2 ? \` 他\${a.length - 2}\` : "") : "";
-    return [fmt(ins, "IN"), fmt(outs, "OUT")].filter(Boolean).join(" / ");
+    return cs.length ? cs.map((c) => '<span class="st st-' + c.verification_status + '">' + c.verification_status + "</span>").join(" ")
+      : '<span style="color:#666">契約: 記録なし</span>';
   };
 
   const boxes = tops.map((e) => {
     const p = pos[e.id];
+    const sel = focusEl === e.id;
     return \`<g data-el="\${e.id}" style="cursor:pointer">
-      <rect x="\${p.x}" y="\${p.y}" width="\${BW}" height="\${BH}" fill="#fff" stroke="#222" stroke-width="1.5" \${e.kind === "external_system" ? 'stroke-dasharray="6 4"' : ""}/>
-      <foreignObject x="\${p.x + 6}" y="\${p.y + 4}" width="\${BW - 12}" height="\${BH - 8}">
-        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:11px; line-height:1.35; overflow:hidden; height:100%">
-          <b style="font-size:12px">\${esc(e.name)}</b> <span style="color:#666">\${esc(e.kind)}</span>\${prop(e)}<br>
-          <span>\${esc(e.purpose)}</span><br>
-          <span style="color:#666">責務: \${e.responsibilities.slice(0, 2).map(esc).join("、")}\${e.responsibilities.length > 2 ? \` 他\${e.responsibilities.length - 2}\` : ""}</span><br>
-          <span style="color:#444">\${ioList(e.id)}</span><br>
-          \${stChips(e.id)}
-          \${M().elements.some((c) => c.parent === e.id) ? '<button class="small" data-drill="' + e.id + '">内部を見る</button>' : ""}
+      <rect x="\${p.x}" y="\${p.y}" width="\${BW}" height="\${BH}" fill="\${sel ? "#eaf1ff" : "#fff"}" stroke="#222" stroke-width="\${sel ? 3 : 1.5}" \${e.kind === "external_system" ? 'stroke-dasharray="6 4"' : ""}/>
+      <foreignObject x="\${p.x + 8}" y="\${p.y + 6}" width="\${BW - 16}" height="\${BH - 12}">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; line-height:1.4; overflow:hidden; height:100%">
+          <div style="font-size:16px; font-weight:700">\${esc(e.name)}</div>
+          <div>\${esc(firstSentence(e.purpose))}</div>
+          <div style="color:#444">\${ioSummary(e.id)}</div>
+          <div style="margin-top:2px">\${stChips(e.id)}
+          \${M().elements.some((c) => c.parent === e.id) ? ' <button data-drill="' + e.id + '" style="font-size:13px">内部を見る</button>' : ""}</div>
         </div>
       </foreignObject>
     </g>\`;
   }).join("");
 
   const pairSeen = {};
-  const bottomY = H - PAD - 60;
+  const laneX = PAD + rowW + 30; // 右側の迂回レーン(フィードバック・層跨ぎ)
   const edges = flows.map((f) => {
     const a = pos[f.from], b = pos[f.to];
     const key = [f.from, f.to].sort().join("|");
-    const off = (pairSeen[key] = (pairSeen[key] ?? -1) + 1) * 18;
+    const off = (pairSeen[key] = (pairSeen[key] ?? -1) + 1) * 22;
     const fb = !!f.feedback_for;
-    const span = Math.abs(Math.round((b.x - a.x) / (BW + GX)));
-    let x1, y1, x2, y2;
-    if (a.x < b.x) { x1 = a.x + BW; x2 = b.x; } else if (a.x > b.x) { x1 = a.x; x2 = b.x + BW; } else { x1 = a.x + BW; x2 = b.x + BW; }
-    y1 = a.y + BH / 2 + off; y2 = b.y + BH / 2 + off;
-    const detour = span >= 2 || fb;
-    let path, lx, ly;
-    if (a.x === b.x) {
-      path = \`M \${x1} \${y1} C \${x1 + 70} \${y1}, \${x2 + 70} \${y2}, \${x2} \${y2}\`;
-      lx = x1 + 74; ly = (y1 + y2) / 2;
-    } else if (detour) {
-      const dy = bottomY + (fb ? 30 : 8) + off;
-      path = \`M \${x1} \${y1} C \${x1 + 60} \${dy}, \${x2 - 60} \${dy}, \${x2} \${y2}\`;
-      lx = (x1 + x2) / 2; ly = dy - 6;
-    } else {
-      const mx = (x1 + x2) / 2;
-      path = \`M \${x1} \${y1} C \${mx} \${y1}, \${mx} \${y2}, \${x2} \${y2}\`;
-      lx = mx; ly = Math.min(y1, y2) - 8 + off;
-    }
+    const down = a.y < b.y, sameLayer = a.y === b.y;
+    const span = Math.abs(Math.round((b.y - a.y) / (BH + GYLAYER)));
     const full = (fb ? "↩ " : "") + f.label + "(" + f.kind + ")";
-    const label = full.length > 26 ? full.slice(0, 25) + "…" : full;
-    return \`<path d="\${path}" fill="none" stroke="#444" stroke-width="1.2" \${fb ? 'stroke-dasharray="5 4"' : ""} marker-end="url(#arr)"><title>\${esc(full)}</title></path>
-      <text x="\${lx}" y="\${ly}" font-size="10" text-anchor="middle" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="3"><title>\${esc(full)}</title>\${esc(label)}</text>\`;
+    let label = full.length > 20 ? full.slice(0, 19) + "…" : full;
+    let path, lx, ly, anchorAttr = 'text-anchor="middle"';
+    if (sameLayer) {
+      const x1 = a.x + BW, x2 = b.x, ym = a.y + BH / 2 + off;
+      path = \`M \${x1} \${ym} C \${(x1 + x2) / 2} \${ym - 30}, \${(x1 + x2) / 2} \${ym - 30}, \${x2} \${ym}\`;
+      lx = (x1 + x2) / 2; ly = ym - 34;
+    } else if (fb || span >= 2) {
+      // 右レーンで迂回し、到達先の上の隙間から入る(他の箱を横切らない)
+      const x1 = a.x + BW, y1 = a.y + BH / 2 + off;
+      const xl = laneX + (fb ? 26 : 0) + off;
+      const yTop = b.y - 26 - off / 2;
+      const xEnd = b.x + BW * 0.72 + off;
+      path = \`M \${x1} \${y1} C \${xl} \${y1}, \${xl} \${y1}, \${xl} \${yTop} L \${xEnd} \${yTop} L \${xEnd} \${b.y}\`;
+      label = full.length > 14 ? full.slice(0, 13) + "…" : full;
+      lx = xl + 6; ly = (y1 + yTop) / 2; anchorAttr = 'text-anchor="start"';
+    } else {
+      // 隣接層への縦の流れ。ラベルは到達先の直前(到達先ごとに散り、衝突しない)
+      const x1 = a.x + BW / 2 + off, x2 = b.x + BW / 2 + off;
+      const y1 = down ? a.y + BH : a.y, y2 = down ? b.y : b.y + BH;
+      const my = (y1 + y2) / 2;
+      path = \`M \${x1} \${y1} C \${x1} \${my}, \${x2} \${my}, \${x2} \${y2}\`;
+      lx = x2; ly = down ? y2 - 8 : y2 + 17;
+    }
+    return \`<path d="\${path}" fill="none" stroke="#444" stroke-width="1.4" \${fb ? 'stroke-dasharray="5 4"' : ""} marker-end="url(#arr)"><title>\${esc(full)}</title></path>
+      <text x="\${lx}" y="\${ly}" font-size="13" \${anchorAttr} fill="#333" paint-order="stroke" stroke="#fff" stroke-width="4"><title>\${esc(full)}</title>\${esc(label)}</text>\`;
   }).join("");
 
-  return \`<svg viewBox="0 0 \${W} \${H}" width="\${W}" style="max-width:100%; height:auto; border:1px solid #ddd">
-    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#444"/></marker></defs>
+  return \`<svg viewBox="0 0 \${W} \${H}" width="\${W}" style="max-width:100%; height:auto; border:1px solid #ddd; background:#fff; display:block; margin:0 auto">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#444"/></marker></defs>
     \${edges}\${boxes}
   </svg>
-  <p class="small">層は Flow の向き(フィードバック除く)の最長距離から導出。辺は正本の Flow のみ・全て名前と種類つき。破線枠 = 外部システム、破線辺 = フィードバック。</p>\`;
+  <div class="legend">実線枠 = 内部 / 破線枠 = 外部システム / 破線辺 ↩ = フィードバック。辺は全て正本の Flow(名前+種類つき)。層は Flow の向きから導出。</div>\`;
+}
+
+function scopeTops() { return M().elements.filter((e) => (drill ? e.parent === drill : (e.parent ?? null) === null)); }
+function scopeFlows(tops) {
+  const ids = new Set(tops.map((e) => e.id));
+  return M().flows.filter((f) => ids.has(f.from) && ids.has(f.to));
 }
 
 function viewSystem() {
   const tops = scopeTops();
   const flows = scopeFlows(tops);
+  const parent = drill ? el(drill) : null;
   const crumb = drill
-    ? \`<div class="crumb"><a id="up">← 全体(\${esc(M().target)})</a> › \${esc(el(drill).name)} の内部</div>\`
+    ? \`<div class="crumb"><a id="up">全体(\${esc(M().target)})</a> › <b>\${esc(parent.name)} の内部</b></div>
+       <div class="parentline">親の目的: \${esc(firstSentence(parent.purpose))}(境界 = \${esc(parent.name)})</div>\`
     : "";
   const ids = new Set(tops.map((e) => e.id));
   const crossFlows = drill
@@ -294,17 +325,16 @@ function viewSystem() {
     : "";
   return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
     \${crumb}
-    \${viewSystemB(tops, flows)}
+    \${diagram(tops, flows)}
     \${flows.length === 0 ? '<p class="small">この階層の内側に閉じた流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
-    \${crossTable}
-    \${focusEl ? detailPanel(focusEl) : '<p class="small">箱を選ぶと詳細(契約充足の評価と IN/OUT の詳細)が開く。</p>'}\`;
+    \${crossTable}\`;
 }
 
 function viewScenario() {
   return \`<div class="q">この画面の一問: この目的の流れでは、誰が何を行い、何が起き、何が返るか</div>
     \${M().scenarios.map((s) => \`
     <details \${s.kind === "normal" ? "open" : ""}>
-      <summary>\${s.kind === "exception" ? "⚠ 例外系: " : "正常系: "}\${esc(s.goal)}\${prop(s)}\${s.exception_of ? ' <span class="small">(正常系: ' + esc(s.exception_of) + ")</span>" : ""}</summary>
+      <summary>\${s.kind === "exception" ? "⚠ 例外系: " : "正常系: "}\${esc(s.goal)}\${s.exception_of ? ' <span class="small">(正常系: ' + esc(s.exception_of) + ")</span>" : ""}</summary>
       <p class="small">きっかけ: \${esc(s.trigger)} / 前提: \${(s.preconditions ?? []).map(esc).join("・") || "—"}</p>
       <table><tr><th>誰が</th><th>何を行う</th><th>誰へ</th><th>期待する結果</th></tr>
         \${s.steps.map((st) => \`<tr><td>\${esc(el(st.actor).name)}</td><td>\${esc(st.action)}</td><td>\${esc(el(st.receiver).name)}</td><td>\${esc(st.expected)}</td></tr>\`).join("")}
@@ -324,7 +354,7 @@ function viewAssurance() {
     \${cs.map((c) => \`<tr>
       <td>\${stBadge(c.verification_status)}</td>
       <td>\${esc(el(c.subject).name)}</td>
-      <td>\${esc(c.guarantee)}\${prop(c)}\${c.na_reason ? '<div class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</div>" : ""}\${c.failure_effect ? '<div class="small">破られたら: ' + esc(c.failure_effect) + "</div>" : ""}</td>
+      <td>\${esc(c.guarantee)}\${c.na_reason ? '<div class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</div>" : ""}\${c.failure_effect ? '<div class="small">破られたら: ' + esc(c.failure_effect) + "</div>" : ""}</td>
       <td class="small">\${c.assumptions.map(esc).join("<br>")}</td>
       <td>\${evRows(c.evidence)}\${provRows(c.provenance)}</td>
     </tr>\`).join("")}</table>\`;
@@ -333,14 +363,13 @@ function viewAssurance() {
 function viewImpact() {
   return \`<div class="q">この画面の一問: これを変更した場合、何をどの順番で修正する必要があるか</div>
     <p>この問いの正本は既存の Doctrine Lens(Consequence View)である。プロトタイプは答えを持たない。</p>
-    <p class="small">対象 doctrine-and-lens では、編集器で当該文書を開けば Lens が「一本の明細」で答える(lens REQ-000)。
-    二画面は連携するが混ぜない(台帳 B 節 P1)。</p>\`;
+    <p class="small">対象 doctrine-and-lens では、編集器で当該文書を開けば Lens が「一本の明細」で答える(lens REQ-000)。二画面は連携するが混ぜない(台帳 B 節 P1)。</p>\`;
 }
 
 function viewInspect() {
   return \`<div class="q">この画面の一問: M 層のうちプロトタイプが受け持つ検査は通っているか</div>
-    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端で生成物を走査し、fetch/XHR が在れば build が落ちる。<b>発火することは負の試験(test-gates.mjs)が確認済み。</b></p>
-    <p><b>M-14</b>(要素→コードまたは証拠が \${3} 操作以内): build 時に全要素の最短操作数を数え、超過で build が落ちる。最大 = \${M14.max} 操作。<b>発火することは負の試験(test-gates.mjs)が確認済み。</b></p>
+    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端で生成物を走査し、fetch/XHR が在れば build が落ちる。発火することは負の試験(test-gates.mjs)が確認済み。</p>
+    <p><b>M-14</b>(要素→コードまたは証拠が 3 操作以内): build 時に全要素の最短操作数を数え、超過で build が落ちる。最大 = \${M14.max} 操作。発火することは負の試験が確認済み。</p>
     <table><tr><th>対象</th><th>要素</th><th>最短操作数</th></tr>
       \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td>\${r.ops}</td></tr>\`).join("")}
     </table>
@@ -349,16 +378,30 @@ function viewInspect() {
 
 function render() {
   const v = { system: viewSystem, scenario: viewScenario, assurance: viewAssurance, impact: viewImpact, inspect: viewInspect }[view];
-  document.getElementById("main").innerHTML = v();
+  document.getElementById("left").innerHTML = v();
+  const d = document.getElementById("detail");
+  if (view === "system" && focusEl) {
+    d.hidden = false;
+    d.innerHTML = detailPanel(focusEl);
+    document.getElementById("close").onclick = () => { focusEl = null; bump(); render(); };
+  } else {
+    d.hidden = true;
+    d.innerHTML = "";
+  }
   document.querySelectorAll("[data-el]").forEach((b) => b.onclick = (ev) => {
     if (ev.target.dataset.drill) return;
     focusEl = b.dataset.el; bump(); render();
   });
   document.querySelectorAll("[data-drill]").forEach((b) => b.onclick = (ev) => {
-    ev.stopPropagation(); drill = b.dataset.drill; focusEl = null; bump(); render();
+    ev.stopPropagation();
+    drillStack.push({ drill, focusEl });
+    drill = b.dataset.drill; focusEl = null; bump(); render();
   });
   const up = document.getElementById("up");
-  if (up) up.onclick = () => { drill = null; focusEl = null; bump(); render(); };
+  if (up) up.onclick = () => {
+    const prev = drillStack.pop() ?? { drill: null, focusEl: null };
+    drill = prev.drill; focusEl = prev.focusEl; bump(); render();
+  };
 }
 render();
 </script>
