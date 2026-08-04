@@ -1,6 +1,6 @@
 # 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit `03d4a8e`(experiment/system-map)・2026-08-04。
+撮影時点: commit `b4426f2`(experiment/system-map)・2026-08-04。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 
 - `01-system-t1.png` — 対象1(Doctrine+Lens)システム画面 — 境界の箱とやり取りの表
@@ -17,3 +17,4 @@
 - `12-system-b-t1.png` — 案B: 対象1 構成図 — 層は Flow 方向から導出、全辺ラベル、状態章つきの箱
 - `13-system-b-t2.png` — 案B: 対象2 構成図(人・運用・外部系)
 - `14-system-b-t3.png` — 案B: 対象3 構成図(Celery)
+- `15-assurance-fixture.png` — fixture(架空): planned/failed/stale を含む保証画面 — H 層 T6 用
