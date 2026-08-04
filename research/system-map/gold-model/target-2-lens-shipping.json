@@ -1,0 +1,322 @@
+{
+  "schema": "system-map/gold-model/0.1",
+  "target": "lens-shipping",
+  "$comment": "対象2: Lens の出荷プロセス(人+運用+外部システム)。手動の公開経路と、実際に起きた stale .vsix 事故を含む。全値 proposed。",
+
+  "elements": [
+    {
+      "id": "maintainer",
+      "name": "保守者",
+      "kind": "person",
+      "purpose": "リリースの判断と実施。門の実行から Marketplace への手動アップロードまでを一人で受け持つ。",
+      "responsibilities": ["リリース判断", "門の実行", "版と CHANGELOG の更新", ".vsix の束ねと手動アップロード"],
+      "owner": "本人",
+      "parent": null,
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L162-163(公開経路は .vsix を手で上げる)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "release-op",
+      "name": "リリース手順",
+      "kind": "operation",
+      "purpose": "配れる状態を確かめてから配る、という順序の運用。機械に強制されない部分を人が持つ。",
+      "responsibilities": ["門(npm run check)→版→CHANGELOG→束ね(npm run package)→手動アップロードの順序を守る", "束ね直しの失念を防ぐ"],
+      "not_responsible_for": ["門の中身の判定(道具の受け持ち)"],
+      "owner": "本人",
+      "parent": null,
+      "provenance": [
+        { "source": "doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md", "locator": "変更内容(配れる状態にする三層)", "checked_at": "2026-08-04", "verdict": "present" },
+        { "source": "README.md", "locator": "L415(npm run package builds the .vsix)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "packager",
+      "name": "束ねの道具",
+      "kind": "component",
+      "purpose": "esbuild で束ね、vsce package で doctrine-lens.vsix を作る。",
+      "responsibilities": ["dist の生成(vscode:prepublish は compile のみ)", ".vsix の生成"],
+      "not_responsible_for": ["門(check)の強制 — package は check を呼ばない"],
+      "owner": "doctrine-lens-maintainer",
+      "parent": null,
+      "provenance": [
+        { "source": "package.json", "locator": "scripts.package(vsce package -o doctrine-lens.vsix)・scripts.vscode:prepublish(compile のみ)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "marketplace",
+      "name": "VS Code Marketplace",
+      "kind": "external_system",
+      "purpose": "拡張機能の配布面。publisher の管理ページから .vsix を受け取り、利用者へ配る。",
+      "responsibilities": ["受領した .vsix の検証と掲載", "配布"],
+      "owner": "Microsoft(外部)",
+      "parent": null,
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L162-163(公開経路の明記)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "user",
+      "name": "利用者",
+      "kind": "person",
+      "purpose": "Marketplace から拡張を導入し、統治木の帰結を読む。",
+      "responsibilities": ["導入と更新の判断"],
+      "owner": "各利用者",
+      "parent": null,
+      "provenance": [
+        { "source": "doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md", "locator": "理由(拡張機能として配り、他人の手元で動く状態にする)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "github",
+      "name": "GitHub リポジトリ",
+      "kind": "external_system",
+      "purpose": "源(コードと統治木)の置き場。版の履歴を持つ。",
+      "responsibilities": ["源の保管", "CI(check)の実行"],
+      "owner": "Forest-Project-Lab",
+      "parent": null,
+      "provenance": [
+        { "source": "package.json", "locator": "repository 欄", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "flows": [
+    {
+      "id": "f-push",
+      "from": "maintainer",
+      "to": "github",
+      "kind": "command",
+      "label": "源を push する",
+      "payload_or_action": "コードと統治木の変更",
+      "condition": "変更のマージのとき",
+      "provenance": [
+        { "source": "package.json", "locator": "repository 欄", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-ci",
+      "from": "github",
+      "to": "maintainer",
+      "kind": "event",
+      "label": "門の結果を返す",
+      "payload_or_action": "check.yml の pass/fail",
+      "condition": "push・PR のとき",
+      "feedback_for": "f-push",
+      "provenance": [
+        { "source": ".github/workflows/check.yml", "locator": "存在", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-package",
+      "from": "maintainer",
+      "to": "packager",
+      "kind": "command",
+      "label": "束ねを走らせる",
+      "payload_or_action": "npm run package(vsce package -o doctrine-lens.vsix)",
+      "condition": "リリース判断の後",
+      "provenance": [
+        { "source": "package.json", "locator": "scripts.package", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-vsix",
+      "from": "packager",
+      "to": "maintainer",
+      "kind": "data",
+      "label": ".vsix を返す",
+      "payload_or_action": "doctrine-lens.vsix",
+      "condition": "束ねの成功時",
+      "provenance": [
+        { "source": "package.json", "locator": "scripts.package の -o doctrine-lens.vsix", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-upload",
+      "from": "maintainer",
+      "to": "marketplace",
+      "kind": "human_action",
+      "label": ".vsix を手で上げる",
+      "payload_or_action": "管理ページからの手動アップロード(自動 publish は使わない)",
+      "condition": "公開のとき",
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L162-163(公開経路は「.vsix を手で上げる」)", "checked_at": "2026-08-04", "verdict": "present" },
+        { "source": "README.md", "locator": "全文(手動である理由の記載なし — 理由は所有者の知識)", "checked_at": "2026-08-04", "verdict": "silent" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-distribute",
+      "from": "marketplace",
+      "to": "user",
+      "kind": "data",
+      "label": "拡張を配布する",
+      "payload_or_action": "掲載された版の導入・更新",
+      "condition": "掲載後",
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L163(そのまま届きうる=配布面である)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-user-report",
+      "from": "user",
+      "to": "maintainer",
+      "kind": "human_action",
+      "label": "不具合・要望を届ける",
+      "payload_or_action": "報告(経路の正本は未整備)",
+      "condition": "問題に気づいたとき",
+      "feedback_for": "f-distribute",
+      "provenance": [
+        { "source": "README.md", "locator": "全文(利用者向けの報告先の記載なし)", "checked_at": "2026-08-04", "verdict": "silent" },
+        { "source": ".github/", "locator": "issue テンプレート無し(workflows のみ)", "checked_at": "2026-08-04", "verdict": "silent" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "contracts": [
+    {
+      "id": "c-main-gated",
+      "subject": "github",
+      "assumptions": ["check.yml が npm run check 全段を走らせる"],
+      "guarantee": "main に入る変更は門(typecheck・試験・監査・linter・用語・実測)を通過している。",
+      "response_measure": "PR の check が pass であること",
+      "verification_status": "verified",
+      "owner": "doctrine-lens-maintainer",
+      "evidence": [
+        {
+          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27 (check pass 1m13s)",
+          "environment": "GitHub Actions(check.yml)",
+          "version": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+          "exit_status": "pass",
+          "observed_at": "2026-08-03"
+        }
+      ],
+      "verification_method": "CI での npm run check",
+      "provenance": [
+        { "source": ".github/workflows/check.yml", "locator": "存在と PR #27 での実行", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-vsix-fresh",
+      "subject": "release-op",
+      "assumptions": ["束ねは公開の直前に、現行の main から行う(人の手順であり、機械に強制されない)"],
+      "guarantee": "配布される .vsix は、公開時点の現行の木から束ねた最新である。",
+      "response_measure": "配布物の版と木の版の一致(現状、機械照合は無い)",
+      "verification_status": "claimed",
+      "owner": "本人",
+      "failure_effect": "実際に起きた — .vsix が 0.6.0 のまま木が 0.9.2 まで進み、gitignore の中なので誰も咎めず、そのまま届きうる状態だった(検出後、消して作り直した)。",
+      "verification_method": "無し(束ね(package)は門(check)を呼ばず、.vsix と commit を結ぶ指紋の記録も無い)",
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L162-163(事故の記録)", "checked_at": "2026-08-04", "verdict": "present" },
+        { "source": "package.json", "locator": "scripts(package→check の依存なし)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-upload-auth",
+      "subject": "marketplace",
+      "assumptions": ["publisher の管理ページへ入れる者だけが公開できる"],
+      "guarantee": "第三者が publisher に成り代わって配布物を差し替えられない。",
+      "response_measure": "定性的である(リポジトリ内に判定基準の記録なし)",
+      "verification_status": "unknown",
+      "owner": "Microsoft(外部)",
+      "failure_effect": "悪意ある差し替えが利用者へ配られる。",
+      "provenance": [
+        { "source": "README.md", "locator": "全文(公開の権限模型の記載なし)", "checked_at": "2026-08-04", "verdict": "silent" },
+        { "source": "CHANGELOG.md", "locator": "全文(同上)", "checked_at": "2026-08-04", "verdict": "silent" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "scenarios": [
+    {
+      "id": "s-release",
+      "goal": "現行の木から新版を配る",
+      "trigger": "リリース判断",
+      "preconditions": ["main の門が緑", "版と CHANGELOG が更新済み"],
+      "steps": [
+        { "actor": "maintainer", "action": "源を push し門を確かめる", "receiver": "github", "expected": "check が pass", "flow": "f-push" },
+        { "actor": "github", "action": "門の結果を返す", "receiver": "maintainer", "expected": "pass の確認", "flow": "f-ci" },
+        { "actor": "maintainer", "action": "束ねを走らせる", "receiver": "packager", "expected": ".vsix が出来る", "flow": "f-package" },
+        { "actor": "packager", "action": ".vsix を返す", "receiver": "maintainer", "expected": "doctrine-lens.vsix(現行の木由来)", "flow": "f-vsix" },
+        { "actor": "maintainer", "action": ".vsix を手で上げる", "receiver": "marketplace", "expected": "掲載される", "flow": "f-upload" },
+        { "actor": "marketplace", "action": "拡張を配布する", "receiver": "user", "expected": "新版が導入できる", "flow": "f-distribute" }
+      ],
+      "outcome": "利用者が門を通過した現行版を導入できる。",
+      "kind": "normal",
+      "provenance": [
+        { "source": "doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md", "locator": "変更内容", "checked_at": "2026-08-04", "verdict": "present" },
+        { "source": "CHANGELOG.md", "locator": "L162-163", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "s-stale-vsix",
+      "goal": "(失敗系)束ね直しを忘れたまま配る",
+      "trigger": "木は進んだが .vsix が古いまま残っている",
+      "preconditions": ["*.vsix が gitignore の中(古びても誰も咎めない)"],
+      "steps": [
+        { "actor": "maintainer", "action": "束ねを飛ばして古い .vsix を上げる", "receiver": "marketplace", "expected": "(誤り)古い版が掲載される", "flow": "f-upload" },
+        { "actor": "marketplace", "action": "拡張を配布する", "receiver": "user", "expected": "(誤り)旧版が現行として届く", "flow": "f-distribute" }
+      ],
+      "outcome": "旧版が届きうる。実際に .vsix 0.6.0 が木 0.9.2 の時点まで残置され、検出後に消して作り直した。",
+      "kind": "exception",
+      "exception_of": "s-release",
+      "loss_or_failure": "利用者が古い挙動と新しい文書の食い違いを踏む。",
+      "provenance": [
+        { "source": "CHANGELOG.md", "locator": "L162-163(事故の記録)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "anchors": [
+    {
+      "id": "a-changelog-incident",
+      "target_kind": "document",
+      "target": "CHANGELOG.md L162-163(stale .vsix 事故の記録)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model"
+    },
+    {
+      "id": "a-vsix",
+      "target_kind": "artifact",
+      "target": "doctrine-lens.vsix(作業木の現物)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "fingerprint": "sha256:43fbfc2866be9fff66bfe20855a1cda41779d2342df0dadf12dea43261327f70"
+    },
+    {
+      "id": "a-package-scripts",
+      "target_kind": "code_range",
+      "target": "package.json scripts(package・vscode:prepublish)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model"
+    },
+    {
+      "id": "a-change-002",
+      "target_kind": "document",
+      "target": "doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "doctrine"
+    }
+  ]
+}
