@@ -13,11 +13,20 @@ import { chromium } from "playwright";
 const here = dirname(fileURLToPath(import.meta.url));
 const shotsDir = join(here, "shots");
 mkdirSync(shotsDir, { recursive: true });
+// 作業木が汚れたまま撮ると、刻印(HEAD)と画面(未コミットの変更)が食い違う。撮影は拒否する。
+// 手順: コードを commit → 撮影 → shots を commit(README の刻印 = 画面を作ったコード)。
+const dirty = execSync("git status --porcelain -- . ':!shots'", { cwd: here, encoding: "utf8" }).trim();
+if (dirty) {
+  console.error("作業木が汚れている(shots/ 以外)。先に commit してから撮ること:\n" + dirty);
+  process.exit(1);
+}
 const rev = execSync("git rev-parse --short HEAD", { cwd: here, encoding: "utf8" }).trim();
+const takenAt = new Date().toISOString();
+const VIEWPORT = { width: 1440, height: 900 };
 const url = "file://" + join(here, "index.html");
 
 const b = await chromium.launch();
-const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const p = await b.newPage({ viewport: VIEWPORT });
 await p.goto(url);
 
 const shots = [];
@@ -72,7 +81,8 @@ await b.close();
 
 writeFileSync(join(shotsDir, "README.md"), `# 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit \`${rev}\`(experiment/system-map)・2026-08-04。
+撮影時点: commit \`${rev}\`(experiment/system-map) / ${takenAt} / viewport ${VIEWPORT.width}×${VIEWPORT.height}・100%。
+刻印は撮影処理が自動生成する(作業木が汚れていると撮影は拒否される)。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 
 ${shots.map((s) => `- \`${s.file}\` — ${s.note}`).join("\n")}

@@ -31,12 +31,14 @@ const models = [
 const m14 = computeOpsRows(models);
 const { max: m14max } = assertM14(m14, 3);
 
-// ---- 実データ overlay(Phase 2 予習・任意) ----
-// overlay/build-overlay.mjs が生成した「宣言済み CLI の実測」。無ければ表示しない。
+// ---- 実データ overlay(Phase 2 予習) ----
+// 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を混ぜない —
+// レビュー指摘 2026-08-04 §5)。SYSTEMMAP_WITH_OVERLAY=1 の明示オプション付き build だけが読む。
 let overlay = null;
-try {
+if (process.env.SYSTEMMAP_WITH_OVERLAY) {
   overlay = JSON.parse(readFileSync(join(here, "..", "overlay", "overlay-doctrine-and-lens.json"), "utf8"));
-} catch { /* overlay 未生成 — 静的モデルのみで build する */ }
+  console.log("Phase 2 build: overlay を同梱する(明示オプション)");
+}
 
 const DATA = JSON.stringify(models);
 const M14 = JSON.stringify({ rows: m14, max: m14max });
