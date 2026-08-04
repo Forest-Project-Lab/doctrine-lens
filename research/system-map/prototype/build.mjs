@@ -31,6 +31,13 @@ const models = [
 const m14 = computeOpsRows(models);
 const { max: m14max } = assertM14(m14, 3);
 
+// ---- 実データ overlay(Phase 2 予習・任意) ----
+// overlay/build-overlay.mjs が生成した「宣言済み CLI の実測」。無ければ表示しない。
+let overlay = null;
+try {
+  overlay = JSON.parse(readFileSync(join(here, "..", "overlay", "overlay-doctrine-and-lens.json"), "utf8"));
+} catch { /* overlay 未生成 — 静的モデルのみで build する */ }
+
 const DATA = JSON.stringify(models);
 const M14 = JSON.stringify({ rows: m14, max: m14max });
 
@@ -98,6 +105,7 @@ const html = `<!DOCTYPE html>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
+const OVERLAY = ${JSON.stringify(overlay)};
 let ti = 0, view = "system", focusEl = null, drill = null;
 const drillStack = [];
 let ops = 0;
@@ -135,6 +143,21 @@ function evRows(evs) {
       " / 版 " + esc(e.version) + " / 終了 " + esc(e.exit_status) + " / 観測 " + esc(e.observed_at) +
       (e.fingerprint ? " / 指紋 " + esc(e.fingerprint) : "") + "</div>";
   }).join("");
+}
+
+// 実測 overlay(Phase 2 予習)— 宣言済み CLI が build 時に返した事実。proposed のモデル値と混ぜず出所を明記。
+function overlayRows(e) {
+  if (!OVERLAY || M().target !== OVERLAY.target) return "";
+  const rows = (e.realized_by ?? [])
+    .map((aid) => OVERLAY.entries.find((x) => x.anchor_id === aid))
+    .filter(Boolean)
+    .flatMap((x) => x.ranges_now.map((r) =>
+      "<div class='small'>実測(build 時・rev " + esc(OVERLAY.generated_from_rev.slice(0, 7)) + "): 注釈対 " +
+      esc(r.id) + " が " + esc(x.path) + " L" + r.begin_line + "–L" + r.end_line +
+      "・指紋 " + esc(r.fingerprint.slice(0, 19)) + "…" +
+      (x.rev_state === "advanced" ? "(記録時 rev から前進)" : "(記録時 rev と同一)") + "</div>"));
+  if (!rows.length) return "";
+  return "<div class='small' style='margin-top:.3rem'><b>実測 overlay</b> — 出所: " + esc(OVERLAY.source) + "(" + esc(OVERLAY.generated_at) + ")</div>" + rows.join("");
 }
 
 // 詳細パネル — 12 節の固定順(所有者指示 §4)
@@ -179,6 +202,7 @@ function detailPanel(id) {
     <h3>12. Code / Test / Evidence(実現と証拠)</h3>
     \${e.realization ? '<p class="small">対象外: ' + esc(e.realization.reason) + "</p>" : ""}
     \${realizedLinks ? "<ul>" + realizedLinks + "</ul>" : ""}
+    \${overlayRows(e)}
     \${evidenceLinks.length ? evidenceLinks.map((x) => evRows([x.ev])).join("") : ""}
     \${!e.realization && !realizedLinks && !evidenceLinks.length ? none : ""}\`;
 }

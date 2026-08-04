@@ -1,0 +1,54 @@
+{
+  "schema": "system-map/overlay/0.1",
+  "target": "doctrine-and-lens",
+  "source": "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した標準出力",
+  "generated_at": "2026-08-04",
+  "generated_from_rev": "0e8bf603c088d72cc4a2644aa53a619241c9e1fa",
+  "entries": [
+    {
+      "anchor_id": "a-consequence-code",
+      "path": "src/model/consequence.ts",
+      "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "current_rev": "0e8bf603c088d72cc4a2644aa53a619241c9e1fa",
+      "rev_state": "advanced",
+      "ranges_now": [
+        {
+          "id": "SPEC-006",
+          "begin_line": 1,
+          "end_line": 839,
+          "fingerprint": "sha256:9460ab09ad8cacd9893cf49bf61b7b240a71767727b5f2e6c6a663bd09606ca0"
+        }
+      ]
+    },
+    {
+      "anchor_id": "a-bridge-code",
+      "path": "src/doctrine/trace.ts",
+      "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "current_rev": "0e8bf603c088d72cc4a2644aa53a619241c9e1fa",
+      "rev_state": "advanced",
+      "ranges_now": [
+        {
+          "id": "SPEC-004",
+          "begin_line": 1,
+          "end_line": 116,
+          "fingerprint": "sha256:0bbbaf62be7d0a2744bc96ad7c0545c490f061355cca2c9931d2c3cb4b911094"
+        }
+      ]
+    },
+    {
+      "anchor_id": "a-view-code",
+      "path": "src/model/view.ts",
+      "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "current_rev": "0e8bf603c088d72cc4a2644aa53a619241c9e1fa",
+      "rev_state": "advanced",
+      "ranges_now": [
+        {
+          "id": "SPEC-006",
+          "begin_line": 1,
+          "end_line": 408,
+          "fingerprint": "sha256:a6ca5647d046b777692e76cd548eafe02f4c36989d2a549bc670637ce33ef81d"
+        }
+      ]
+    }
+  ]
+}
