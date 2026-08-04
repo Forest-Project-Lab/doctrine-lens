@@ -10,6 +10,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { computeOpsRows, assertM14, checkNoRuntimeFetch } from "./gates.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
@@ -21,26 +22,10 @@ const models = [
 ];
 
 // ---- M-14 の機械判定(build 時) ----
-// UI の操作構造は決定的: 要素を選ぶ(1) → 契約を開く(2) → 証拠/anchor へ跳ぶ(3)。
-// 要素ごとに「コードまたは証拠」への最短操作数を数え、3 を超えたら build を落とす。
-const m14 = [];
-for (const m of models) {
-  for (const e of m.elements) {
-    const contracts = m.contracts.filter((c) => c.subject === e.id);
-    const anchors = (e.realized_by ?? []).length;
-    let ops = null;
-    if (contracts.some((c) => (c.evidence ?? []).length > 0)) ops = 3;      // 選ぶ→契約→証拠
-    else if (anchors > 0) ops = 2;                                          // 選ぶ→anchor
-    else if (contracts.length > 0) ops = 2;                                 // 選ぶ→契約(証拠なしはその旨を表示)
-    else ops = 2;                                                           // 選ぶ→出所(provenance は常に在る: スキーマ必須)
-    m14.push({ target: m.target, element: e.id, ops });
-  }
-}
-const m14max = Math.max(...m14.map((r) => r.ops));
-if (m14max > 3) {
-  console.error("M-14 FAIL: 3 操作を超える要素がある");
-  process.exit(1);
-}
+// 判定器は gates.mjs。発火することは test-gates.mjs の負の試験が確かめる
+// (所有者判断 2026-08-04:「M-13/M-14 の発火可能な負の試験」)。
+const m14 = computeOpsRows(models);
+const { max: m14max } = assertM14(m14, 3);
 
 const DATA = JSON.stringify(models);
 const M14 = JSON.stringify({ rows: m14, max: m14max, checked_at: "build 時" });
@@ -113,7 +98,7 @@ const html = `<!DOCTYPE html>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
-let ti = 0, view = "system", focusEl = null, drill = null, sysMode = "A";
+let ti = 0, view = "system", focusEl = null, drill = null;
 let ops = 0;
 const bump = () => { ops++; document.getElementById("ops").textContent = ops; };
 document.getElementById("opreset").onclick = () => { ops = 0; document.getElementById("ops").textContent = 0; };
@@ -151,6 +136,7 @@ function evRows(evs) {
 function detailPanel(id) {
   const e = el(id);
   const cs = M().contracts.filter((c) => c.subject === id);
+  const io = M().flows.filter((f) => f.from === id || f.to === id);
   return \`<div class="panel">
     <h2>詳細: \${esc(e.name)}\${prop(e)}</h2>
     <div class="q">この画面の一問: この要素の責務と契約は何で、その充足をどの根拠が支えているか(契約充足の評価)</div>
@@ -159,6 +145,12 @@ function detailPanel(id) {
     \${e.not_responsible_for ? "<p><b>担わないこと</b></p><ul>" + e.not_responsible_for.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" : ""}
     <p><b>所有者</b> \${esc(e.owner)}</p>
     \${provRows(e.provenance)}
+    <h3>接続(IN/OUT の詳細 — 図と同じ Flow 正本から)</h3>
+    \${io.length ? \`<table><tr><th>向き</th><th>相手</th><th>何を(種類)</th><th>成立条件</th></tr>
+      \${io.map((f) => {
+        const isOut = f.from === id;
+        return \`<tr><td>\${isOut ? "OUT →" : "← IN"}\${f.feedback_for ? " ↩" : ""}</td><td>\${esc(el(isOut ? f.to : f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td class="small">\${esc(f.condition)}</td></tr>\`;
+      }).join("")}</table>\` : '<p class="small">この要素に結ばれた流れは記録されていない。</p>'}
     <h3>契約(\${cs.length})</h3>
     \${cs.length ? cs.map((c) => \`
       <details><summary>\${stBadge(c.verification_status)} \${esc(c.guarantee)}\${prop(c)}</summary>
@@ -179,22 +171,7 @@ function scopeFlows(tops) {
   return M().flows.filter((f) => ids.has(f.from) && ids.has(f.to));
 }
 
-function viewSystemA(tops, flows) {
-  return \`<div class="boxes">\${tops.map((e) => \`
-      <div class="box \${e.kind === "external_system" ? "ext" : ""}" data-el="\${e.id}">
-        <h3>\${esc(e.name)}</h3>
-        <div class="kind">\${esc(e.kind)}\${prop(e)}</div>
-        <div class="purpose">\${esc(e.purpose)}</div>
-        <div class="owner">所有: \${esc(e.owner)}</div>
-        \${M().elements.some((c) => c.parent === e.id) ? '<button class="small" data-drill="' + e.id + '">内部を見る</button>' : ""}
-      </div>\`).join("")}</div>
-    <h3>やり取り(全て動詞つき — 無名の矢印は無い)</h3>
-    <table><tr><th>から</th><th>何を(種類)</th><th>へ</th><th>成立条件</th></tr>
-      \${flows.map((f) => \`<tr><td>\${esc(el(f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})\${f.feedback_for ? " ↩ feedback" : ""}</td><td>\${esc(el(f.to).name)}</td><td class="small">\${esc(f.condition)}</td></tr>\`).join("")}
-    </table>\`;
-}
-
-// 案B: 中小粒度の構成図。配置は意味から導く — 層 = フィードバックを除く Flow の最長距離。
+// 構成図(主画面。所有者判断 2026-08-04 で採用)。配置は意味から導く — 層 = フィードバックを除く Flow の最長距離。
 // 辺は正本の Flow のみ。無名の辺・意味の無い軸を作らない。
 function viewSystemB(tops, flows) {
   const ids = tops.map((e) => e.id);
@@ -304,17 +281,11 @@ function viewSystem() {
   const crumb = drill
     ? \`<div class="crumb"><a id="up">← 全体(\${esc(M().target)})</a> › \${esc(el(drill).name)} の内部</div>\`
     : "";
-  const toggle = \`<div class="small" style="border:1px dashed #999; padding:.3rem .6rem; margin-bottom:.6rem">
-    比較実験(所有者指示 2026-08-04): 同一データ・同一問いを
-    <button data-mode="A" \${sysMode === "A" ? "disabled" : ""}>案A(表)</button>
-    <button data-mode="B" \${sysMode === "B" ? "disabled" : ""}>案B(図)</button>
-    で表示している。最終採用は A/B 比較と H 層検証の証拠で決める(未決)。
-  </div>\`;
   return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
-    \${crumb}\${toggle}
-    \${sysMode === "A" ? viewSystemA(tops, flows) : viewSystemB(tops, flows)}
+    \${crumb}
+    \${viewSystemB(tops, flows)}
     \${flows.length === 0 ? '<p class="small">この階層に流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
-    \${focusEl ? detailPanel(focusEl) : '<p class="small">箱を選ぶと詳細(契約充足の評価)が開く。</p>'}\`;
+    \${focusEl ? detailPanel(focusEl) : '<p class="small">箱を選ぶと詳細(契約充足の評価と IN/OUT の詳細)が開く。</p>'}\`;
 }
 
 function viewScenario() {
@@ -356,8 +327,8 @@ function viewImpact() {
 
 function viewInspect() {
   return \`<div class="q">この画面の一問: M 層のうちプロトタイプが受け持つ検査は通っているか</div>
-    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — データは build 時に固定 JSON を同梱し、fetch/XHR を書いていない。<b>PASS(構造による)</b></p>
-    <p><b>M-14</b>(要素→コードまたは証拠が \${3} 操作以内): build 時に全要素の最短操作数を数え、超過があれば build が落ちる。最大 = \${M14.max} 操作。<b>PASS</b></p>
+    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端で生成物を走査し、fetch/XHR が在れば build が落ちる。<b>発火することは負の試験(test-gates.mjs)が確認済み。</b></p>
+    <p><b>M-14</b>(要素→コードまたは証拠が \${3} 操作以内): build 時に全要素の最短操作数を数え、超過で build が落ちる。最大 = \${M14.max} 操作。<b>発火することは負の試験(test-gates.mjs)が確認済み。</b></p>
     <table><tr><th>対象</th><th>要素</th><th>最短操作数</th></tr>
       \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td>\${r.ops}</td></tr>\`).join("")}
     </table>
@@ -374,9 +345,6 @@ function render() {
   document.querySelectorAll("[data-drill]").forEach((b) => b.onclick = (ev) => {
     ev.stopPropagation(); drill = b.dataset.drill; focusEl = null; bump(); render();
   });
-  document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => {
-    sysMode = b.dataset.mode; bump(); render();
-  });
   const up = document.getElementById("up");
   if (up) up.onclick = () => { drill = null; focusEl = null; bump(); render(); };
 }
@@ -386,5 +354,11 @@ render();
 </html>
 `;
 
+// ---- M-13 の機械判定(build 終端) ----
+if (!checkNoRuntimeFetch(html)) {
+  console.error("M-13 FAIL: 生成物に実行時の外部読み取り(fetch/XHR)が在る");
+  process.exit(1);
+}
+
 writeFileSync(join(here, "index.html"), html);
-console.log("index.html を生成した。M-14 最大操作数:", m14max);
+console.log("index.html を生成した。M-14 最大操作数:", m14max, "/ M-13: 外部読み取りなし");
