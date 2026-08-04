@@ -40,18 +40,33 @@ for (const r of rows.filter((r) => r.status === "reachable")) {
     await p.locator(`[data-drill="${e.parent}"]`).click(); clicks++;   // 降りる
   }
   await p.locator(`svg g[data-el="${e.id}"]`).click(); clicks++;        // 選ぶ
-  const link = p.locator("#detail h3:has-text('12.') ~ ul a, #detail ul a").first();
-  const visible = await link.isVisible().catch(() => false);
-  if (!visible) { report(false, `${r.target}/${r.element}`, "12 節にリンクが見えない"); continue; }
-  const href = await link.getAttribute("href");
+  // 計算が挙げた全到達先が 12 節に見えており、一つを実際に開き、全てが HTTP で到達成功すること
+  const wantUrls = r.links.map((l) => l.url);
+  const seenHrefs = await p.locator("#detail a").evaluateAll((as) => as.map((a) => a.href));
+  const missing = wantUrls.filter((u) => !seenHrefs.includes(u));
+  if (missing.length) { report(false, `${r.target}/${r.element}`, "12 節に無いリンク: " + missing[0]); continue; }
+  const href = wantUrls[0];
+  const link = p.locator(`#detail a[href="${href}"]`).first();
   const [popup] = await Promise.all([ctx.waitForEvent("page"), link.click()]);
   clicks++;                                                             // 開く
   const opened = popup.url();
   await popup.close();
+  let reachBad = null;
+  for (const u of wantUrls) {
+    // 到達成功の検査(開いただけを成功と呼ばない)。429 は「存在するが抑流」なので一度待って再試行し、
+    // それでも 429 なら到達扱い(存在の否定ではない)。404/5xx は失敗。
+    let res = await ctx.request.get(u).catch(() => null);
+    if (res && res.status() === 429) { await new Promise((r) => setTimeout(r, 2500)); res = await ctx.request.get(u).catch(() => null); }
+    const st = res ? res.status() : null;
+    const ok = st !== null && (st < 400 || st === 429);
+    if (!ok) { reachBad = `${u} → ${st ?? "接続不能"}`; break; }
+    await new Promise((r) => setTimeout(r, 300));
+  }
   const okOpen = opened === href && /^https?:\/\//.test(opened);
   const okCount = clicks === r.ops && clicks <= 3;
-  report(okOpen && okCount, `${r.target}/${r.element}`,
-    `実操作 ${clicks} / 計算 ${r.ops}${okOpen ? "" : " / 開いた先が不一致: " + opened}`);
+  report(okOpen && okCount && !reachBad, `${r.target}/${r.element}`,
+    `実操作 ${clicks} / 計算 ${r.ops} / 到達先 ${wantUrls.length} 件` +
+    (okOpen ? "" : " / 開いた先が不一致: " + opened) + (reachBad ? " / 到達失敗: " + reachBad : ""));
 }
 
 // 対象外の要素は 12 節に「対象外」と理由が出ることを確認(代表 3 件)

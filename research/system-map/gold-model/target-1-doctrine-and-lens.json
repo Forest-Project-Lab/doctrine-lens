@@ -66,7 +66,8 @@
       ],
       "review_status": "proposed",
       "realized_by": [
-        "a-doctrine-repo"
+        "a-audit-py",
+        "a-traceindex-py"
       ]
     },
     {
@@ -138,7 +139,7 @@
       ],
       "review_status": "proposed",
       "realized_by": [
-        "a-doctrine-plugin"
+        "a-doc-author-skill"
       ]
     },
     {
@@ -175,7 +176,7 @@
       ],
       "review_status": "proposed",
       "realized_by": [
-        "a-lens-repo"
+        "a-lens-entry"
       ]
     },
     {
@@ -506,7 +507,7 @@
       "owner": "doctrine-lens-maintainer",
       "evidence": [
         {
-          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27 (CI checks)",
+          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27",
           "environment": "GitHub Actions(check.yml)",
           "version": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
           "exit_status": "pass",
@@ -538,7 +539,7 @@
       "owner": "doctrine-maintainers",
       "evidence": [
         {
-          "ref": "https://github.com/Forest-Project-Lab/doctrine/pull/206 (本文: 全件監査 0/0/0・試験 1201 件 OK)",
+          "ref": "https://github.com/Forest-Project-Lab/doctrine/pull/206",
           "environment": "doctrine 側 CI と変更フロー",
           "version": "9ae87e8",
           "exit_status": "pass",
@@ -801,6 +802,24 @@
       "observed_at": "2026-08-04",
       "authority": "gold_model",
       "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd/plugin"
+    },
+    {
+      "id": "a-lens-entry",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/extension.ts(拡張機能の入口)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/extension.ts"
+    },
+    {
+      "id": "a-doc-author-skill",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/skills/doc-author/SKILL.md(Skill 定義 = LLM が実行する指示プログラム)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/skills/doc-author/SKILL.md"
     }
   ],
   "system": {

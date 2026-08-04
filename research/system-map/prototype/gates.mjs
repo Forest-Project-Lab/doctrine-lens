@@ -20,6 +20,11 @@ export const UI_STRUCTURE = {
 
 const isUrl = (s) => /^https?:\/\/\S+$/.test(s ?? "");
 
+/** M-14 が実現先として認めるアンカー種別。document・artifact・external_doc は数えない
+ *  (それらは 11 節の根拠・参照であり、Code/Test/Evidence への到達ではない)。 */
+export const REALIZATION_KINDS = ["code_range", "test"];
+const EVIDENCE_KEYS = ["ref", "environment", "version", "exit_status", "observed_at"];
+
 /** 要素の「実現・証拠」到達先を解決する。 */
 export function resolveDestinations(model, e) {
   if (e.realization && e.realization.status === "not_applicable") {
@@ -30,12 +35,19 @@ export function resolveDestinations(model, e) {
   for (const aid of e.realized_by ?? []) {
     const a = (model.anchors ?? []).find((x) => x.id === aid);
     if (!a) { broken.push(`anchor ${aid} が実在しない`); continue; }
+    if (!REALIZATION_KINDS.includes(a.target_kind)) {
+      broken.push(`anchor ${aid} の種別 ${a.target_kind} は実現先にならない(認めるのは ${REALIZATION_KINDS.join("/")})`);
+      continue;
+    }
     if (!isUrl(a.url)) { broken.push(`anchor ${aid} に開ける URL が無い`); continue; }
-    links.push(a.url);
+    links.push({ url: a.url, kind: a.target_kind });
   }
   for (const c of model.contracts.filter((c) => c.subject === e.id)) {
     for (const ev of c.evidence ?? []) {
-      if (isUrl(ev.ref)) links.push(ev.ref);
+      if (!isUrl(ev.ref)) continue;
+      const missing = EVIDENCE_KEYS.filter((k) => !ev[k]);
+      if (missing.length) { broken.push(`証拠 ${ev.ref} に必須属性 ${missing.join("/")} が無い`); continue; }
+      links.push({ url: ev.ref, kind: "evidence" });
     }
   }
   if (broken.length) return { kind: "broken", detail: broken.join(" / ") };
@@ -54,7 +66,11 @@ export function computeOpsRows(models, ui = UI_STRUCTURE) {
       else if (d.kind === "unregistered") rows.push({ target: m.target, element: e.id, status: "unregistered", ops: null, note: "実現・証拠が未登録(provenance は代用にならない)" });
       else {
         const drill = (e.parent ?? null) !== null ? ui.drillOps : 0; // 実操作: 子は先に内部へ降りる
-        rows.push({ target: m.target, element: e.id, status: "reachable", ops: drill + ui.selectOps + ui.extraExpands + ui.linkClickOps, note: d.links[0] });
+        rows.push({
+          target: m.target, element: e.id, status: "reachable",
+          ops: drill + ui.selectOps + ui.extraExpands + ui.linkClickOps,
+          links: d.links, note: d.links.map((l) => l.kind).join("+"),
+        });
       }
     }
   }

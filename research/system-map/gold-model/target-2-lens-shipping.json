@@ -59,9 +59,10 @@
         }
       ],
       "review_status": "proposed",
-      "realized_by": [
-        "a-change-002"
-      ]
+      "realization": {
+        "status": "not_applicable",
+        "reason": "運用手順の実現先は手順文書(CHANGE-002)であり、M-14 の到達先種別(Code/Test/Evidence)に該当しない。手順文書へは 11 節の出所から辿れる。"
+      }
     },
     {
       "id": "packager",
@@ -320,7 +321,7 @@
       "owner": "doctrine-lens-maintainer",
       "evidence": [
         {
-          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27 (check pass 1m13s)",
+          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27",
           "environment": "GitHub Actions(check.yml)",
           "version": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
           "exit_status": "pass",

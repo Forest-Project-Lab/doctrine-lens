@@ -50,7 +50,7 @@ t("負: 展開を 1 段挟む画面遷移にすると子が 4 操作になり落
 t("負: 境界 — 親のみの最小モデルで展開 1 段(計 3)は通り、2 段(計 4)は落ちる", () => {
   const mini = [{
     target: "mini", elements: [{ id: "top", parent: null, realized_by: ["a"] }],
-    contracts: [], anchors: [{ id: "a", url: "https://example.com/x" }],
+    contracts: [], anchors: [{ id: "a", target_kind: "code_range", url: "https://example.com/x" }],
   }];
   assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 1 }), 3);
   expectThrow(() => assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 2 }), 3), "境界");
@@ -68,6 +68,27 @@ t("負: anchor から URL を消すと「壊れた参照」で落ちる", () => 
   const broken = clone(realModels);
   delete broken[0].anchors.find((a) => a.id === "a-consequence-code").url;
   expectThrow(() => assertM14(computeOpsRows(broken), 3), "URL 無し");
+});
+
+t("負: document アンカーを実現先に渡すと種別で落ちる(文書は Code/Test/Evidence でない)", () => {
+  const broken = clone(realModels);
+  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-req000"]; // document
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "document 種別");
+  if (!/実現先にならない/.test(msg)) throw new Error("落ちた理由が種別でない: " + msg);
+});
+
+t("負: artifact アンカー(リポジトリ tree)を実現先に渡すと種別で落ちる", () => {
+  const broken = clone(realModels);
+  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-lens-repo"]; // artifact
+  expectThrow(() => assertM14(computeOpsRows(broken), 3), "artifact 種別");
+});
+
+t("負: 必須属性の欠けた証拠は「壊れ」で落ちる(NA でない要素の契約で検証)", () => {
+  const broken = clone(realModels);
+  const c = broken[0].contracts.find((c) => c.id === "c-lens-honest"); // subject=lens(到達可能要素)
+  delete c.evidence[0].environment; // 証跡最小形を欠く
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "証拠属性");
+  if (!/必須属性/.test(msg)) throw new Error("落ちた理由が証拠属性でない: " + msg);
 });
 
 t("負: 実現も明示 NA も無い要素(provenance だけ)は「未登録」で落ちる", () => {
