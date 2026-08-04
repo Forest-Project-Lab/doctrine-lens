@@ -172,6 +172,32 @@ for (const file of files) {
     if (ok) pass("M-12");
   }
 
+  // M-15 not_applicable は理由(+出所)必須(doctrine S1 → 登載)
+  {
+    let ok = true;
+    for (const c of contracts.filter((c) => c.verification_status === "not_applicable")) {
+      if (!c.na_reason) { fail("M-15", `${c.id} が not_applicable なのに na_reason が無い`); ok = false; }
+      if (!(c.provenance ?? []).some((p) => p.verdict === "present")) {
+        fail("M-15", `${c.id} の理由に present の出所が無い`); ok = false;
+      }
+    }
+    if (ok) pass("M-15");
+  }
+
+  // M-16 証跡最小形は五項 — fingerprint、または version の SHA が指紋を兼ねる(doctrine S2 → 登載)
+  {
+    const shaLike = /\b[0-9a-f]{7,40}\b/;
+    let ok = true;
+    for (const c of contracts.filter((c) => c.verification_status === "verified")) {
+      for (const ev of c.evidence ?? []) {
+        if (!ev.fingerprint && !shaLike.test(ev.version ?? "")) {
+          fail("M-16", `${c.id} の evidence に指紋が無く、version も SHA でない(黙った省略)`); ok = false;
+        }
+      }
+    }
+    if (ok) pass("M-16", "等価規則: version の commit SHA は内容の指紋を兼ねる");
+  }
+
   // モデル単体では判定できないもの(合格ではない)
   skip("M-13", "宣言済み CLI 限定は道具側の検査(Phase 1 のプロトタイプで判定)");
   skip("M-14", "3 操作以内の到達はプロトタイプの検査(Phase 1 で判定)");

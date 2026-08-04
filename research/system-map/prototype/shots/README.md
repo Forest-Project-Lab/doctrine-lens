@@ -1,6 +1,6 @@
 # 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit `779f89e`(experiment/system-map)・2026-08-04。
+撮影時点: commit `a4326bd`(experiment/system-map)・2026-08-04。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 
 - `01-system-t1.png` — 対象1(Doctrine+Lens)システム画面 — 境界の箱とやり取りの表

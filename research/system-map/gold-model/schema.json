@@ -23,7 +23,7 @@
       "description": "出所。verdict=silent は「確認したが記載が無かった」の負の出所(v3.2-5 補強1)。未調査は出所そのものを書かない — 空白と沈黙を混同しない。",
       "required": ["source", "checked_at", "verdict"],
       "properties": {
-        "source": { "type": "string", "description": "URL またはリポジトリ内パス" },
+        "source": { "type": "string", "description": "URL、またはリポジトリ接頭付きパス(`doctrine:` / `doctrine-lens:`)。両リポジトリに似た名の文書が在るため、パス単独を許さない(S4)" },
         "locator": { "type": "string", "description": "節・見出し・行など、確認した箇所" },
         "checked_at": { "type": "string", "format": "date" },
         "verdict": { "enum": ["present", "silent"] }
@@ -84,8 +84,10 @@
     },
     "Contract": {
       "type": "object",
+      "$comment": "条件必須(M-15): verification_status=not_applicable のとき na_reason(+出所)が必須。理由は状態の構成要件である(v3.2-9「適用しない理由を所有者が明示した」)。",
       "required": ["id", "subject", "assumptions", "guarantee", "response_measure", "verification_status", "owner", "provenance", "review_status"],
       "properties": {
+        "na_reason": { "type": "string", "description": "not_applicable のとき必須。適用しない理由(出所は provenance に置く)" },
         "id": { "type": "string" },
         "subject": { "type": "string", "description": "対象の SystemElement または Flow の id" },
         "assumptions": { "type": "array", "items": { "type": "string" }, "minItems": 1, "description": "無条件の保証文を許さない(§6.1)" },
@@ -106,7 +108,8 @@
     },
     "Evidence": {
       "type": "object",
-      "description": "証跡最小形(v3.2-9): 指紋・実行環境・版・終了状態・時刻。",
+      "description": "証跡最小形(v3.2-9)は五項: 指紋・実行環境・版・終了状態・時刻。",
+      "$comment": "等価規則(M-16): git の commit SHA は内容の指紋を兼ねる。version に SHA(7〜40 桁の16進)を置けば fingerprint は省略可。どちらも無いものは verified の証跡にならない。黙った省略を許さない。",
       "required": ["ref", "environment", "version", "exit_status", "observed_at"],
       "properties": {
         "ref": { "type": "string", "description": "証拠への到達可能な参照(URL・パス・anchor id)" },

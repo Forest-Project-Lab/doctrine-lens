@@ -163,6 +163,7 @@ function detailPanel(id) {
       <details><summary>\${stBadge(c.verification_status)} \${esc(c.guarantee)}\${prop(c)}</summary>
         <p class="small">前提: \${c.assumptions.map(esc).join(" / ")}</p>
         <p class="small">測り方: \${esc(c.response_measure)}</p>
+        \${c.na_reason ? '<p class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</p>" : ""}
         \${c.failure_effect ? '<p class="small">破られたら: ' + esc(c.failure_effect) + "</p>" : ""}
         \${c.verification_method ? '<p class="small">検証方法: ' + esc(c.verification_method) + "</p>" : ""}
         \${evRows(c.evidence)}
@@ -219,7 +220,7 @@ function viewAssurance() {
     \${cs.map((c) => \`<tr>
       <td>\${stBadge(c.verification_status)}</td>
       <td>\${esc(el(c.subject).name)}</td>
-      <td>\${esc(c.guarantee)}\${prop(c)}\${c.failure_effect ? '<div class="small">破られたら: ' + esc(c.failure_effect) + "</div>" : ""}</td>
+      <td>\${esc(c.guarantee)}\${prop(c)}\${c.na_reason ? '<div class="small"><b>適用しない理由</b>: ' + esc(c.na_reason) + "</div>" : ""}\${c.failure_effect ? '<div class="small">破られたら: ' + esc(c.failure_effect) + "</div>" : ""}</td>
       <td class="small">\${c.assumptions.map(esc).join("<br>")}</td>
       <td>\${evRows(c.evidence)}\${provRows(c.provenance)}</td>
     </tr>\`).join("")}</table>\`;
