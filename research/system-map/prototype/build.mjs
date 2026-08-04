@@ -368,10 +368,10 @@ function viewImpact() {
 
 function viewInspect() {
   return \`<div class="q">この画面の一問: M 層のうちプロトタイプが受け持つ検査は通っているか</div>
-    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端で生成物を走査し、fetch/XHR が在れば build が落ちる。発火することは負の試験(test-gates.mjs)が確認済み。</p>
-    <p><b>M-14</b>(要素→コードまたは証拠が 3 操作以内): build 時に全要素の最短操作数を数え、超過で build が落ちる。最大 = \${M14.max} 操作。発火することは負の試験が確認済み。</p>
-    <table><tr><th>対象</th><th>要素</th><th>最短操作数</th></tr>
-      \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td>\${r.ops}</td></tr>\`).join("")}
+    <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端の生成物走査に加え、実ブラウザで全操作の通信を記録する検査(test-m13-browser.mjs)がある。外部資源を仕込んだ負例が落ちることも同検査が確かめる。</p>
+    <p><b>M-14</b>(要素→実在する Code/Test/Evidence へ 3 操作以内): 到達先は開ける URL を持つアンカーに限る(出所は代用にならない)。壊れた参照・未登録は build が落ちる。実現が適用されない要素は明示の対象外のみ。最大 = \${M14.max} 操作。負の試験(4 操作・リンク切れ・未登録)は本番と同じ計算経路で発火を確認済み。</p>
+    <table><tr><th>対象</th><th>要素</th><th>判定</th><th>操作数 / 備考</th></tr>
+      \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td>\${r.status === "reachable" ? "到達可" : r.status === "not_applicable" ? "対象外" : esc(r.status)}</td><td class="small">\${r.ops ?? ""}\${r.status === "not_applicable" ? esc(r.note) : ""}</td></tr>\`).join("")}
     </table>
     <p class="small">操作数の定義は台帳 v3.2-16。右下の計数器は H 層試験(O 層観測)用。</p>\`;
 }

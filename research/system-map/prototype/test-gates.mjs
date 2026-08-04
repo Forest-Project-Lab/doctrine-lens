@@ -1,58 +1,91 @@
-// M-13 / M-14 の「負の試験」— 門が実際に発火することを確かめる。
+// M-14 の正・負の試験 — 門が実際に発火することを、本番と同じ計算経路で確かめる。
 //
 //   node test-gates.mjs
 //
-// 正の入力(現物)が通ることと、負の入力(仕込んだ違反)が確実に落ちることの
-// 両方を検べる。負の側が落ちなければ、この門は飾りである。
+// 負の試験は「実際のモデル、または画面遷移の構造を変えたもの」を computeOpsRows へ
+// 与えて落とす(所有者判定 §6: 判定器へ {ops:4} を直接渡す形を禁じる)。
+// 3 操作・4 操作・リンク切れ・明示的な対象外を別々に試験する。
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { computeOpsRows, assertM14, checkNoRuntimeFetch } from "./gates.mjs";
+import { computeOpsRows, assertM14, checkNoRuntimeFetch, UI_STRUCTURE } from "./gates.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
+const realModels = ["target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"].map(gm);
+const clone = (x) => JSON.parse(JSON.stringify(x));
+
 let failures = 0;
 const t = (name, fn) => {
   try { fn(); console.log("ok   " + name); }
-  catch (e) { failures++; console.log("NG   " + name + " — " + e.message); }
+  catch (e) { failures++; console.log("NG   " + name + " — " + e.message.split("\n")[0]); }
 };
 const expectThrow = (fn, name) => {
-  let threw = false;
-  try { fn(); } catch { threw = true; }
-  if (!threw) throw new Error(name + " が発火しなかった(負の入力を通した)");
+  let msg = null;
+  try { fn(); } catch (e) { msg = e.message; }
+  if (msg === null) throw new Error(name + " が発火しなかった(負の入力を通した)");
+  return msg;
 };
 
-// ---- M-14 ----
-t("M-14 正: 現物の四対象は 3 操作以内で通る", () => {
-  const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
-  const models = ["target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"].map(gm);
-  const { max } = assertM14(computeOpsRows(models), 3);
+// ---- 正: 現物 ----
+t("正: 現物の四対象は実 UI 構造(選ぶ+開く=2 操作)で全て到達・NA・超過なし", () => {
+  const { max, reachable, na } = assertM14(computeOpsRows(realModels), 3);
   if (max > 3) throw new Error("max=" + max);
+  if (reachable === 0) throw new Error("到達可能な要素が零(配線が死んでいる)");
+  if (na === 0) throw new Error("明示 NA が零(人・外部系の NA が消えた)");
 });
 
-t("M-14 負: 4 操作の要素を仕込むと落ちる", () => {
-  expectThrow(() => assertM14([{ target: "synthetic", element: "x", ops: 4 }], 3), "M-14");
+// ---- 負: 画面遷移を深くする(同じ計算経路) ----
+t("負: 展開を 2 段挟む画面遷移(計 4 操作)にすると落ちる", () => {
+  const deepUi = { ...UI_STRUCTURE, extraExpands: 2 };
+  const msg = expectThrow(() => assertM14(computeOpsRows(realModels, deepUi), 3), "M-14(4 操作)");
+  if (!/操作超過/.test(msg)) throw new Error("落ちた理由が操作超過でない: " + msg);
 });
 
-t("M-14 負: 限度をまたぐ境界(3 は通り 4 は落ちる)", () => {
-  assertM14([{ target: "s", element: "a", ops: 3 }], 3);
-  expectThrow(() => assertM14([{ target: "s", element: "a", ops: 4 }], 3), "M-14 境界");
+t("負: 境界 — 展開 1 段(計 3 操作)は通り、2 段(4 操作)は落ちる", () => {
+  assertM14(computeOpsRows(realModels, { ...UI_STRUCTURE, extraExpands: 1 }), 3);
+  expectThrow(() => assertM14(computeOpsRows(realModels, { ...UI_STRUCTURE, extraExpands: 2 }), 3), "境界");
 });
 
-// ---- M-13 ----
-t("M-13 正: 現物の index.html に実行時外部読み取りが無い", () => {
+// ---- 負: モデルを実際に壊す(同じ計算経路) ----
+t("負: realized_by が実在しない anchor を指すと「壊れた参照」で落ちる", () => {
+  const broken = clone(realModels);
+  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["no-such-anchor"];
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "リンク切れ");
+  if (!/壊れた参照/.test(msg)) throw new Error("落ちた理由が壊れた参照でない: " + msg);
+});
+
+t("負: anchor から URL を消すと「壊れた参照」で落ちる", () => {
+  const broken = clone(realModels);
+  delete broken[0].anchors.find((a) => a.id === "a-consequence-code").url;
+  expectThrow(() => assertM14(computeOpsRows(broken), 3), "URL 無し");
+});
+
+t("負: 実現も明示 NA も無い要素(provenance だけ)は「未登録」で落ちる", () => {
+  const broken = clone(realModels);
+  const e = broken[0].elements.find((e) => e.id === "maintainer");
+  delete e.realization; // provenance は残る — 代用にならないことの証明
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "未登録");
+  if (!/未登録/.test(msg)) throw new Error("落ちた理由が未登録でない: " + msg);
+});
+
+// ---- 正: 明示 NA の扱い ----
+t("正: 明示 NA(理由つき)は許され、到達判定から除外される", () => {
+  const rows = computeOpsRows(realModels);
+  const nas = rows.filter((r) => r.status === "not_applicable");
+  if (!nas.length) throw new Error("NA 行が無い");
+  if (!nas.every((r) => r.note && r.note.length > 0)) throw new Error("理由の無い NA が居る");
+});
+
+// ---- M-13(静的側)の発火 ----
+t("M-13 静的・正: 現物の index.html に fetch/XHR の綴りが無い", () => {
   const html = readFileSync(join(here, "index.html"), "utf8");
   if (!checkNoRuntimeFetch(html)) throw new Error("現物に fetch/XHR が在る");
 });
-
-t("M-13 負: fetch を仕込むと検出される", () => {
-  const tampered = "<script>fetch('https://example.com')</script>";
-  if (checkNoRuntimeFetch(tampered)) throw new Error("fetch( を見逃した");
+t("M-13 静的・負: fetch( / XMLHttpRequest を仕込むと検出される", () => {
+  if (checkNoRuntimeFetch("<script>fetch('https://x')</script>")) throw new Error("fetch を見逃した");
+  if (checkNoRuntimeFetch("<script>new XMLHttpRequest()</script>")) throw new Error("XHR を見逃した");
 });
 
-t("M-13 負: XMLHttpRequest を仕込むと検出される", () => {
-  const tampered = "<script>new XMLHttpRequest()</script>";
-  if (checkNoRuntimeFetch(tampered)) throw new Error("XMLHttpRequest を見逃した");
-});
-
-console.log(failures === 0 ? "\n全件通過(正 2・負 4 が期待どおり)" : `\n${failures} 件の失敗`);
+console.log(failures === 0 ? "\n全件通過" : `\n${failures} 件の失敗`);
 process.exit(failures === 0 ? 0 : 1);
