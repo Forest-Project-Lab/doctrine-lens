@@ -1,6 +1,6 @@
 # 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit `cd5dc40`(experiment/system-map)・2026-08-04。
+撮影時点: commit `03d4a8e`(experiment/system-map)・2026-08-04。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 
 - `01-system-t1.png` — 対象1(Doctrine+Lens)システム画面 — 境界の箱とやり取りの表
@@ -14,3 +14,6 @@
 - `09-assurance-t3.png` — 対象3 保証画面 — 順序保証の unknown(負の出所2件)
 - `10-impact.png` — 変更影響画面 — 答えの正本は既存 Lens と明記(混ぜない)
 - `11-inspect.png` — 検査画面 — M-13/M-14 の判定と全要素の操作数表
+- `12-system-b-t1.png` — 案B: 対象1 構成図 — 層は Flow 方向から導出、全辺ラベル、状態章つきの箱
+- `13-system-b-t2.png` — 案B: 対象2 構成図(人・運用・外部系)
+- `14-system-b-t3.png` — 案B: 対象3 構成図(Celery)
