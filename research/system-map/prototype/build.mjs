@@ -17,6 +17,7 @@ const models = [
   gm("target-1-doctrine-and-lens.json"),
   gm("target-2-lens-shipping.json"),
   gm("target-3-celery.json"),
+  gm("fixture-rare-states.json"), // 架空。H 層 T6(希少状態の読み分け)専用
 ];
 
 // ---- M-14 の機械判定(build 時) ----

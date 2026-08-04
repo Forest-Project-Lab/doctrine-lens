@@ -70,6 +70,10 @@ await p.selectOption("#target", "1");
 await shot("13-system-b-t2", "案B: 対象2 構成図(人・運用・外部系)");
 await p.selectOption("#target", "2");
 await shot("14-system-b-t3", "案B: 対象3 構成図(Celery)");
+// 希少状態 fixture(架空)
+await p.selectOption("#target", "3");
+await p.locator('nav button[data-v="assurance"]').click();
+await shot("15-assurance-fixture", "fixture(架空): planned/failed/stale を含む保証画面 — H 層 T6 用");
 
 await b.close();
 
