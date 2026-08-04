@@ -368,6 +368,96 @@
         }
       ],
       "review_status": "proposed"
+    },
+    {
+      "id": "cf-bridge-invoke",
+      "from": "lens.bridge",
+      "to": "doctrine.graph",
+      "kind": "command",
+      "label": "宣言済み CLI を実行する",
+      "payload_or_action": "dep-graph / trace-index の起動(読み取り専用)",
+      "condition": "画面の更新が必要なとき(親の f-invoke に集約)",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-001-doctrine-bridge.md",
+          "locator": "全体",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-graph-facts",
+      "from": "doctrine.graph",
+      "to": "lens.bridge",
+      "kind": "data",
+      "label": "事実を返す",
+      "payload_or_action": "dep-graph/1・trace-index/1 の JSON",
+      "condition": "cf-bridge-invoke への応答(親の f-facts に集約)",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "データ契約・追跡索引の問い合わせ",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-bridge-model",
+      "from": "lens.bridge",
+      "to": "lens.model",
+      "kind": "data",
+      "label": "写した事実を渡す",
+      "payload_or_action": "節点・辺・所見・範囲(絞らず素通し)",
+      "condition": "取得の完了時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-004-trace-bridge.md",
+          "locator": "所見は絞らずに、そのまま呼び手へ渡す",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-model-view",
+      "from": "lens.model",
+      "to": "lens.view",
+      "kind": "data",
+      "label": "帰結の明細を渡す",
+      "payload_or_action": "順(波)・記号・要約・脚注",
+      "condition": "組み立ての完了時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "何が中核か(consequence.ts→view.ts)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-graph-resolve",
+      "from": "doctrine.graph",
+      "to": "doctrine.governance",
+      "kind": "data",
+      "label": "id の解決を返す(resolve)",
+      "payload_or_action": "{path, domain, type, status}",
+      "condition": "ガード・リンタ・監査が id からドメイン・型・位置づけを引くとき",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "データ契約(resolve の行)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
     }
   ],
   "contracts": [

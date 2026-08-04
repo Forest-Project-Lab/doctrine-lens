@@ -281,10 +281,20 @@ function viewSystem() {
   const crumb = drill
     ? \`<div class="crumb"><a id="up">← 全体(\${esc(M().target)})</a> › \${esc(el(drill).name)} の内部</div>\`
     : "";
+  const ids = new Set(tops.map((e) => e.id));
+  const crossFlows = drill
+    ? M().flows.filter((f) => ids.has(f.from) !== ids.has(f.to) && (ids.has(f.from) || ids.has(f.to)))
+    : [];
+  const crossTable = crossFlows.length
+    ? \`<h3>境界を越える流れ(親の外部 I/O へ集約される)</h3>
+      <table><tr><th>から</th><th>何を(種類)</th><th>へ</th><th>成立条件</th></tr>
+      \${crossFlows.map((f) => \`<tr><td>\${esc(el(f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td>\${esc(el(f.to).name)}</td><td class="small">\${esc(f.condition)}</td></tr>\`).join("")}</table>\`
+    : "";
   return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
     \${crumb}
     \${viewSystemB(tops, flows)}
-    \${flows.length === 0 ? '<p class="small">この階層に流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
+    \${flows.length === 0 ? '<p class="small">この階層の内側に閉じた流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
+    \${crossTable}
     \${focusEl ? detailPanel(focusEl) : '<p class="small">箱を選ぶと詳細(契約充足の評価と IN/OUT の詳細)が開く。</p>'}\`;
 }
 
