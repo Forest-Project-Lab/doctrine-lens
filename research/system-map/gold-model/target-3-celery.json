@@ -1,0 +1,300 @@
+{
+  "schema": "system-map/gold-model/0.1",
+  "target": "celery",
+  "$comment": "対象3: イベント駆動系(Celery)。出所は公開文書のみ(issue 204 の G-8 報告2件で取得済みの引用)。当方は Celery を運用しておらず、全契約は文書の主張の写し(claimed)か、文書の沈黙の記録(unknown)である。planned/failed/stale は自然に発生しなかった — これは Phase 0 の所見として decisions/ に記録する。全値 proposed。",
+
+  "elements": [
+    {
+      "id": "operator",
+      "name": "運用者",
+      "kind": "person",
+      "purpose": "ワーカーとブローカーを設定・監視する。acks_late や time limit の選択(=配送意味論の選択)を行う。",
+      "responsibilities": ["acks_late の採否(冪等性との引き換えの判断)", "time limit の設定", "失敗タスクの監視"],
+      "owner": "導入組織",
+      "parent": null,
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late(If your task is idempotent you can set the acks_late option)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "producer",
+      "name": "依頼側(アプリ)",
+      "kind": "component",
+      "purpose": "タスクの実行を依頼し、必要なら結果を読む。",
+      "responsibilities": ["タスクの投入", "結果・状態の参照"],
+      "owner": "導入組織",
+      "parent": null,
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "タスクの呼び出しと状態の参照", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "broker",
+      "name": "ブローカー",
+      "kind": "external_system",
+      "purpose": "メッセージを預かり、ワーカーへ渡す。ack が返るまでメッセージを保持する(タイミングは設定で変わる)。",
+      "responsibilities": ["メッセージの保持と配送", "ack の受領"],
+      "owner": "導入組織(RabbitMQ/Redis 等)",
+      "parent": null,
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acknowledge の記述(worker acknowledge the message)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "worker",
+      "name": "ワーカー",
+      "kind": "component",
+      "purpose": "メッセージを受けてタスクを実行し、状態と結果を書く。",
+      "responsibilities": ["タスクの実行", "ack のタイミングの遵守(既定: 実行直前/acks_late: 実行後)", "再試行の実施", "time limit の遵守"],
+      "owner": "導入組織",
+      "parent": null,
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late・Retrying", "checked_at": "2026-08-03", "verdict": "present" },
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/workers.html", "locator": "Time Limits", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "result-backend",
+      "name": "結果の置き場",
+      "kind": "external_system",
+      "purpose": "タスクの状態(FAILURE を含む)と結果・例外・traceback を保持する。",
+      "responsibilities": ["状態と結果の保持"],
+      "owner": "導入組織",
+      "parent": null,
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "States(FAILURE: Task execution resulted in failure / traceback contains the backtrace)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "flows": [
+    {
+      "id": "f-enqueue",
+      "from": "producer",
+      "to": "broker",
+      "kind": "command",
+      "label": "タスクを積む",
+      "payload_or_action": "タスクのメッセージ(名前・引数)",
+      "condition": "依頼時",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "タスクの呼び出し", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-deliver",
+      "from": "broker",
+      "to": "worker",
+      "kind": "event",
+      "label": "メッセージを渡す",
+      "payload_or_action": "タスクのメッセージ",
+      "condition": "ワーカーが受け取れるとき。ack が無いまま接続が切れた場合の再配は設定に依る",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late の帰結(may be executed multiple times should the worker crash)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-ack",
+      "from": "worker",
+      "to": "broker",
+      "kind": "event",
+      "label": "ack を返す",
+      "payload_or_action": "受領確認。既定は実行の直前、acks_late=True なら実行の後",
+      "condition": "メッセージ処理の節目(タイミングは設定が決める)",
+      "feedback_for": "f-deliver",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late(acknowledge the message after the task returns instead)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-retry",
+      "from": "worker",
+      "to": "broker",
+      "kind": "command",
+      "label": "再試行を積み直す",
+      "payload_or_action": "同じタスクの再実行(Task.retry / autoretry_for。retry_backoff で指数的に遅延)",
+      "condition": "回復可能な例外のとき。上限超過は MaxRetriesExceededError",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "Retrying(app.Task.retry() can be used to re-execute the task)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-write-state",
+      "from": "worker",
+      "to": "result-backend",
+      "kind": "data",
+      "label": "状態と結果を書く",
+      "payload_or_action": "SUCCESS/FAILURE 等の状態。FAILURE は例外と traceback を伴う",
+      "condition": "実行の終了時(成功・失敗とも)",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "States(FAILURE)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-read-result",
+      "from": "result-backend",
+      "to": "producer",
+      "kind": "data",
+      "label": "状態と結果を返す",
+      "payload_or_action": "タスクの状態・戻り値・例外情報",
+      "condition": "依頼側が参照したとき",
+      "feedback_for": "f-enqueue",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "States", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-configure",
+      "from": "operator",
+      "to": "worker",
+      "kind": "human_action",
+      "label": "意味論を設定する",
+      "payload_or_action": "acks_late・time limit(soft/hard)の設定",
+      "condition": "導入・変更のとき",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/workers.html", "locator": "Time Limits", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "contracts": [
+    {
+      "id": "c-delivery",
+      "subject": "worker",
+      "assumptions": ["acks_late=True を設定している", "タスクは冪等である(文書が条件として明示)"],
+      "guarantee": "ワーカーが実行中に落ちてもタスクは失われず、再実行される(at-least-once)。その代償として、同じタスクが複数回実行されうる。",
+      "response_measure": "定性的である(文書の主張の写し。当方の判定基準は未定義)",
+      "verification_status": "claimed",
+      "owner": "Celery(上流文書)",
+      "failure_effect": "既定(実行前 ack)ではクラッシュ時にタスクが失われうる。acks_late で非冪等なら二重の副作用。",
+      "verification_method": "無し(当方は Celery を運用しておらず、検証の計画も持たない — planned ではなく claimed)",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late(This means the task may be executed multiple times should the worker crash in the middle of execution.)", "checked_at": "2026-08-03", "verdict": "present" },
+        { "source": "https://docs.celeryq.dev/en/stable/faq.html", "locator": "acks_late would be used when you need the task to be executed again if the worker crashes mid-execution", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-order",
+      "subject": "broker",
+      "assumptions": ["定性的である(順序に関する前提を置ける文書記述が見つかっていない)"],
+      "guarantee": "(候補)タスクは積んだ順に実行される。",
+      "response_measure": "定性的である(判定基準を導ける出所が無い)",
+      "verification_status": "unknown",
+      "owner": "Celery(上流文書)",
+      "failure_effect": "順序に依存する処理が、根拠なく順序を仮定して壊れる。",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/faq.html", "locator": "全文(実行順序の保証の有無への言及なし)", "checked_at": "2026-08-03", "verdict": "silent" },
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "全文(同上)", "checked_at": "2026-08-03", "verdict": "silent" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-timeout",
+      "subject": "worker",
+      "assumptions": ["time limit が設定されている"],
+      "guarantee": "時間を超えたタスクは止まる — soft limit は片づけ用の例外を受け取れ、hard limit は捕捉不能で強制終了する。",
+      "response_measure": "定性的である(文書の主張の写し)",
+      "verification_status": "claimed",
+      "owner": "Celery(上流文書)",
+      "failure_effect": "無限走行のタスクがワーカーを塞ぐ(limit 未設定時)。",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/workers.html", "locator": "Time Limits(the hard timeout isn't catch-able and force terminates the task)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-retry-bounded",
+      "subject": "worker",
+      "assumptions": ["再試行の上限(max_retries)が設定されている"],
+      "guarantee": "再試行は上限で止まり、超過は MaxRetriesExceededError として失敗になる(無限再試行にならない)。",
+      "response_measure": "定性的である(文書の主張の写し)",
+      "verification_status": "claimed",
+      "owner": "Celery(上流文書)",
+      "failure_effect": "上限が無い・大きすぎると、失敗し続けるタスクが資源を占有する。",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "Retrying(MaxRetriesExceededError)", "checked_at": "2026-08-04", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "scenarios": [
+    {
+      "id": "s-async-success",
+      "goal": "依頼したタスクが一度実行され、結果が読める",
+      "trigger": "依頼側がタスクを投入する",
+      "preconditions": ["ブローカー・ワーカー・結果の置き場が稼働している"],
+      "steps": [
+        { "actor": "producer", "action": "タスクを積む", "receiver": "broker", "expected": "メッセージが預かられる", "flow": "f-enqueue" },
+        { "actor": "broker", "action": "メッセージを渡す", "receiver": "worker", "expected": "ワーカーが受け取る", "flow": "f-deliver" },
+        { "actor": "worker", "action": "ack を返す(既定: 実行の直前)", "receiver": "broker", "expected": "メッセージが預かりから外れる", "flow": "f-ack" },
+        { "actor": "worker", "action": "状態と結果を書く", "receiver": "result-backend", "expected": "SUCCESS と戻り値", "flow": "f-write-state" },
+        { "actor": "result-backend", "action": "状態と結果を返す", "receiver": "producer", "expected": "依頼側が結果を読める", "flow": "f-read-result" }
+      ],
+      "outcome": "タスクが一度実行され、結果が依頼側へ戻る。",
+      "kind": "normal",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "呼び出し・States・acks_late(既定は実行前 ack)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "s-crash-redeliver",
+      "goal": "(失敗系)実行中のクラッシュから取りこぼさず回復する — 代償は多重実行",
+      "trigger": "acks_late=True のワーカーが、タスク実行の途中で落ちる",
+      "preconditions": ["acks_late=True", "タスクは冪等(文書が条件として明示)"],
+      "steps": [
+        { "actor": "worker", "action": "ack を返す前に落ちる", "receiver": "broker", "expected": "ack が届かず、メッセージが預かりに残る", "flow": "f-ack" },
+        { "actor": "broker", "action": "メッセージを渡し直す", "receiver": "worker", "expected": "同じタスクが再び実行される", "flow": "f-deliver" },
+        { "actor": "worker", "action": "状態と結果を書く", "receiver": "result-backend", "expected": "二度目の実行の結果が残る(多重実行が起きうる)", "flow": "f-write-state" }
+      ],
+      "outcome": "タスクは失われないが、複数回実行されうる(文書の警告どおり)。",
+      "kind": "exception",
+      "exception_of": "s-async-success",
+      "loss_or_failure": "非冪等なタスクでは二重の副作用(二重送信・二重課金など)。",
+      "provenance": [
+        { "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html", "locator": "acks_late(may be executed multiple times should the worker crash in the middle of execution)", "checked_at": "2026-08-03", "verdict": "present" }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+
+  "anchors": [
+    {
+      "id": "a-tasks-guide",
+      "target_kind": "external_doc",
+      "target": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+      "source_revision": "en/stable(2026-08-03〜04 取得)",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model"
+    },
+    {
+      "id": "a-workers-guide",
+      "target_kind": "external_doc",
+      "target": "https://docs.celeryq.dev/en/stable/userguide/workers.html",
+      "source_revision": "en/stable(2026-08-03〜04 取得)",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model"
+    },
+    {
+      "id": "a-faq",
+      "target_kind": "external_doc",
+      "target": "https://docs.celeryq.dev/en/stable/faq.html",
+      "source_revision": "en/stable(2026-08-03 取得)",
+      "observed_at": "2026-08-03",
+      "authority": "gold_model"
+    }
+  ]
+}
