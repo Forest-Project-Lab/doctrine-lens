@@ -61,6 +61,15 @@ await p.locator('nav button[data-v="impact"]').click();
 await shot("10-impact", "変更影響画面 — 答えの正本は既存 Lens と明記(混ぜない)");
 await p.locator('nav button[data-v="inspect"]').click();
 await shot("11-inspect", "検査画面 — M-13/M-14 の判定と全要素の操作数表");
+// 案B(構成図)
+await p.locator('nav button[data-v="system"]').click();
+await p.selectOption("#target", "0");
+await p.locator('[data-mode="B"]').click();
+await shot("12-system-b-t1", "案B: 対象1 構成図 — 層は Flow 方向から導出、全辺ラベル、状態章つきの箱");
+await p.selectOption("#target", "1");
+await shot("13-system-b-t2", "案B: 対象2 構成図(人・運用・外部系)");
+await p.selectOption("#target", "2");
+await shot("14-system-b-t3", "案B: 対象3 構成図(Celery)");
 
 await b.close();
 

@@ -112,7 +112,7 @@ const html = `<!DOCTYPE html>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
-let ti = 0, view = "system", focusEl = null, drill = null;
+let ti = 0, view = "system", focusEl = null, drill = null, sysMode = "A";
 let ops = 0;
 const bump = () => { ops++; document.getElementById("ops").textContent = ops; };
 document.getElementById("opreset").onclick = () => { ops = 0; document.getElementById("ops").textContent = 0; };
@@ -172,16 +172,14 @@ function detailPanel(id) {
   </div>\`;
 }
 
-function viewSystem() {
-  const tops = M().elements.filter((e) => (drill ? e.parent === drill : (e.parent ?? null) === null));
-  const inScope = new Set(M().elements.filter((e) => (e.parent ?? null) === null).map((e) => e.id));
-  const flows = M().flows.filter((f) => inScope.has(f.from) || inScope.has(f.to));
-  const crumb = drill
-    ? \`<div class="crumb"><a id="up">← 全体(\${esc(M().target)})</a> › \${esc(el(drill).name)} の内部</div>\`
-    : "";
-  return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
-    \${crumb}
-    <div class="boxes">\${tops.map((e) => \`
+function scopeTops() { return M().elements.filter((e) => (drill ? e.parent === drill : (e.parent ?? null) === null)); }
+function scopeFlows(tops) {
+  const ids = new Set(tops.map((e) => e.id));
+  return M().flows.filter((f) => ids.has(f.from) && ids.has(f.to));
+}
+
+function viewSystemA(tops, flows) {
+  return \`<div class="boxes">\${tops.map((e) => \`
       <div class="box \${e.kind === "external_system" ? "ext" : ""}" data-el="\${e.id}">
         <h3>\${esc(e.name)}</h3>
         <div class="kind">\${esc(e.kind)}\${prop(e)}</div>
@@ -192,7 +190,129 @@ function viewSystem() {
     <h3>やり取り(全て動詞つき — 無名の矢印は無い)</h3>
     <table><tr><th>から</th><th>何を(種類)</th><th>へ</th><th>成立条件</th></tr>
       \${flows.map((f) => \`<tr><td>\${esc(el(f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})\${f.feedback_for ? " ↩ feedback" : ""}</td><td>\${esc(el(f.to).name)}</td><td class="small">\${esc(f.condition)}</td></tr>\`).join("")}
-    </table>
+    </table>\`;
+}
+
+// 案B: 中小粒度の構成図。配置は意味から導く — 層 = フィードバックを除く Flow の最長距離。
+// 辺は正本の Flow のみ。無名の辺・意味の無い軸を作らない。
+function viewSystemB(tops, flows) {
+  const ids = tops.map((e) => e.id);
+  // 層計算に使う辺: フィードバックを除き、さらに宣言順で見て「循環を閉じる辺」を除く
+  // (除いた辺も描画はされる。層は意味から導くが、循環は宣言順という決定的な規則で切る)
+  const adj = Object.fromEntries(ids.map((i) => [i, []]));
+  const reaches = (from, to, seen = new Set()) => {
+    if (from === to) return true;
+    if (seen.has(from)) return false;
+    seen.add(from);
+    return adj[from].some((n) => reaches(n, to, seen));
+  };
+  const layerFlows = [];
+  for (const f of flows.filter((f) => !f.feedback_for && f.from !== f.to)) {
+    if (reaches(f.to, f.from)) continue; // この辺を足すと循環する — 層計算からは外す
+    adj[f.from].push(f.to);
+    layerFlows.push(f);
+  }
+  const dist = Object.fromEntries(ids.map((i) => [i, 0]));
+  for (let pass = 0; pass < ids.length; pass++) {
+    let moved = false;
+    for (const f of layerFlows) {
+      if (dist[f.to] < dist[f.from] + 1) { dist[f.to] = dist[f.from] + 1; moved = true; }
+    }
+    if (!moved) break;
+  }
+  const nLayers = Math.max(...ids.map((i) => dist[i])) + 1;
+  const cols = Array.from({ length: nLayers }, () => []);
+  for (const e of tops) cols[dist[e.id]].push(e);
+
+  const BW = 240, BH = 195, GX = 185, GY = 30, PAD = 16;
+  const pos = {};
+  cols.forEach((col, ci) => col.forEach((e, ri) => {
+    pos[e.id] = { x: PAD + ci * (BW + GX), y: PAD + ri * (BH + GY) };
+  }));
+  const W = PAD * 2 + nLayers * BW + (nLayers - 1) * GX;
+  const H = PAD * 2 + Math.max(...cols.map((c) => c.length)) * (BH + GY) + 70;
+
+  const stChips = (eid) => {
+    const cs = M().contracts.filter((c) => c.subject === eid);
+    return cs.map((c) => '<span class="st st-' + c.verification_status + '">' + c.verification_status + "</span>").join(" ") || '<span class="small">契約: 記録なし</span>';
+  };
+  const ioList = (eid) => {
+    const ins = flows.filter((f) => f.to === eid), outs = flows.filter((f) => f.from === eid);
+    const fmt = (a, tag) => a.length ? tag + ": " + a.slice(0, 2).map((f) => esc(f.label)).join("、") + (a.length > 2 ? \` 他\${a.length - 2}\` : "") : "";
+    return [fmt(ins, "IN"), fmt(outs, "OUT")].filter(Boolean).join(" / ");
+  };
+
+  const boxes = tops.map((e) => {
+    const p = pos[e.id];
+    return \`<g data-el="\${e.id}" style="cursor:pointer">
+      <rect x="\${p.x}" y="\${p.y}" width="\${BW}" height="\${BH}" fill="#fff" stroke="#222" stroke-width="1.5" \${e.kind === "external_system" ? 'stroke-dasharray="6 4"' : ""}/>
+      <foreignObject x="\${p.x + 6}" y="\${p.y + 4}" width="\${BW - 12}" height="\${BH - 8}">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:11px; line-height:1.35; overflow:hidden; height:100%">
+          <b style="font-size:12px">\${esc(e.name)}</b> <span style="color:#666">\${esc(e.kind)}</span>\${prop(e)}<br>
+          <span>\${esc(e.purpose)}</span><br>
+          <span style="color:#666">責務: \${e.responsibilities.slice(0, 2).map(esc).join("、")}\${e.responsibilities.length > 2 ? \` 他\${e.responsibilities.length - 2}\` : ""}</span><br>
+          <span style="color:#444">\${ioList(e.id)}</span><br>
+          \${stChips(e.id)}
+          \${M().elements.some((c) => c.parent === e.id) ? '<button class="small" data-drill="' + e.id + '">内部を見る</button>' : ""}
+        </div>
+      </foreignObject>
+    </g>\`;
+  }).join("");
+
+  const pairSeen = {};
+  const bottomY = H - PAD - 60;
+  const edges = flows.map((f) => {
+    const a = pos[f.from], b = pos[f.to];
+    const key = [f.from, f.to].sort().join("|");
+    const off = (pairSeen[key] = (pairSeen[key] ?? -1) + 1) * 18;
+    const fb = !!f.feedback_for;
+    const span = Math.abs(Math.round((b.x - a.x) / (BW + GX)));
+    let x1, y1, x2, y2;
+    if (a.x < b.x) { x1 = a.x + BW; x2 = b.x; } else if (a.x > b.x) { x1 = a.x; x2 = b.x + BW; } else { x1 = a.x + BW; x2 = b.x + BW; }
+    y1 = a.y + BH / 2 + off; y2 = b.y + BH / 2 + off;
+    const detour = span >= 2 || fb;
+    let path, lx, ly;
+    if (a.x === b.x) {
+      path = \`M \${x1} \${y1} C \${x1 + 70} \${y1}, \${x2 + 70} \${y2}, \${x2} \${y2}\`;
+      lx = x1 + 74; ly = (y1 + y2) / 2;
+    } else if (detour) {
+      const dy = bottomY + (fb ? 30 : 8) + off;
+      path = \`M \${x1} \${y1} C \${x1 + 60} \${dy}, \${x2 - 60} \${dy}, \${x2} \${y2}\`;
+      lx = (x1 + x2) / 2; ly = dy - 6;
+    } else {
+      const mx = (x1 + x2) / 2;
+      path = \`M \${x1} \${y1} C \${mx} \${y1}, \${mx} \${y2}, \${x2} \${y2}\`;
+      lx = mx; ly = Math.min(y1, y2) - 8 + off;
+    }
+    const full = (fb ? "↩ " : "") + f.label + "(" + f.kind + ")";
+    const label = full.length > 26 ? full.slice(0, 25) + "…" : full;
+    return \`<path d="\${path}" fill="none" stroke="#444" stroke-width="1.2" \${fb ? 'stroke-dasharray="5 4"' : ""} marker-end="url(#arr)"><title>\${esc(full)}</title></path>
+      <text x="\${lx}" y="\${ly}" font-size="10" text-anchor="middle" fill="#333" paint-order="stroke" stroke="#fff" stroke-width="3"><title>\${esc(full)}</title>\${esc(label)}</text>\`;
+  }).join("");
+
+  return \`<svg viewBox="0 0 \${W} \${H}" width="\${W}" style="max-width:100%; height:auto; border:1px solid #ddd">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#444"/></marker></defs>
+    \${edges}\${boxes}
+  </svg>
+  <p class="small">層は Flow の向き(フィードバック除く)の最長距離から導出。辺は正本の Flow のみ・全て名前と種類つき。破線枠 = 外部システム、破線辺 = フィードバック。</p>\`;
+}
+
+function viewSystem() {
+  const tops = scopeTops();
+  const flows = scopeFlows(tops);
+  const crumb = drill
+    ? \`<div class="crumb"><a id="up">← 全体(\${esc(M().target)})</a> › \${esc(el(drill).name)} の内部</div>\`
+    : "";
+  const toggle = \`<div class="small" style="border:1px dashed #999; padding:.3rem .6rem; margin-bottom:.6rem">
+    比較実験(所有者指示 2026-08-04): 同一データ・同一問いを
+    <button data-mode="A" \${sysMode === "A" ? "disabled" : ""}>案A(表)</button>
+    <button data-mode="B" \${sysMode === "B" ? "disabled" : ""}>案B(図)</button>
+    で表示している。最終採用は A/B 比較と H 層検証の証拠で決める(未決)。
+  </div>\`;
+  return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
+    \${crumb}\${toggle}
+    \${sysMode === "A" ? viewSystemA(tops, flows) : viewSystemB(tops, flows)}
+    \${flows.length === 0 ? '<p class="small">この階層に流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
     \${focusEl ? detailPanel(focusEl) : '<p class="small">箱を選ぶと詳細(契約充足の評価)が開く。</p>'}\`;
 }
 
@@ -252,6 +372,9 @@ function render() {
   });
   document.querySelectorAll("[data-drill]").forEach((b) => b.onclick = (ev) => {
     ev.stopPropagation(); drill = b.dataset.drill; focusEl = null; bump(); render();
+  });
+  document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => {
+    sysMode = b.dataset.mode; bump(); render();
   });
   const up = document.getElementById("up");
   if (up) up.onclick = () => { drill = null; focusEl = null; bump(); render(); };
