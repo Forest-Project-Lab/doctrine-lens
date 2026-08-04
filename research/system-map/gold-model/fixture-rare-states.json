@@ -2,49 +2,83 @@
   "schema": "system-map/gold-model/0.1",
   "target": "fixture-rare-states(架空)",
   "$comment": "この対象は【架空】である。H 層 T6(希少状態 planned/failed/stale の読み分け)専用の練習例。実在の三対象に希少状態を捏造して混ぜないための分離(所有者指示 2026-08-04 項6)。全ての出所・証拠も架空であり、その旨を各所に明記する。unknown は実在対象に実例があるため、この fixture には置かない(架空の負の出所を作らないため)。",
-
   "elements": [
     {
       "id": "scheduler",
       "name": "夜間起動器(架空)",
       "kind": "component",
       "purpose": "毎営業日の深夜に帳票生成を起動する。",
-      "responsibilities": ["起動時刻の管理", "失敗時の再実行判断"],
+      "responsibilities": [
+        "起動時刻の管理",
+        "失敗時の再実行判断"
+      ],
       "owner": "架空の運用チーム",
       "parent": null,
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例(この文書自身)", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例(この文書自身)",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "架空の対象であり、実現物は存在しない(この fixture は H 層 T6 専用)。"
+      }
     },
     {
       "id": "generator",
       "name": "帳票生成器(架空)",
       "kind": "component",
       "purpose": "前日分の取引データから帳票を作る。",
-      "responsibilities": ["帳票の生成", "形式検査"],
+      "responsibilities": [
+        "帳票の生成",
+        "形式検査"
+      ],
       "owner": "架空の開発チーム",
       "parent": null,
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例(この文書自身)", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例(この文書自身)",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "架空の対象であり、実現物は存在しない(この fixture は H 層 T6 専用)。"
+      }
     },
     {
       "id": "operator",
       "name": "運用者(架空)",
       "kind": "person",
       "purpose": "翌朝に帳票と実行結果を点検する。",
-      "responsibilities": ["結果の点検", "異常時の連絡"],
+      "responsibilities": [
+        "結果の点検",
+        "異常時の連絡"
+      ],
       "owner": "架空の運用チーム",
       "parent": null,
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例(この文書自身)", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例(この文書自身)",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "架空の対象であり、実現物は存在しない(この fixture は H 層 T6 専用)。"
+      }
     }
   ],
-
   "flows": [
     {
       "id": "f-kick",
@@ -55,7 +89,12 @@
       "payload_or_action": "生成ジョブの開始指示",
       "condition": "毎営業日 2:00",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
@@ -68,7 +107,12 @@
       "payload_or_action": "生成済み帳票と実行記録",
       "condition": "生成の完了時",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
@@ -82,17 +126,23 @@
       "condition": "翌営業朝",
       "feedback_for": "f-kick",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     }
   ],
-
   "contracts": [
     {
       "id": "c-fx-deadline",
       "subject": "generator",
-      "assumptions": ["前日分データが 1:00 までに揃っている"],
+      "assumptions": [
+        "前日分データが 1:00 までに揃っている"
+      ],
       "guarantee": "帳票は毎営業日 6:00 までに出来る。",
       "response_measure": "30 営業日の実測で遅延 0 件",
       "verification_status": "planned",
@@ -100,14 +150,21 @@
       "verification_method": "2026-08-11 から 30 営業日、完了時刻を記録する(計画のみ・結果なし)",
       "failure_effect": "朝会に帳票が間に合わない。",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の検証計画", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の検証計画",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
     {
       "id": "c-fx-duration",
       "subject": "generator",
-      "assumptions": ["取引件数が 100 万件以下"],
+      "assumptions": [
+        "取引件数が 100 万件以下"
+      ],
       "guarantee": "生成は 30 分以内に終わる。",
       "response_measure": "実行記録の所要時間 ≤ 30 分",
       "verification_status": "failed",
@@ -125,14 +182,21 @@
       "failure_effect": "後続の集計が朝までに終わらない。",
       "verification_method": "実行記録の所要時間の照合",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の不合格記録", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の不合格記録",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
     {
       "id": "c-fx-capacity",
       "subject": "generator",
-      "assumptions": ["単一ノード構成(2026-06 時点)"],
+      "assumptions": [
+        "単一ノード構成(2026-06 時点)"
+      ],
       "guarantee": "単一ノードで全件を処理できる。",
       "response_measure": "全件処理の完走",
       "verification_status": "stale",
@@ -150,14 +214,21 @@
       "failure_effect": "2026-07 の二ノード化で前提が変わり、旧証拠は再利用できない(= stale)。",
       "verification_method": "新構成での再実測(未実施)",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の構成変更記録", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の構成変更記録",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
     {
       "id": "c-fx-format",
       "subject": "generator",
-      "assumptions": ["帳票スキーマ v2 が正本"],
+      "assumptions": [
+        "帳票スキーマ v2 が正本"
+      ],
       "guarantee": "帳票はスキーマ v2 に適合する。",
       "response_measure": "形式検査の合格",
       "verification_status": "verified",
@@ -174,55 +245,98 @@
       ],
       "verification_method": "スキーマ照合",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の合格記録", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の合格記録",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
     {
       "id": "c-fx-idempotent",
       "subject": "generator",
-      "assumptions": ["同一営業日の再実行がありうる"],
+      "assumptions": [
+        "同一営業日の再実行がありうる"
+      ],
       "guarantee": "再実行しても帳票は二重にならない。",
       "response_measure": "定性的である(判定手順は未定義)",
       "verification_status": "claimed",
       "owner": "架空の開発チーム",
       "failure_effect": "二重帳票が下流に流れる。",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の主張(方法・証拠なし)", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の主張(方法・証拠なし)",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
     {
       "id": "c-fx-multiregion",
       "subject": "scheduler",
-      "assumptions": ["単一拠点の社内バッチである"],
+      "assumptions": [
+        "単一拠点の社内バッチである"
+      ],
       "guarantee": "多地域での冗長実行。",
       "response_measure": "適用しない(理由の明示あり)",
       "verification_status": "not_applicable",
       "na_reason": "単一拠点の社内バッチであり、多地域冗長は要求されていない(架空の所有者が明示した、という設定)。",
       "owner": "架空の運用チーム",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の適用除外の記録", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の適用除外の記録",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     }
   ],
-
   "scenarios": [
     {
       "id": "s-fx-nightly",
       "goal": "夜間に帳票が出来て、朝に点検される",
       "trigger": "毎営業日 2:00 の起動",
-      "preconditions": ["前日分データが揃っている"],
+      "preconditions": [
+        "前日分データが揃っている"
+      ],
       "steps": [
-        { "actor": "scheduler", "action": "夜間実行を起動する", "receiver": "generator", "expected": "生成が始まる", "flow": "f-kick" },
-        { "actor": "generator", "action": "帳票を置く", "receiver": "operator", "expected": "帳票と実行記録が届く", "flow": "f-deliver-report" },
-        { "actor": "operator", "action": "結果を点検し翌晩の実行可否を確かめる", "receiver": "scheduler", "expected": "異常があれば止まる", "flow": "f-inspect" }
+        {
+          "actor": "scheduler",
+          "action": "夜間実行を起動する",
+          "receiver": "generator",
+          "expected": "生成が始まる",
+          "flow": "f-kick"
+        },
+        {
+          "actor": "generator",
+          "action": "帳票を置く",
+          "receiver": "operator",
+          "expected": "帳票と実行記録が届く",
+          "flow": "f-deliver-report"
+        },
+        {
+          "actor": "operator",
+          "action": "結果を点検し翌晩の実行可否を確かめる",
+          "receiver": "scheduler",
+          "expected": "異常があれば止まる",
+          "flow": "f-inspect"
+        }
       ],
       "outcome": "帳票が朝会に間に合い、異常は翌晩前に検出される。",
       "kind": "normal",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     },
@@ -230,21 +344,33 @@
       "id": "s-fx-overrun",
       "goal": "(失敗系)生成が 30 分を超える",
       "trigger": "取引件数の急増",
-      "preconditions": ["c-fx-duration の前提(100 万件以下)が破れている"],
+      "preconditions": [
+        "c-fx-duration の前提(100 万件以下)が破れている"
+      ],
       "steps": [
-        { "actor": "generator", "action": "帳票を置く", "receiver": "operator", "expected": "(遅延して)帳票が届く。実行記録に 45 分の所要が残る", "flow": "f-deliver-report" }
+        {
+          "actor": "generator",
+          "action": "帳票を置く",
+          "receiver": "operator",
+          "expected": "(遅延して)帳票が届く。実行記録に 45 分の所要が残る",
+          "flow": "f-deliver-report"
+        }
       ],
       "outcome": "所要 45 分の不合格記録が残る(c-fx-duration = failed の由来)。",
       "kind": "exception",
       "exception_of": "s-fx-nightly",
       "loss_or_failure": "朝の集計が遅れる。",
       "provenance": [
-        { "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json", "locator": "架空の例", "checked_at": "2026-08-04", "verdict": "present" }
+        {
+          "source": "doctrine-lens: research/system-map/gold-model/fixture-rare-states.json",
+          "locator": "架空の例",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
       ],
       "review_status": "proposed"
     }
   ],
-
   "anchors": [
     {
       "id": "a-fx-self",

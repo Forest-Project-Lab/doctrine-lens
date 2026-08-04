@@ -23,7 +23,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
     },
     {
       "id": "producer",
@@ -44,7 +48,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "実現コードは本モデルの対象外(公開文書のみを出所とする方針。Celery 本体のコードは扱わない)。"
+      }
     },
     {
       "id": "broker",
@@ -65,7 +73,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "実現コードは本モデルの対象外(公開文書のみを出所とする方針。Celery 本体のコードは扱わない)。"
+      }
     },
     {
       "id": "worker",
@@ -94,7 +106,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "実現コードは本モデルの対象外(公開文書のみを出所とする方針。Celery 本体のコードは扱わない)。"
+      }
     },
     {
       "id": "result-backend",
@@ -114,7 +130,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "実現コードは本モデルの対象外(公開文書のみを出所とする方針。Celery 本体のコードは扱わない)。"
+      }
     }
   ],
   "flows": [
@@ -457,7 +477,8 @@
       "target": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
       "source_revision": "en/stable(2026-08-03〜04 取得)",
       "observed_at": "2026-08-04",
-      "authority": "gold_model"
+      "authority": "gold_model",
+      "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html"
     },
     {
       "id": "a-workers-guide",
@@ -465,7 +486,8 @@
       "target": "https://docs.celeryq.dev/en/stable/userguide/workers.html",
       "source_revision": "en/stable(2026-08-03〜04 取得)",
       "observed_at": "2026-08-04",
-      "authority": "gold_model"
+      "authority": "gold_model",
+      "url": "https://docs.celeryq.dev/en/stable/userguide/workers.html"
     },
     {
       "id": "a-faq",
@@ -473,7 +495,8 @@
       "target": "https://docs.celeryq.dev/en/stable/faq.html",
       "source_revision": "en/stable(2026-08-03 取得)",
       "observed_at": "2026-08-03",
-      "authority": "gold_model"
+      "authority": "gold_model",
+      "url": "https://docs.celeryq.dev/en/stable/faq.html"
     }
   ]
 }

@@ -24,7 +24,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
     },
     {
       "id": "release-op",
@@ -54,7 +58,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-change-002"
+      ]
     },
     {
       "id": "packager",
@@ -78,7 +85,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-package-scripts"
+      ]
     },
     {
       "id": "marketplace",
@@ -99,7 +109,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム(Microsoft 提供)。実現は本モデルの対象外。"
+      }
     },
     {
       "id": "user",
@@ -119,7 +133,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
     },
     {
       "id": "github",
@@ -140,7 +158,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム(GitHub 提供)。実現は本モデルの対象外。"
+      }
     }
   ],
   "flows": [
@@ -488,7 +510,8 @@
       "target": "CHANGELOG.md L162-163(stale .vsix 事故の記録)",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-04",
-      "authority": "gold_model"
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/CHANGELOG.md"
     },
     {
       "id": "a-vsix",
@@ -505,7 +528,8 @@
       "target": "package.json scripts(package・vscode:prepublish)",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-04",
-      "authority": "gold_model"
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/package.json"
     },
     {
       "id": "a-change-002",
@@ -513,7 +537,8 @@
       "target": "doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-04",
-      "authority": "doctrine"
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/doctrine_docs/lens/decisions/CHANGE-002-shipping-readiness.md"
     }
   ]
 }

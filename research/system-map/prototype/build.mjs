@@ -6,7 +6,9 @@
 // (M-13: 道具が読むのは固定された検証用 JSON だけ。fetch/XHR を書かない)。
 // 画面は台帳 v3.2 B 節 P1 の区分に従う: システム / シナリオ / 保証 / 変更影響。
 // 詳細パネルの一問は「契約充足の評価」。一画面一問(v3.2-6)。
-// 図は描かない — 境界と交換は表で言う(関係は文と記号で言える。lens ADR-012 と同じ判断)。
+// システム画面は構成図(所有者判断 2026-08-04 で採用。DESIGN-001)。
+// 配置は意味からだけ導く(層 = Flow 方向の最長距離)。辺は正本の Flow と一対一。
+// 旧地図の失敗要因(無意味な軸・同一事実の二重描画)は持ち込まない。
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

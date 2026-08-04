@@ -16,8 +16,8 @@
 | T3 | | | | | |
 | T4 | | | | | |
 | T5a | | | unknown→問題なし: 有/無 | | |
-| T5b | | | claimed↔planned 混同: 有/無 | | |
-| T5c | | | claimed→verified: 有/無 | | |
+| T5b | | | claimed→planned または verified: 有/無 | | |
+| T5c | | | planned→verified: 有/無 | | |
 | T6 | | | stale→有効: 有/無 | | |
 | T7 | | | 3 操作以内: 是/否(実数: ) | | |
 | T8 | | | 経路追跡: 方向誤読/戻り見落とし: 有/無 | | |

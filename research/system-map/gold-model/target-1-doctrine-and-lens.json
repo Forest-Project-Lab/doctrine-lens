@@ -27,7 +27,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
     },
     {
       "id": "doctrine",
@@ -60,7 +64,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-doctrine-repo"
+      ]
     },
     {
       "id": "doctrine.governance",
@@ -81,7 +88,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-audit-py"
+      ]
     },
     {
       "id": "doctrine.graph",
@@ -102,7 +112,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-traceindex-py"
+      ]
     },
     {
       "id": "doctrine.authoring",
@@ -123,7 +136,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-doctrine-plugin"
+      ]
     },
     {
       "id": "lens",
@@ -157,7 +173,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-lens-repo"
+      ]
     },
     {
       "id": "lens.bridge",
@@ -184,7 +203,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-bridge-code"
+      ]
     },
     {
       "id": "lens.model",
@@ -206,7 +228,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-consequence-code"
+      ]
     },
     {
       "id": "lens.view",
@@ -227,7 +252,10 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realized_by": [
+        "a-view-code"
+      ]
     },
     {
       "id": "vscode",
@@ -248,7 +276,11 @@
           "verdict": "present"
         }
       ],
-      "review_status": "proposed"
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム(Microsoft 提供)。実現は本モデルの対象外。"
+      }
     }
   ],
   "flows": [
@@ -676,7 +708,8 @@
       "target": "doctrine_docs/_system/REQ-000-what-this-product-solves.md",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-03",
-      "authority": "doctrine"
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/doctrine_docs/_system/REQ-000-what-this-product-solves.md"
     },
     {
       "id": "a-consequence-code",
@@ -684,7 +717,8 @@
       "target": "src/model/consequence.ts(doctrine:begin の注釈対)",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-03",
-      "authority": "doctrine"
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/model/consequence.ts"
     },
     {
       "id": "a-lens-ci",
@@ -693,7 +727,8 @@
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-03",
       "authority": "gold_model",
-      "environment": "GitHub Actions"
+      "environment": "GitHub Actions",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27"
     },
     {
       "id": "a-doctrine-icd002",
@@ -701,7 +736,71 @@
       "target": "doctrine: doctrine_docs/graph/ICD.md",
       "source_revision": "8cd29bd",
       "observed_at": "2026-08-03",
-      "authority": "doctrine"
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/doctrine_docs/graph/ICD.md"
+    },
+    {
+      "id": "a-lens-repo",
+      "target_kind": "artifact",
+      "target": "doctrine-lens リポジトリ(30b060f 時点の木)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/tree/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49"
+    },
+    {
+      "id": "a-bridge-code",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/doctrine/trace.ts(doctrine:begin の注釈対)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/doctrine/trace.ts"
+    },
+    {
+      "id": "a-view-code",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/model/view.ts(何を出さないかの判断)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/model/view.ts"
+    },
+    {
+      "id": "a-doctrine-repo",
+      "target_kind": "artifact",
+      "target": "doctrine リポジトリ(8cd29bd 時点の木)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd"
+    },
+    {
+      "id": "a-audit-py",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/docs-audit.py",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/scripts/docs-audit.py"
+    },
+    {
+      "id": "a-traceindex-py",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/trace-index.py(SPEC-026 の注釈対)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/scripts/trace-index.py"
+    },
+    {
+      "id": "a-doctrine-plugin",
+      "target_kind": "artifact",
+      "target": "doctrine: plugin/(Skill・Hook・スクリプト群)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd/plugin"
     }
   ]
 }
