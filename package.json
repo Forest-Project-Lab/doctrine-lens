@@ -1,7 +1,7 @@
 {
   "name": "doctrine-lens",
   "displayName": "Doctrine Lens",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "publisher": "Forest-Project-Lab",
   "description": "%ext.description%",
   "license": "MIT",
@@ -87,6 +87,11 @@
       {
         "command": "doctrineLens.selectWorkspaceFolder",
         "title": "%cmd.selectFolder%",
+        "category": "Doctrine Lens"
+      },
+      {
+        "command": "doctrineLens.openSystemMapExperiment",
+        "title": "%cmd.openSystemMap%",
         "category": "Doctrine Lens"
       }
     ],

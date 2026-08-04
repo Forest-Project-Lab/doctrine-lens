@@ -1,0 +1,844 @@
+{
+  "schema": "system-map/gold-model/0.1",
+  "target": "doctrine-and-lens",
+  "$comment": "対象1: 文書統治の系(doctrine)と、その帰結を映す拡張機能(doctrine-lens)。全値は起草エージェントの候補(review_status=proposed)であり、所有者の確認まで正本ではない。出所の checked_at は実際に確認した日。",
+  "elements": [
+    {
+      "id": "maintainer",
+      "name": "保守者(所有者)",
+      "kind": "person",
+      "purpose": "統治木と両製品を保ち、意味の確定(confirmed への昇格)を裁く。",
+      "responsibilities": [
+        "統治木の文書を書く・直す",
+        "監査所見への対処",
+        "決定(ADR)の受理と置換",
+        "リリースの実施"
+      ],
+      "not_responsible_for": [
+        "統治規則の機械判定(doctrine の受け持ち)"
+      ],
+      "owner": "本人",
+      "parent": null,
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/decided-facts.md",
+          "locator": "owner 欄・確定方針",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
+    },
+    {
+      "id": "doctrine",
+      "name": "doctrine(文書統治)",
+      "kind": "system",
+      "purpose": "統治木(doctrine_docs)の型・status・依存・指紋を検査し、事実と判定を宣言済みの読み口から返す。",
+      "responsibilities": [
+        "統治規則の正本を一箇所で持つ",
+        "全件監査(34 種の検査)と日本語の所見",
+        "依存グラフ・追跡索引の導出",
+        "執筆・整理の道具(Skill)と護り(Hook)"
+      ],
+      "not_responsible_for": [
+        "ハザード層・過程適合・IV&V(採るのは主張と証跡を結ぶ形だけ)",
+        "リポジトリを越えた統治"
+      ],
+      "owner": "doctrine-maintainers",
+      "parent": null,
+      "provenance": [
+        {
+          "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+          "locator": "本文 §4.2(文書の統治モデル)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
+          "locator": "第10・17項",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-audit-py",
+        "a-traceindex-py"
+      ]
+    },
+    {
+      "id": "doctrine.governance",
+      "name": "登録簿と監査",
+      "kind": "subsystem",
+      "purpose": "型・必須キー・status の正本(_registry)を一度だけ持ち、docs-audit が統治木の逸脱を検出する。",
+      "responsibilities": [
+        "構造規則の正本",
+        "全件監査と所見(docs-audit/1)"
+      ],
+      "owner": "doctrine-maintainers",
+      "parent": "doctrine",
+      "provenance": [
+        {
+          "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+          "locator": "doctrine 第1信 §1(DECIDED-001 事実1・事実3)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-audit-py"
+      ]
+    },
+    {
+      "id": "doctrine.graph",
+      "name": "グラフと追跡索引",
+      "kind": "subsystem",
+      "purpose": "依存グラフ(dep-graph)と注釈対のコード範囲(trace-index)を、問い合わせのたびに導出して返す。",
+      "responsibilities": [
+        "dependency-graph-api の正本",
+        "trace-index-api の正本(入口は上流 ICD 002)"
+      ],
+      "owner": "doctrine-maintainers",
+      "parent": "doctrine",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "正本である事実・データ契約",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-traceindex-py"
+      ]
+    },
+    {
+      "id": "doctrine.authoring",
+      "name": "執筆の道具と護り",
+      "kind": "subsystem",
+      "purpose": "文書の作成・整理を Skill が受け持ち、Hook が統治木への書き込みを護る。",
+      "responsibilities": [
+        "doc-author・docs-curate ほかの Skill",
+        "書き込み経路のガード"
+      ],
+      "owner": "doctrine-maintainers",
+      "parent": "doctrine",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/non-goals.md",
+          "locator": "統治木を書き換えない(Skill の受け持ちの明記)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-doc-author-skill"
+      ]
+    },
+    {
+      "id": "lens",
+      "name": "doctrine-lens(帰結の画面)",
+      "kind": "system",
+      "purpose": "いま開いている場所から「これを変えたら、何をどの順で直すことになるか」に、一本の明細で答える。",
+      "responsibilities": [
+        "帰結の明細(順・記号・要約・脚注)",
+        "上流の判定を絞らず出す",
+        "確かめたことしか言わない"
+      ],
+      "not_responsible_for": [
+        "俯瞰・構造・分類への回答",
+        "統治規則の判定",
+        "統治木の書き換え",
+        "図の描画"
+      ],
+      "owner": "doctrine-lens-maintainer",
+      "parent": null,
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "要求文・何を解いていないか",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/non-goals.md",
+          "locator": "全項",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-lens-entry"
+      ]
+    },
+    {
+      "id": "lens.bridge",
+      "name": "上流への橋",
+      "kind": "component",
+      "purpose": "上流の宣言済み CLI を実行し、返る JSON を写して呼び手へ渡す。規則を持たない。",
+      "responsibilities": [
+        "dep-graph・trace-index・docs-audit の実行と素通し",
+        "所見を絞らないこと"
+      ],
+      "owner": "doctrine-lens-maintainer",
+      "parent": "lens",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-001-doctrine-bridge.md",
+          "locator": "全体",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-004-trace-bridge.md",
+          "locator": "入出力",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-bridge-code"
+      ]
+    },
+    {
+      "id": "lens.model",
+      "name": "帰結の模型",
+      "kind": "component",
+      "purpose": "上流の事実から、到達・循環の縮約・最長距離の波・記号の排他を組み立てる。",
+      "responsibilities": [
+        "順序(波)の導出",
+        "五記号の排他判定",
+        "出さないものの判断"
+      ],
+      "owner": "doctrine-lens-maintainer",
+      "parent": "lens",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "何が中核か(src/model/consequence.ts・view.ts)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-consequence-code"
+      ]
+    },
+    {
+      "id": "lens.view",
+      "name": "画面",
+      "kind": "component",
+      "purpose": "帰結の明細を編集器内に描く。図・座標・SVG を持たない。",
+      "responsibilities": [
+        "一本の明細の表示",
+        "隠した件数の明記"
+      ],
+      "owner": "doctrine-lens-maintainer",
+      "parent": "lens",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/decisions/ADR-012-consequence-not-map.md",
+          "locator": "決定 2・8",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realized_by": [
+        "a-view-code"
+      ]
+    },
+    {
+      "id": "vscode",
+      "name": "VS Code(編集器)",
+      "kind": "external_system",
+      "purpose": "拡張機能の実行環境。開いているファイルとカーソル位置という「問い」を供給する。",
+      "responsibilities": [
+        "拡張機能の起動と Webview の器",
+        "編集状態の通知"
+      ],
+      "owner": "Microsoft(外部)",
+      "parent": null,
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
+          "locator": "起点を選ぶ操作を求めない(ファイルを開くことが問い合わせ)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム(Microsoft 提供)。実現は本モデルの対象外。"
+      }
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-author",
+      "from": "maintainer",
+      "to": "doctrine",
+      "kind": "human_action",
+      "label": "文書を書く・直す",
+      "payload_or_action": "統治木の文書(Skill 経由の作成・整理を含む)",
+      "condition": "変更の必要が生じたとき",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/non-goals.md",
+          "locator": "統治木を書き換えない(書くのは doctrine の Skill の受け持ち)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-open",
+      "from": "maintainer",
+      "to": "vscode",
+      "kind": "human_action",
+      "label": "ファイルを開く(=問い合わせ)",
+      "payload_or_action": "編集対象のファイルとカーソル位置",
+      "condition": "作業中、常時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
+          "locator": "ファイルを開いていること自体が問い合わせである",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-editor-state",
+      "from": "vscode",
+      "to": "lens",
+      "kind": "event",
+      "label": "編集状態を通知する",
+      "payload_or_action": "開いているファイルのパスとカーソル行",
+      "condition": "起動時・選択変更時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/decisions/ADR-011-activate-on-startup.md",
+          "locator": "題名(起動時の活性化)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-invoke",
+      "from": "lens",
+      "to": "doctrine",
+      "kind": "command",
+      "label": "宣言済み CLI を実行する",
+      "payload_or_action": "dep-graph / trace-index / docs-audit の起動(読み取り専用)",
+      "condition": "画面の更新が必要なとき(二つの更新周期。lens ADR-008)",
+      "protocol": "子プロセス起動・JSON 出力",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/decisions/ADR-001-delegate-to-doctrine-cli.md",
+          "locator": "題名(取得を上流 CLI に委ねる)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-facts",
+      "from": "doctrine",
+      "to": "lens",
+      "kind": "data",
+      "label": "事実と判定を返す",
+      "payload_or_action": "dep-graph/1(節点・辺)、trace-index/1(ranges 五項)、docs-audit/1(所見・checks_run)",
+      "condition": "f-invoke への応答",
+      "schema": "上流 ICD 001・002・005 の宣言",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "データ契約・追跡索引の問い合わせ",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-render",
+      "from": "lens",
+      "to": "maintainer",
+      "kind": "data",
+      "label": "帰結の明細を見せる",
+      "payload_or_action": "順(波)・記号(× + ? ! ~)・題名と一文・隠した件数",
+      "condition": "起点が定まったとき",
+      "feedback_for": "f-author",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "要求文(上から下へ読む一本の明細)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/decisions/ADR-012-consequence-not-map.md",
+          "locator": "決定 3〜5(記号と波)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-bridge-invoke",
+      "from": "lens.bridge",
+      "to": "doctrine.graph",
+      "kind": "command",
+      "label": "宣言済み CLI を実行する",
+      "payload_or_action": "dep-graph / trace-index の起動(読み取り専用)",
+      "condition": "画面の更新が必要なとき(親の f-invoke に集約)",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-001-doctrine-bridge.md",
+          "locator": "全体",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-graph-facts",
+      "from": "doctrine.graph",
+      "to": "lens.bridge",
+      "kind": "data",
+      "label": "事実を返す",
+      "payload_or_action": "dep-graph/1・trace-index/1 の JSON",
+      "condition": "cf-bridge-invoke への応答(親の f-facts に集約)",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "データ契約・追跡索引の問い合わせ",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-bridge-model",
+      "from": "lens.bridge",
+      "to": "lens.model",
+      "kind": "data",
+      "label": "写した事実を渡す",
+      "payload_or_action": "節点・辺・所見・範囲(絞らず素通し)",
+      "condition": "取得の完了時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/spec/SPEC-004-trace-bridge.md",
+          "locator": "所見は絞らずに、そのまま呼び手へ渡す",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-model-view",
+      "from": "lens.model",
+      "to": "lens.view",
+      "kind": "data",
+      "label": "帰結の明細を渡す",
+      "payload_or_action": "順(波)・記号・要約・脚注",
+      "condition": "組み立ての完了時",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "何が中核か(consequence.ts→view.ts)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "cf-graph-resolve",
+      "from": "doctrine.graph",
+      "to": "doctrine.governance",
+      "kind": "data",
+      "label": "id の解決を返す(resolve)",
+      "payload_or_action": "{path, domain, type, status}",
+      "condition": "ガード・リンタ・監査が id からドメイン・型・位置づけを引くとき",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+          "locator": "データ契約(resolve の行)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "c-lens-honest",
+      "subject": "lens",
+      "assumptions": [
+        "上流 doctrine の宣言済み CLI が到達可能",
+        "統治木が doctrine の形式に従う"
+      ],
+      "guarantee": "画面は確かめたことしか言わない — 取れていない数をその場に出さず、上流の所見を一字も削らず、発火していない門を緑と呼ばない。",
+      "response_measure": "受入 TEST-006(帰結の明細)と門(npm run check)の全段通過で判定",
+      "verification_status": "verified",
+      "owner": "doctrine-lens-maintainer",
+      "evidence": [
+        {
+          "ref": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27",
+          "environment": "GitHub Actions(check.yml)",
+          "version": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+          "exit_status": "pass",
+          "observed_at": "2026-08-03"
+        }
+      ],
+      "failure_effect": "確かめていない緑・古い数字が読み手の判断を誤らせる(過去に実測した失敗型)。",
+      "verification_method": "typecheck / 単体試験 / 上流監査 / linter / 用語 / 実測主張の突き合わせ",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "ADR-014・017・019・021・023 の五つが芯",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-doctrine-audit",
+      "subject": "doctrine",
+      "assumptions": [
+        "統治木が doctrine_docs 配下に在る",
+        "検査は登録簿の規則からのみ導かれる"
+      ],
+      "guarantee": "統治木の逸脱(型・依存・指紋・期限ほか 34 種)を全件走査で検出し、日本語の所見として返す。",
+      "response_measure": "全件監査の error/warn 件数(0/0 で緑)",
+      "verification_status": "verified",
+      "owner": "doctrine-maintainers",
+      "evidence": [
+        {
+          "ref": "https://github.com/Forest-Project-Lab/doctrine/pull/206",
+          "environment": "doctrine 側 CI と変更フロー",
+          "version": "9ae87e8",
+          "exit_status": "pass",
+          "observed_at": "2026-08-03"
+        }
+      ],
+      "failure_effect": "逸脱が黙って残り、下流(lens の画面)が古い・誤った判定を映す。",
+      "verification_method": "doctrine の変更フロー(決定→仕様→実装→試験→監査)",
+      "provenance": [
+        {
+          "source": "https://github.com/Forest-Project-Lab/doctrine/pull/206",
+          "locator": "検証節",
+          "checked_at": "2026-08-04",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-lens-performance",
+      "subject": "lens",
+      "assumptions": [
+        "定性的である(現時点で測定条件の定義が無い)"
+      ],
+      "guarantee": "(候補)大きな統治木でも帰結の明細が実用的な時間で出る。",
+      "response_measure": "定性的である(判定可能な測定基準は未定義)",
+      "verification_status": "unknown",
+      "owner": "doctrine-lens-maintainer",
+      "failure_effect": "木が育つと画面が実用にならない可能性。",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+          "locator": "全文(性能への言及なし)",
+          "checked_at": "2026-08-04",
+          "verdict": "silent"
+        },
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
+          "locator": "全文(応答時間の要求なし)",
+          "checked_at": "2026-08-04",
+          "verdict": "silent"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "c-safety-na",
+      "subject": "doctrine",
+      "assumptions": [
+        "対象は文書統治であり、安全重要システムの保証実務ではない"
+      ],
+      "guarantee": "ハザード層(Loss・Hazard・Safety constraint)の安全保証。",
+      "response_measure": "適用しない(理由の明示が正本に在る)",
+      "verification_status": "not_applicable",
+      "owner": "doctrine-maintainers",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
+          "locator": "第17項(ハザード層は採らない。採るのは主張と証跡を結ぶ形だけ)",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed",
+      "na_reason": "対象は文書統治であり、安全重要システムの保証実務ではない。ハザード層(Loss・Hazard・Safety constraint)は doctrine の非目標第17項が明示的に採らないと定める(採るのは主張と証跡を結ぶ形だけ)。"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "s-read-consequence",
+      "goal": "変更前に、直す順を知る",
+      "trigger": "保守者が統治木の文書(または印の付いたコード)を開く",
+      "preconditions": [
+        "統治木が doctrine の形式",
+        "上流 CLI が到達可能"
+      ],
+      "steps": [
+        {
+          "actor": "maintainer",
+          "action": "ファイルを開く",
+          "receiver": "vscode",
+          "expected": "カーソル位置が定まる",
+          "flow": "f-open"
+        },
+        {
+          "actor": "vscode",
+          "action": "編集状態を通知する",
+          "receiver": "lens",
+          "expected": "起点の文書が決まる(選ばせない)",
+          "flow": "f-editor-state"
+        },
+        {
+          "actor": "lens",
+          "action": "宣言済み CLI を実行する",
+          "receiver": "doctrine",
+          "expected": "読み取り専用の問い合わせが走る",
+          "flow": "f-invoke"
+        },
+        {
+          "actor": "doctrine",
+          "action": "事実と判定を返す",
+          "receiver": "lens",
+          "expected": "グラフ・索引・所見が JSON で届く",
+          "flow": "f-facts"
+        },
+        {
+          "actor": "lens",
+          "action": "帰結の明細を見せる",
+          "receiver": "maintainer",
+          "expected": "順・記号・隠した件数が読める",
+          "flow": "f-render"
+        }
+      ],
+      "outcome": "保守者が「何を、どの順で直すか」を選ばずに得る。",
+      "kind": "normal",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
+          "locator": "要求文・確認の三条件",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "s-broken-tree",
+      "goal": "壊れている木で、壊れを隠さず読む",
+      "trigger": "監査が error/warn の所見を持つ状態で画面を開く",
+      "preconditions": [
+        "docs-audit が所見を返す"
+      ],
+      "steps": [
+        {
+          "actor": "doctrine",
+          "action": "所見と checks_run を返す",
+          "receiver": "lens",
+          "expected": "34 種すべての判定が絞られず届く",
+          "flow": "f-facts"
+        },
+        {
+          "actor": "lens",
+          "action": "壊れ(×)を最も重い記号で出す",
+          "receiver": "maintainer",
+          "expected": "上流の日本語の所見が一字も削られず読める",
+          "flow": "f-render"
+        }
+      ],
+      "outcome": "壊れているものが帰結と同じ画面に、上流の言葉のまま並ぶ。",
+      "kind": "exception",
+      "exception_of": "s-read-consequence",
+      "provenance": [
+        {
+          "source": "doctrine-lens: doctrine_docs/lens/decisions/ADR-012-consequence-not-map.md",
+          "locator": "決定 4(34 検査すべてを受け取りそのまま出す)・記号表",
+          "checked_at": "2026-08-03",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "a-req000",
+      "target_kind": "document",
+      "target": "doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-03",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/doctrine_docs/_system/REQ-000-what-this-product-solves.md"
+    },
+    {
+      "id": "a-consequence-code",
+      "target_kind": "code_range",
+      "target": "src/model/consequence.ts(doctrine:begin の注釈対)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-03",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/model/consequence.ts"
+    },
+    {
+      "id": "a-lens-ci",
+      "target_kind": "artifact",
+      "target": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27 の CI 実行",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-03",
+      "authority": "gold_model",
+      "environment": "GitHub Actions",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/pull/27"
+    },
+    {
+      "id": "a-doctrine-icd002",
+      "target_kind": "document",
+      "target": "doctrine: doctrine_docs/graph/ICD.md",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-03",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/doctrine_docs/graph/ICD.md"
+    },
+    {
+      "id": "a-lens-repo",
+      "target_kind": "artifact",
+      "target": "doctrine-lens リポジトリ(30b060f 時点の木)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/tree/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49"
+    },
+    {
+      "id": "a-bridge-code",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/doctrine/trace.ts(doctrine:begin の注釈対)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/doctrine/trace.ts"
+    },
+    {
+      "id": "a-view-code",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/model/view.ts(何を出さないかの判断)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/model/view.ts"
+    },
+    {
+      "id": "a-doctrine-repo",
+      "target_kind": "artifact",
+      "target": "doctrine リポジトリ(8cd29bd 時点の木)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd"
+    },
+    {
+      "id": "a-audit-py",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/docs-audit.py",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/scripts/docs-audit.py"
+    },
+    {
+      "id": "a-traceindex-py",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/trace-index.py(SPEC-026 の注釈対)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/scripts/trace-index.py"
+    },
+    {
+      "id": "a-doctrine-plugin",
+      "target_kind": "artifact",
+      "target": "doctrine: plugin/(Skill・Hook・スクリプト群)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/tree/8cd29bd/plugin"
+    },
+    {
+      "id": "a-lens-entry",
+      "target_kind": "code_range",
+      "target": "doctrine-lens: src/extension.ts(拡張機能の入口)",
+      "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/extension.ts"
+    },
+    {
+      "id": "a-doc-author-skill",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/skills/doc-author/SKILL.md(Skill 定義 = LLM が実行する指示プログラム)",
+      "source_revision": "8cd29bd",
+      "observed_at": "2026-08-04",
+      "authority": "gold_model",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/8cd29bd/plugin/skills/doc-author/SKILL.md"
+    }
+  ],
+  "system": {
+    "purpose": "統治木(doctrine_docs)を持つ開発を、規則の検査(doctrine)と帰結の表示(doctrine-lens)の一組で支える。",
+    "boundary": "境界の内側は二製品(doctrine と doctrine-lens)。保守者は利用者として、VS Code は実行環境として、境界の外に居る。",
+    "provenance": [
+      {
+        "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
+        "locator": "要求文",
+        "checked_at": "2026-08-03",
+        "verdict": "present"
+      },
+      {
+        "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+        "locator": "本文 §4(二製品の役割分担)",
+        "checked_at": "2026-08-03",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
+}

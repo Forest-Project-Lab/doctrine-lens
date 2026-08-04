@@ -1,0 +1,17 @@
+# system-map 実験ブランチの必須検証(レビュー指摘 2026-08-04 §5: 一括検証の CI 接続)。
+# 対象は experiment/system-map のみ — main の check.yml には触れない。
+name: system-map verify
+on:
+  push:
+    branches: ["experiment/system-map", "main"]
+    paths: ["research/system-map/**", ".github/workflows/system-map.yml"]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22" }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium-headless-shell
+      - run: node research/system-map/prototype/verify.mjs
