@@ -106,6 +106,7 @@ const html = `<!DOCTYPE html>
 const MODELS = ${DATA};
 const M14 = ${M14};
 const OVERLAY = ${JSON.stringify(overlay)};
+const SYSTEMMAP_NO_STAGGER = ${process.env.SYSTEMMAP_NO_STAGGER ? "true" : "false"}; // 試験専用(重なり検出の負例)
 let ti = 0, view = "system", focusEl = null, drill = null;
 const drillStack = [];
 let ops = 0;
@@ -282,6 +283,18 @@ function diagram(tops, flows) {
 
   const pairSeen = {};
   const laneX = PAD + rowW + 30; // 右側の迂回レーン(フィードバック・層跨ぎ)
+  // レーンのラベルは縦に並ぶため、近接すると重なる。置いた y を記録し、36px 未満なら退避する。
+  // NO_STAGGER は退避を切る試験専用の旗 — 重なり検出試験(test-labels-browser)の負例が
+  // 「検出器が本当に検出する」ことを確かめるために使う。本番 build では使わない。
+  const laneLabelYs = [];
+  const staggerOff = typeof SYSTEMMAP_NO_STAGGER !== "undefined" && SYSTEMMAP_NO_STAGGER;
+  const placeLaneLabel = (ly) => {
+    if (!staggerOff) {
+      while (laneLabelYs.some((y) => Math.abs(y - ly) < 36)) ly -= 36;
+    }
+    laneLabelYs.push(ly);
+    return ly;
+  };
   const edges = flows.map((f) => {
     const a = pos[f.from], b = pos[f.to];
     const key = [f.from, f.to].sort().join("|");
@@ -305,7 +318,7 @@ function diagram(tops, flows) {
       const yTop = b.y - 26 - off / 2;
       const xEnd = b.x + BW * 0.72 + off;
       path = \`M \${x1} \${y1} C \${xl} \${y1}, \${xl} \${y1}, \${xl} \${yTop} L \${xEnd} \${yTop} L \${xEnd} \${b.y}\`;
-      lx = xl + 6; ly = (y1 + yTop) / 2 - 8; anchorAttr = 'text-anchor="start"';
+      lx = xl + 6; ly = placeLaneLabel((y1 + yTop) / 2 - 8); anchorAttr = 'text-anchor="start"';
     } else {
       // 隣接層への縦の流れ。ラベルは到達先の直前(到達先ごとに散り、衝突しない)
       const x1 = a.x + BW / 2 + off, x2 = b.x + BW / 2 + off;
@@ -360,6 +373,9 @@ function viewSystem() {
     \${sysHeader}
     \${diagram(tops, flows)}
     \${flows.length === 0 ? '<p class="small">この階層の内側に閉じた流れは記録されていない(記録が無いのであって「無い」の確定ではない)。</p>' : ""}
+    \${flows.length ? \`<h3>Flow 一覧(配置に依らない全件の確認用)</h3>
+      <table><tr><th>ID</th><th>送信元</th><th>受信先</th><th>名前</th><th>種類</th><th>feedback_for</th></tr>
+      \${flows.map((f) => \`<tr><td>\${esc(f.id)}</td><td>\${esc(el(f.from).name)}</td><td>\${esc(el(f.to).name)}</td><td>\${esc(f.label)}</td><td>\${esc(f.kind)}</td><td>\${esc(f.feedback_for ?? "—")}</td></tr>\`).join("")}</table>\` : ""}
     \${crossTable}\`;
 }
 
