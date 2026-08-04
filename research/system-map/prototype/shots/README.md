@@ -1,6 +1,6 @@
 # 静止画(所有者の UIUX 確認用)
 
-撮影時点: commit `01e844d`(experiment/system-map)・2026-08-04。
+撮影時点: commit `e29b9ea`(experiment/system-map)・2026-08-04。
 **静止画は撮った時点の木でしか正しくない。** 模型や画面を変えたら撮り直す(build.mjs → shoot.mjs)。
 12〜14 番(旧 案A/案B 比較用)は、所有者判断(2026-08-04、構成図を採用)により役目を終えて削除した。
 
