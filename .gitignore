@@ -39,5 +39,9 @@ coverage/
 .npmrc
 .mutate-restore.json
 
+# 検証の記録として残す生ログだけは例外。判定の根拠であり、一時物ではない。
+# 置き場を decisions/ 配下の logs/ に限る（ここへ秘密を書かない規律とセット）。
+!research/system-map/decisions/**/logs/*.log
+
 # 規範資料の抽出物はコミットしない（再配布条件を確認するまで。ADR-029）
 Reference_material/

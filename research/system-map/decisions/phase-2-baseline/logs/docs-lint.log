@@ -1,0 +1,5 @@
+
+> doctrine-lens@0.10.0 docs:lint
+> python3 "$(node tools/doctrine-path.mjs)/scripts/docs-linter.py" --batch .
+
+docs-linter --batch: ERROR なし。

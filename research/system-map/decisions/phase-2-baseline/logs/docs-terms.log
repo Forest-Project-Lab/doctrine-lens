@@ -1,0 +1,5 @@
+
+> doctrine-lens@0.10.0 docs:terms
+> node tools/check-root-terms.mjs
+
+根の文書 5 件は、辞書と合う（README.md・AGENTS.md・CLAUDE.md・DESIGN.md・CHANGELOG.md）。

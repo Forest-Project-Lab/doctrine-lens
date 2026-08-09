@@ -1,0 +1,4 @@
+
+> doctrine-lens@0.10.0 typecheck
+> tsc --noEmit -p tsconfig.json
+

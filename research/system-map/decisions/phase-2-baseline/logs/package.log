@@ -1,0 +1,40 @@
+
+> doctrine-lens@0.10.0 package
+> vsce package -o doctrine-lens.vsix
+
+Executing prepublish script 'npm run vscode:prepublish'...
+
+> doctrine-lens@0.10.0 vscode:prepublish
+> npm run compile
+
+
+> doctrine-lens@0.10.0 compile
+> node esbuild.mjs
+
+
+  dist/webview.js  7.3kb
+
+⚡ Done in 45ms
+
+  dist/extension.js  228.7kb
+
+⚡ Done in 133ms
+ INFO  Files included in the VSIX:
+doctrine-lens.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ LICENSE.txt [1.05 KB]
+   ├─ changelog.md [50.86 KB]
+   ├─ icon.png [4.18 KB]
+   ├─ package.json [6.32 KB]
+   ├─ package.nls.ja.json [2.11 KB]
+   ├─ package.nls.json [1.96 KB]
+   ├─ readme.md [28.27 KB]
+   ├─ dist/
+   │  ├─ extension.js [228.66 KB]
+   │  └─ webview.js [7.34 KB]
+   └─ l10n/
+      └─ bundle.l10n.ja.json [9.96 KB]
+
+ DONE  Packaged: doctrine-lens.vsix (12 files, 105.9 KB)

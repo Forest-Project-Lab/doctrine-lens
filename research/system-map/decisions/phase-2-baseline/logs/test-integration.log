@@ -1,0 +1,169 @@
+
+> doctrine-lens@0.10.0 test:integration
+> npm run compile && tsc -p tsconfig.integration.json && node tools/run-vscode-test.mjs
+
+
+> doctrine-lens@0.10.0 compile
+> node esbuild.mjs
+
+
+  dist/webview.js  7.3kb
+
+⚡ Done in 80ms
+
+  dist/extension.js  228.7kb
+
+⚡ Done in 219ms
+親の VS Code から受け継いだ環境変数を落とした: VSCODE_CWD, VSCODE_ESM_ENTRYPOINT, VSCODE_NLS_CONFIG, VSCODE_HANDLES_UNCAUGHT_ERRORS, VSCODE_RECONNECTION_GRACE_TIME, VSCODE_IPC_HOOK_CLI, VSCODE_L10N_BUNDLE_LOCATION, VSCODE_HANDLES_SIGPIPE, ELECTRON_RUN_AS_NODE
+- Resolving version...
+✔ Validated version: 1.132.0
+- Found at https://update.code.visualstudio.com/1.132.0/linux-x64/stable?released=true
+✔ Found at https://update.code.visualstudio.com/1.132.0/linux-x64/stable?released=true
+- Downloading (334.01 MB)
+✔ Downloaded VS Code (07b4ff1883f94da91f6d698744fc7c3638b59720) into /workspaces/doctrine_lens/.vscode-test/vscode-linux-x64-1.132.0
+[12625:0809/213233.241518:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213233.833887:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[12625:0809/213233.834024:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213233.834045:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213233.889561:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[12625:0809/213233.889870:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[12625:0809/213233.902228:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+Warning: 'cached-data' is not in the list of known options, but still passed to Electron/Chromium.
+[90m[main 2026-08-09T21:32:34.154Z][0m StorageMainService: creating application shared storage
+[12625:0809/213234.159738:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213234.159847:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213234.159875:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213234.160248:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /run/dbus/system_bus_socket: No such file or directory
+[12625:0809/213234.188201:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.login1.Manager.Inhibit: object_path= /org/freedesktop/login1: unknown error type: 
+[12625:0809/213234.452138:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[90m[main 2026-08-09T21:32:34.452Z][0m [shared storage] Creating shared storage database at ':memory:' (wasCreated: true)
+[90m[main 2026-08-09T21:32:34.488Z][0m [shared storage] Initializing fallback application storage (path: in-memory)
+[90m[main 2026-08-09T21:32:34.553Z][0m [shared storage] Fallback application storage initialized with 3 items
+[90m[main 2026-08-09T21:32:34.555Z][0m update#setState disabled
+[90m[main 2026-08-09T21:32:34.556Z][0m update#ctor - updates are disabled by the environment
+[12625:0809/213234.572435:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[AgentHost:renderer] Acquiring MessagePort to agent host...
+[90m[main 2026-08-09T21:32:36.093Z][0m AgentHostProcessManager: agent host started
+[AgentHost:renderer] MessagePort acquired, creating client...
+Started local extension host with pid 12834.
+[AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false
+Loading development extension at /workspaces/doctrine_lens
+[vscode.mermaid-markdown-features]: Extension 'vscode.mermaid-markdown-features' CANNOT use 'legacyToolReferenceFullNames' without the 'chatParticipantPrivate' API proposal enabled
+[AgentHost:renderer] Protocol connection established; clientId=512f9134-a1e0-47e6-947e-831a8c84f1df
+[91m[main 2026-08-09T21:32:39.102Z][0m [AgentHost:stderr] (node:12749) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `exe --trace-deprecation ...` to show where the warning was created)
+
+Settings Sync: Account status changed from uninitialized to unavailable
+Unknown channel: agentHostClientProxy
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AgentHost] No token resolved for resource: https://api.github.com
+[AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+[AgentHost] No token resolved for resource: https://api.github.com/repos
+
+  Doctrine Lens — 拡張機能ホスト
+(node:12834) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `exe --trace-deprecation ...` to show where the warning was created)
+    ✔ 読み込めて起動する（main の指す束が実在する）
+    ✔ 命令がすべて登録されている
+    ✔ 005-1. 印が囲む範囲の始まりに見出しが出る
+    ✔ 005-2. 見出しから文書を開ける (1831ms)
+    ✔ 005-4. 印を含まないファイルには見出しが出ない (325ms)
+    ✔ 005-5. 範囲の外で命令を呼んでも例外が出ない (1127ms)
+    ✔ コード → 文書。範囲の中から呼ぶと、その根拠の文書が開く (352ms)
+Tool "renderMermaidDiagram" was not contributed.
+    ✔ 005-6. 文書 → コード。跳ぶ先が複数あるとき選ばせる (3290ms)
+    ✔ id を指した文書の帰結は、その文書を開いてから出る（起点を渡さない） (135ms)
+    ✔ 明細の画面が開き、いま開いている位置が起点になる (5170ms)
+  10 passing (18s)
+[90m[main 2026-08-09T21:33:03.216Z][0m Extension host with pid 12834 exited with code: 0, signal: unknown.
+Exit code:   0
+拡張機能ホストでの試験が通った。

@@ -5,7 +5,7 @@ type: OVERVIEW
 domain: _system
 status: current
 owner: render-projection
-updated: 2026-08-04
+updated: 2026-08-09
 llm_context: always
 sources: []
 ---
@@ -57,6 +57,7 @@ sources: []
 | ADR-028 | ADR | lens | 辞書は素の部分一致で照合される |
 | ADR-029 | ADR | lens | 書き込みを持つ画面は Lens ではない — 構想には製品を変えずに応える |
 | ADR-030 | ADR | lens | 触れない検証は進まない — 実験を同梱し、図の禁止を帰結の画面に限る |
+| ADR-031 | ADR | lens | Phase 2 を始める — 上流の判定を借りない |
 | CHANGE-001 | CHANGE | lens | 文書とコードの往復を加える |
 | CHANGE-002 | CHANGE | lens | 配れる状態にする |
 | CHANGE-003 | CHANGE | lens | 公開前監査で見つかった 24 件を直す |
@@ -87,6 +88,7 @@ sources: []
 | CHANGE-029 | CHANGE | lens | 走査が挙げた残りを、一件ずつ測ってから直した |
 | CHANGE-030 | CHANGE | lens | 地図の問いが戻ってきた — 製品を変えずに応えた |
 | CHANGE-031 | CHANGE | lens | 実験を同梱して main へ上げる — 所有者の判断 |
+| CHANGE-032 | CHANGE | lens | Phase 2 の実装を始める — 基準線と裁定の記録 |
 | IMPACT-001 | IMPACT | lens | 文書とコードの往復を加えることの影響 |
 | IMPACT-002 | IMPACT | lens | 配れる状態にすることの影響 |
 | IMPACT-003 | IMPACT | lens | 公開前監査の直しの影響 |
@@ -117,6 +119,7 @@ sources: []
 | IMPACT-029 | IMPACT | lens | 測ってから直した十二件の影響 |
 | IMPACT-030 | IMPACT | lens | 構想に応えた影響 |
 | IMPACT-031 | IMPACT | lens | 実験の同梱の影響 |
+| IMPACT-032 | IMPACT | lens | Phase 2 が触るもの |
 | IMPL-001 | IMPL | lens | 拡張機能の部品の配置 |
 | TEST-001 | TEST | lens | 橋渡しの受入 |
 | TEST-004 | TEST | lens | 追跡索引の橋渡しの受入 |

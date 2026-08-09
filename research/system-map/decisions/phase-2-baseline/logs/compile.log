@@ -1,0 +1,12 @@
+
+> doctrine-lens@0.10.0 compile
+> node esbuild.mjs
+
+
+  dist/webview.js  7.3kb
+
+⚡ Done in 97ms
+
+  dist/extension.js  228.7kb
+
+⚡ Done in 288ms
