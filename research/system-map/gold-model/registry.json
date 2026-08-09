@@ -249,6 +249,14 @@
       ]
     },
     {
+      "id": "M-18",
+      "statement": "模型が schema.json に適合する(形と語彙の全体)",
+      "source": "gold-model/schema.json",
+      "checkers": [
+        "model:schema-shape"
+      ]
+    },
+    {
       "id": "M-L1",
       "statement": "SVG のラベル同士が視覚的に重ならない",
       "source": "レビュー指摘 2026-08-04 §4",
@@ -278,6 +286,22 @@
       "source": "ADR-031 決定8",
       "checkers": [
         "meta:registry-consistent"
+      ]
+    },
+    {
+      "id": "M-N2",
+      "statement": "負例の表の各行で、名指した検査器が名指した判定と符丁を出す(門が発火する)",
+      "source": "ADR-031 決定8・ADR-017",
+      "checkers": [
+        "meta:negatives-fire"
+      ]
+    },
+    {
+      "id": "M-N3",
+      "statement": "判定を支える規則(空判定・非 PASS・了解の期限・種別・文法)を潰すと、対応する確かめが実際に変わる",
+      "source": "ADR-017・ADR-031 決定5",
+      "checkers": [
+        "meta:rules-load-bearing"
       ]
     }
   ],
@@ -379,6 +403,12 @@
       "module": "gold-model/check-model.mjs"
     },
     {
+      "id": "model:schema-shape",
+      "invariant": "M-18",
+      "gate": "model",
+      "module": "gold-model/validate-schema.mjs"
+    },
+    {
       "id": "build:no-runtime-fetch",
       "invariant": "M-13",
       "gate": "build",
@@ -425,6 +455,18 @@
       "invariant": "M-R1",
       "gate": "registry",
       "module": "prototype/test-registry.mjs"
+    },
+    {
+      "id": "meta:negatives-fire",
+      "invariant": "M-N2",
+      "gate": "negatives",
+      "module": "prototype/test-negatives.mjs"
+    },
+    {
+      "id": "meta:rules-load-bearing",
+      "invariant": "M-N3",
+      "gate": "mutation",
+      "module": "prototype/test-mutation.mjs"
     }
   ],
   "acknowledgements": [
@@ -644,6 +686,24 @@
       "cmd": [
         "node",
         "test-gates.mjs"
+      ]
+    },
+    {
+      "id": "negatives",
+      "label": "負例の表(門が発火する)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-negatives.mjs"
+      ]
+    },
+    {
+      "id": "mutation",
+      "label": "規則を潰すと判定が変わる(門が荷重を負っている)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-mutation.mjs"
       ]
     },
     {
