@@ -11,6 +11,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -107,4 +108,13 @@ console.log(
     ? `\n全件通過(${files.length} 本の .mjs を見た)`
     : `\n${hits.length} 箇所が正本の外に事実を持っている`,
 );
-process.exit(hits.length === 0 ? 0 : 1);
+
+const today = todayFrom(process.argv.slice(2));
+const records = [verdict({
+  invariant: "M-S1", checker: "meta:single-source", target: "research/system-map",
+  examined: files.length, examined_unit: "走査した .mjs",
+  violations: hits.map((h) => ({ code: "meta.duplicated_fact", message: `${h.rel}:${h.line} に ${h.rule.id} が手書きされている` })),
+})];
+const reportPath = reportPathFrom(process.argv.slice(2));
+if (reportPath) writeReport(reportPath, "single-source", records);
+process.exit(gateExitCode(records, today.date));
