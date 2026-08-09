@@ -1,0 +1,25 @@
+{
+  "schema": "doctrine-lens/plugin-resolution/1",
+  "root": "<複製>/forest-project-lab/doctrine/0.11.0",
+  "version": "0.11.0",
+  "commit": null,
+  "commit_source": null,
+  "resolved_via": "cache",
+  "pin_state": "matched",
+  "trace": [
+    "台帳の登録はどれもこのプロジェクト向けでない(<別のプロジェクト>)。複製へ降りる",
+    "複製から引いた: 0.11.0"
+  ],
+  "pin": {
+    "schema": "system-map/doctrine-pin/1",
+    "$comment": "上流 doctrine の実体を固定する(ADR-031 決定6)。tag は動かせるが commit は動かせないので、CI は commit を取りに行き `git rev-parse HEAD` で照合する。手元の門は、引いた実体の版をここと突き合わせ、食い違えば静かに測らずに申告する。",
+    "plugin": "doctrine@forest-project-lab",
+    "version": "0.11.0",
+    "tag": "v0.11.0",
+    "commit": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+    "allow_autodetect": true,
+    "recorded_at": "2026-08-09",
+    "recorded_because": "手元の導入実体が 0.10.0、上流が 0.11.0 を出しており、全ての門が 0.10.0 に対して回っていることを誰も申告していなかった(doctrine#212 第2信)。0.11.0 で scripts/map-draft-check.py と skills/system-map-draft/ が入る。",
+    "$comment_autodetect": "allow_autodetect を真にしているのは、npm script(docs:check ほか)が導入済みの実体をそのまま使えるようにするためである。**食い違いを黙らせるためではない** —— 解決した版と commit は毎回 stderr に出す。再現性が要る段(overlay 生成・system-map の CI)は --require-pin を付け、食い違えば止まる。"
+  }
+}
