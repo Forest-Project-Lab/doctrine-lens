@@ -86,10 +86,40 @@ export function assertM14(rows, limit) {
   if (bad.length) throw new Error("M-14 FAIL:\n  " + bad.join("\n  "));
   const reachable = rows.filter((r) => r.status === "reachable");
   return {
-    max: Math.max(...reachable.map((r) => r.ops)),
+    // 到達可能な要素が 0 件のとき、Math.max(...[]) は -Infinity を返す。
+    // それは「最大操作数が -Infinity」ではなく「数える対象が無い」である。null で言う。
+    max: reachable.length ? Math.max(...reachable.map((r) => r.ops)) : null,
     reachable: reachable.length,
     na: rows.filter((r) => r.status === "not_applicable").length,
   };
+}
+
+/**
+ * M-14 を**対象ごとに**判定の記録へ変える。
+ *
+ * 四対象を束ねて数えると、到達可能な要素が 0 件の対象が隠れる —— 実測で celery と
+ * fixture がそうだった(束ねると最大 3・到達 9 で緑に見える)。対象ごとに見ると
+ * 「何も検めていない」が現れる。
+ */
+export function reachabilityVerdicts(models, limit, ui = UI_STRUCTURE) {
+  return models.map((m) => {
+    const rows = computeOpsRows([m], ui);
+    const violations = [];
+    for (const r of rows) {
+      if (r.status === "broken") violations.push({ code: "gate.broken_link", message: `壊れた参照: ${r.element} — ${r.note}` });
+      if (r.status === "unregistered") violations.push({ code: "gate.unregistered", message: `未登録: ${r.element}(provenance は代用にならない)` });
+      if (r.status === "reachable" && r.ops > limit) violations.push({ code: "gate.ops_over_limit", message: `${limit} 操作超過: ${r.element}(${r.ops})` });
+    }
+    const reachable = rows.filter((r) => r.status === "reachable");
+    return {
+      target: m.target,
+      examined: reachable.length,
+      rows,
+      violations,
+      max: reachable.length ? Math.max(...reachable.map((r) => r.ops)) : null,
+      na: rows.filter((r) => r.status === "not_applicable").length,
+    };
+  });
 }
 
 /** M-13(静的側): 生成物に実行時の外部読み取りの綴りが無いこと。実通信の検査は test-m13-browser.mjs。 */

@@ -14,13 +14,15 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 // 掃引する対象と、画面での指し方は registry.json / spec.mjs が正本。ここでは持たない。
 import { targetIds, targetIndex } from "../gold-model/spec.mjs";
+import { verdict, reportPathFrom, writeReport, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** ドリルの重なりを見る対象。`lens` を内部に持つのはこの対象だけである。 */
 const DRILL_TARGET = "doctrine-and-lens";
 let failures = 0;
+const failed = [];
 const report = (ok, name, detail = "") => {
-  if (!ok) failures++;
+  if (!ok) { failures++; failed.push(name + (detail ? " — " + detail : "")); }
   console.log((ok ? "ok   " : "NG   ") + name + (detail ? " — " + detail : ""));
 };
 
@@ -84,4 +86,14 @@ async function sweep(htmlPath) {
 
 await b.close();
 console.log(failures === 0 ? "\n全件通過(正 1・負 1)" : `\n${failures} 件の失敗`);
-process.exit(failures === 0 ? 0 : 1);
+
+// 判定の記録。見た件数は掃引した画面の数(全対象 + ドリル 1)。
+const today = todayFrom(process.argv.slice(2));
+const records = [verdict({
+  invariant: "M-L1", checker: "browser:label-no-overlap", target: "index.html",
+  examined: targetIds("labels").length + 1, examined_unit: "掃引した画面",
+  violations: failed.map((n) => ({ code: "gate.label_overlap", message: n })),
+})];
+const reportPath = reportPathFrom(process.argv.slice(2));
+if (reportPath) writeReport(reportPath, "browser-labels", records);
+process.exit(gateExitCode(records, today.date));

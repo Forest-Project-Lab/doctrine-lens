@@ -18,15 +18,18 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { loadModels, targetIndex } from "../gold-model/spec.mjs";
+import { verdict, reportPathFrom, writeReport, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexPath = join(here, "index.html");
 // 対象の一覧は registry.json が正本。ここでは持たない。
 const models = loadModels("gates");
 
-let failures = 0;
+let failures = 0, checks = 0;
+const failed = [];
 const report = (ok, name, detail = "") => {
-  if (!ok) failures++;
+  checks++;
+  if (!ok) { failures++; failed.push(name + (detail ? " — " + detail : "")); }
   console.log((ok ? "ok   " : "NG   ") + name + (detail ? " — " + detail : ""));
 };
 
@@ -170,4 +173,15 @@ for (const [name, inject] of negatives) {
 
 await b.close();
 console.log(failures === 0 ? "\n全件通過(正 2・負 5)" : `\n${failures} 件の失敗`);
-process.exit(failures === 0 ? 0 : 1);
+
+// 判定の記録。**段が黙って終わらないための唯一の証拠である**(verify.mjs が
+// 「登録された検査器が判定を出したか」を検める)。見た件数は assert した回数。
+const today = todayFrom(process.argv.slice(2));
+const records = [verdict({
+  invariant: "M-13", checker: "browser:no-external-request", target: "index.html",
+  examined: checks, examined_unit: "実ブラウザの assert",
+  violations: failed.map((n) => ({ code: "gate.external_request", message: n })),
+})];
+const reportPath = reportPathFrom(process.argv.slice(2));
+if (reportPath) writeReport(reportPath, "browser-m13", records);
+process.exit(gateExitCode(records, today.date));

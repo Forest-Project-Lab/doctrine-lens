@@ -1,0 +1,237 @@
+
+===== validator(M-01〜16・四対象) =====
+
+== target-1-doctrine-and-lens.json (target: doctrine-and-lens) ==
+  M-01   model:id-unique                    doctrine-and-lens          PASS    (id 40 件)
+  M-02   model:parent-acyclic               doctrine-and-lens          PASS    (要素 10 件)
+  M-03   model:flow-endpoints               doctrine-and-lens          PASS    (Flow 11 件)
+  M-04   model:child-crossing-aggregated    doctrine-and-lens          PASS    (子の越境 Flow 2 件)
+  M-05   model:contract-shape               doctrine-and-lens          PASS    (契約 4 件)
+  M-06   model:verified-has-evidence        doctrine-and-lens          PASS    (verified な契約 2 件)
+  M-07a  model:review-status-present        doctrine-and-lens          PASS    (実体 27 件)
+  M-07b  model:no-proposed-in-canonical     doctrine-and-lens          VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: confirmed の実体が一つも無く、confirmed だけを写した正本表示も実装されていない。**この不変条件はまだ一度も検められていない。** 検査器は登録され発火するが、見る対象が無いことを言うだけである
+  M-08   model:no-doc-edge-flows            doctrine-and-lens          PASS    (Flow 11 件)
+  M-09   model:flow-labelled                doctrine-and-lens          PASS    (Flow 11 件)
+  M-10   model:single-freshness-authority   doctrine-and-lens          PASS    (アンカー 13 件)
+  M-11   model:unknown-has-negative-source  doctrine-and-lens          PASS    (unknown な契約 1 件)
+  M-12   model:no-ghost-in-scenarios        doctrine-and-lens          PASS    (シナリオの段 7 件)
+  M-15   model:na-has-reason                doctrine-and-lens          PASS    (not_applicable な契約 1 件)
+  M-16   model:evidence-fingerprinted       doctrine-and-lens          PASS    (verified な契約の証跡 2 件)
+
+== target-2-lens-shipping.json (target: lens-shipping) ==
+  M-01   model:id-unique                    lens-shipping              PASS    (id 22 件)
+  M-02   model:parent-acyclic               lens-shipping              PASS    (要素 6 件)
+  M-03   model:flow-endpoints               lens-shipping              PASS    (Flow 7 件)
+  M-04   model:child-crossing-aggregated    lens-shipping              VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 6 要素が最上位)。境界を越える子の Flow が存在しないので、親への集約を検める対象が無い
+  M-05   model:contract-shape               lens-shipping              PASS    (契約 3 件)
+  M-06   model:verified-has-evidence        lens-shipping              PASS    (verified な契約 1 件)
+  M-07a  model:review-status-present        lens-shipping              PASS    (実体 18 件)
+  M-07b  model:no-proposed-in-canonical     lens-shipping              VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-08   model:no-doc-edge-flows            lens-shipping              PASS    (Flow 7 件)
+  M-09   model:flow-labelled                lens-shipping              PASS    (Flow 7 件)
+  M-10   model:single-freshness-authority   lens-shipping              PASS    (アンカー 4 件)
+  M-11   model:unknown-has-negative-source  lens-shipping              PASS    (unknown な契約 1 件)
+  M-12   model:no-ghost-in-scenarios        lens-shipping              PASS    (シナリオの段 8 件)
+  M-15   model:na-has-reason                lens-shipping              VACUOUS (not_applicable な契約 0 件) not_applicable な契約 が 0 件。何も検めていない  ← 了解済: not_applicable の契約が無い(verified 1・claimed 1・unknown 1)。要素の側には明示 NA が 5 件あるが、それは実現の非該当であって契約の状態ではない
+  M-16   model:evidence-fingerprinted       lens-shipping              PASS    (verified な契約の証跡 1 件)
+
+== target-3-celery.json (target: celery) ==
+  M-01   model:id-unique                    celery                     PASS    (id 21 件)
+  M-02   model:parent-acyclic               celery                     PASS    (要素 5 件)
+  M-03   model:flow-endpoints               celery                     PASS    (Flow 7 件)
+  M-04   model:child-crossing-aggregated    celery                     VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 5 要素が最上位)。同上
+  M-05   model:contract-shape               celery                     PASS    (契約 4 件)
+  M-06   model:verified-has-evidence        celery                     VACUOUS (verified な契約 0 件) verified な契約 が 0 件。何も検めていない  ← 了解済: Celery の公開文書からは verified の契約が一件も取れなかった。四契約は claimed 3・unknown 1 である。台帳 v3.2-5 (e′) により、出所が沈黙しているものは unknown のまま置く——埋めれば捏造になる
+  M-07a  model:review-status-present        celery                     PASS    (実体 18 件)
+  M-07b  model:no-proposed-in-canonical     celery                     VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-08   model:no-doc-edge-flows            celery                     PASS    (Flow 7 件)
+  M-09   model:flow-labelled                celery                     PASS    (Flow 7 件)
+  M-10   model:single-freshness-authority   celery                     PASS    (アンカー 3 件)
+  M-11   model:unknown-has-negative-source  celery                     PASS    (unknown な契約 1 件)
+  M-12   model:no-ghost-in-scenarios        celery                     PASS    (シナリオの段 8 件)
+  M-15   model:na-has-reason                celery                     VACUOUS (not_applicable な契約 0 件) not_applicable な契約 が 0 件。何も検めていない  ← 了解済: not_applicable の契約が無い(claimed 3・unknown 1)
+  M-16   model:evidence-fingerprinted       celery                     VACUOUS (verified な契約の証跡 0 件) verified な契約の証跡 が 0 件。何も検めていない  ← 了解済: verified の契約が 0 件なので、その証跡も 0 件である(M-06 と同じ理由の帰結)
+
+== fixture-rare-states.json (target: fixture-rare-states(架空)) ==
+  M-01   model:id-unique                    fixture-rare-states(架空)    PASS    (id 15 件)
+  M-02   model:parent-acyclic               fixture-rare-states(架空)    PASS    (要素 3 件)
+  M-03   model:flow-endpoints               fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-04   model:child-crossing-aggregated    fixture-rare-states(架空)    VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 3 要素が最上位)。同上
+  M-05   model:contract-shape               fixture-rare-states(架空)    PASS    (契約 6 件)
+  M-06   model:verified-has-evidence        fixture-rare-states(架空)    PASS    (verified な契約 1 件)
+  M-07a  model:review-status-present        fixture-rare-states(架空)    PASS    (実体 14 件)
+  M-07b  model:no-proposed-in-canonical     fixture-rare-states(架空)    VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-08   model:no-doc-edge-flows            fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-09   model:flow-labelled                fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-10   model:single-freshness-authority   fixture-rare-states(架空)    PASS    (アンカー 1 件)
+  M-11   model:unknown-has-negative-source  fixture-rare-states(架空)    VACUOUS (unknown な契約 0 件) unknown な契約 が 0 件。何も検めていない  ← 了解済: この架空の対象は希少状態(planned/failed/stale/verified/claimed/not_applicable)の読み分けが目的であり、unknown を含まない。負の出所の検査は他の三対象が受け持つ
+  M-12   model:no-ghost-in-scenarios        fixture-rare-states(架空)    PASS    (シナリオの段 4 件)
+  M-15   model:na-has-reason                fixture-rare-states(架空)    PASS    (not_applicable な契約 1 件)
+  M-16   model:evidence-fingerprinted       fixture-rare-states(架空)    PASS    (verified な契約の証跡 1 件)
+
+計: PASS 48 / FAIL 0 / VACUOUS 12 / SKIP 0 / ERROR 0(うち了解済 12)
+※ VACUOUS・SKIP・ERROR は PASS ではない。合計に混ぜない。
+判定に使った日付: 2026-08-09(--today)
+
+===== build(既定 = overlay なし。M-13 静的・M-14 計算) =====
+  M-14   build:reachability                 doctrine-and-lens          PASS    (到達可能な要素 8 件)
+  M-14   build:reachability                 lens-shipping              PASS    (到達可能な要素 1 件)
+  M-14   build:reachability                 celery                     VACUOUS (到達可能な要素 0 件) 到達可能な要素 が 0 件。何も検めていない  ← 了解済: 全 5 要素が realization: not_applicable(外部の実体であり、この木にコードも試験も無い)。到達を数える対象が 0 件である。**この対象について M-14 は何も言っていない。** 束ねて数えていた頃は、他の対象の到達で隠れていた
+  M-14   build:reachability                 fixture-rare-states(架空)    VACUOUS (到達可能な要素 0 件) 到達可能な要素 が 0 件。何も検めていない  ← 了解済: 全 3 要素が realization: not_applicable(架空であり実在の成果物を指さない)。同上
+  M-13   build:no-runtime-fetch             index.html                 PASS    (生成物 1 件)
+index.html を生成した。M-14 最大操作数: 3 / M-13: 外部読み取りなし
+
+===== 不変条件と検査器の対応 =====
+ok   不変条件が名指す検査器はすべて登録されている
+ok   検査器はすべてちょうど一つの不変条件に属する
+ok   検査器を持たない不変条件が無い
+ok   id が一意である
+ok   検査器の属する段が実在する
+ok   模型の門の検査器が、登録と実装で一致する(集合として)
+ok   INVARIANTS.md の表が登録と一致する
+ok   判定の語彙に、合格の桶が一つだけ在る
+ok   了解の記録が実在する不変条件と対象を指す
+
+全件通過(不変条件 21 件・検査器 23 件・段 8 件・了解 14 件)
+
+===== 正本の単一性(事実の二重定義が無い) =====
+ok   模型のファイル名 — 正本の外に綴りが無い
+ok   対象を位置で指す — 正本の外に綴りが無い
+ok   対象の添字の一覧 — 正本の外に綴りが無い
+ok   実現先として認める種別 — 正本の外に綴りが無い
+ok   証跡の必須属性 — 正本の外に綴りが無い
+ok   七状態 — 正本の外に綴りが無い
+ok   操作数の上限 — 正本の外に綴りが無い
+
+全件通過(15 本の .mjs を見た)
+
+===== M-14 計算経路の正負(test-gates) =====
+ok   正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選ぶ+開く=3)で全て到達・NA・超過なし
+ok   負: 展開を 1 段挟む画面遷移にすると子が 4 操作になり落ちる
+ok   負: 境界 — 親のみの最小モデルで展開 1 段(計 3)は通り、2 段(計 4)は落ちる
+ok   負: realized_by が実在しない anchor を指すと「壊れた参照」で落ちる
+ok   負: anchor から URL を消すと「壊れた参照」で落ちる
+ok   負: document アンカーを実現先に渡すと種別で落ちる(文書は Code/Test/Evidence でない)
+ok   負: artifact アンカー(リポジトリ tree)を実現先に渡すと種別で落ちる
+ok   負: 必須属性の欠けた証拠は「壊れ」で落ちる(NA でない要素の契約で検証)
+ok   負: 実現も明示 NA も無い要素(provenance だけ)は「未登録」で落ちる
+ok   正: 明示 NA(理由つき)は許され、到達判定から除外される
+ok   M-13 静的・正: 現物の index.html に fetch/XHR の綴りが無い
+ok   M-13 静的・負: fetch( / XMLHttpRequest を仕込むと検出される
+
+全件通過
+
+===== M-13 実ブラウザ(操作単位 assert・オフライン・負例5) =====
+ok   正: オンラインで全 15 操作が成立・各操作の外部リクエスト 0 件
+ok   正: オフラインでも同一の全 15 操作が成立・外部 0 件
+ok   負: 外部 script の仕込みが検出される
+ok   負: 外部 stylesheet の仕込みが検出される
+ok   負: 外部 img の仕込みが検出される
+ok   負: 外部 fetch の仕込みが検出される
+ok   負: 外部 font の仕込みが検出される
+
+全件通過(正 2・負 5)
+
+===== M-14 実操作(全到達要素のクリック計測・全リンク到達) =====
+ok   doctrine-and-lens/doctrine — 実操作 2 / 計算 2 / 到達先 3 件
+ok   doctrine-and-lens/doctrine.governance — 実操作 3 / 計算 3 / 到達先 1 件
+ok   doctrine-and-lens/doctrine.graph — 実操作 3 / 計算 3 / 到達先 1 件
+ok   doctrine-and-lens/doctrine.authoring — 実操作 3 / 計算 3 / 到達先 1 件
+ok   doctrine-and-lens/lens — 実操作 2 / 計算 2 / 到達先 2 件
+ok   doctrine-and-lens/lens.bridge — 実操作 3 / 計算 3 / 到達先 1 件
+ok   doctrine-and-lens/lens.model — 実操作 3 / 計算 3 / 到達先 1 件
+ok   doctrine-and-lens/lens.view — 実操作 3 / 計算 3 / 到達先 1 件
+ok   lens-shipping/packager — 実操作 2 / 計算 2 / 到達先 1 件
+ok   NA 表示: doctrine-and-lens/maintainer
+ok   NA 表示: doctrine-and-lens/vscode
+ok   NA 表示: lens-shipping/maintainer
+
+全件通過(実操作と計算の突合)
+
+===== ラベル重なり(全対象+ドリル・回帰負例) =====
+ok   正: 全対象・ドリル含めラベルの重なりなし
+ok   負: 退避を切った変種の重なりが検出される(回帰負例=Celery) — 対象 celery: ↩ ack を返す(event)↩ ack を返 × ↩ 状態と結果を返す(data)↩ 状態と結果を(計 1 組)
+
+全件通過(正 1・負 1)
+
+===== M 層の判定(日付 2026-08-09・--today) =====
+  M-01   model:id-unique                    celery                     PASS    (id 21 件)
+  M-01   model:id-unique                    doctrine-and-lens          PASS    (id 40 件)
+  M-01   model:id-unique                    fixture-rare-states(架空)    PASS    (id 15 件)
+  M-01   model:id-unique                    lens-shipping              PASS    (id 22 件)
+  M-02   model:parent-acyclic               celery                     PASS    (要素 5 件)
+  M-02   model:parent-acyclic               doctrine-and-lens          PASS    (要素 10 件)
+  M-02   model:parent-acyclic               fixture-rare-states(架空)    PASS    (要素 3 件)
+  M-02   model:parent-acyclic               lens-shipping              PASS    (要素 6 件)
+  M-03   model:flow-endpoints               celery                     PASS    (Flow 7 件)
+  M-03   model:flow-endpoints               doctrine-and-lens          PASS    (Flow 11 件)
+  M-03   model:flow-endpoints               fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-03   model:flow-endpoints               lens-shipping              PASS    (Flow 7 件)
+  M-04   model:child-crossing-aggregated    celery                     VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 5 要素が最上位)。同上
+  M-04   model:child-crossing-aggregated    doctrine-and-lens          PASS    (子の越境 Flow 2 件)
+  M-04   model:child-crossing-aggregated    fixture-rare-states(架空)    VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 3 要素が最上位)。同上
+  M-04   model:child-crossing-aggregated    lens-shipping              VACUOUS (子の越境 Flow 0 件) 子の越境 Flow が 0 件。何も検めていない  ← 了解済: この模型は子要素を持たない(全 6 要素が最上位)。境界を越える子の Flow が存在しないので、親への集約を検める対象が無い
+  M-05   model:contract-shape               celery                     PASS    (契約 4 件)
+  M-05   model:contract-shape               doctrine-and-lens          PASS    (契約 4 件)
+  M-05   model:contract-shape               fixture-rare-states(架空)    PASS    (契約 6 件)
+  M-05   model:contract-shape               lens-shipping              PASS    (契約 3 件)
+  M-06   model:verified-has-evidence        celery                     VACUOUS (verified な契約 0 件) verified な契約 が 0 件。何も検めていない  ← 了解済: Celery の公開文書からは verified の契約が一件も取れなかった。四契約は claimed 3・unknown 1 である。台帳 v3.2-5 (e′) により、出所が沈黙しているものは unknown のまま置く——埋めれば捏造になる
+  M-06   model:verified-has-evidence        doctrine-and-lens          PASS    (verified な契約 2 件)
+  M-06   model:verified-has-evidence        fixture-rare-states(架空)    PASS    (verified な契約 1 件)
+  M-06   model:verified-has-evidence        lens-shipping              PASS    (verified な契約 1 件)
+  M-07a  model:review-status-present        celery                     PASS    (実体 18 件)
+  M-07a  model:review-status-present        doctrine-and-lens          PASS    (実体 27 件)
+  M-07a  model:review-status-present        fixture-rare-states(架空)    PASS    (実体 14 件)
+  M-07a  model:review-status-present        lens-shipping              PASS    (実体 18 件)
+  M-07b  model:no-proposed-in-canonical     celery                     VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-07b  model:no-proposed-in-canonical     doctrine-and-lens          VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: confirmed の実体が一つも無く、confirmed だけを写した正本表示も実装されていない。**この不変条件はまだ一度も検められていない。** 検査器は登録され発火するが、見る対象が無いことを言うだけである
+  M-07b  model:no-proposed-in-canonical     fixture-rare-states(架空)    VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-07b  model:no-proposed-in-canonical     lens-shipping              VACUOUS (confirmed の実体 0 件) confirmed の実体 が 0 件。何も検めていない  ← 了解済: 同上(confirmed の実体が無い)
+  M-08   model:no-doc-edge-flows            celery                     PASS    (Flow 7 件)
+  M-08   model:no-doc-edge-flows            doctrine-and-lens          PASS    (Flow 11 件)
+  M-08   model:no-doc-edge-flows            fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-08   model:no-doc-edge-flows            lens-shipping              PASS    (Flow 7 件)
+  M-09   model:flow-labelled                celery                     PASS    (Flow 7 件)
+  M-09   model:flow-labelled                doctrine-and-lens          PASS    (Flow 11 件)
+  M-09   model:flow-labelled                fixture-rare-states(架空)    PASS    (Flow 3 件)
+  M-09   model:flow-labelled                lens-shipping              PASS    (Flow 7 件)
+  M-10   model:single-freshness-authority   celery                     PASS    (アンカー 3 件)
+  M-10   model:single-freshness-authority   doctrine-and-lens          PASS    (アンカー 13 件)
+  M-10   model:single-freshness-authority   fixture-rare-states(架空)    PASS    (アンカー 1 件)
+  M-10   model:single-freshness-authority   lens-shipping              PASS    (アンカー 4 件)
+  M-11   model:unknown-has-negative-source  celery                     PASS    (unknown な契約 1 件)
+  M-11   model:unknown-has-negative-source  doctrine-and-lens          PASS    (unknown な契約 1 件)
+  M-11   model:unknown-has-negative-source  fixture-rare-states(架空)    VACUOUS (unknown な契約 0 件) unknown な契約 が 0 件。何も検めていない  ← 了解済: この架空の対象は希少状態(planned/failed/stale/verified/claimed/not_applicable)の読み分けが目的であり、unknown を含まない。負の出所の検査は他の三対象が受け持つ
+  M-11   model:unknown-has-negative-source  lens-shipping              PASS    (unknown な契約 1 件)
+  M-12   model:no-ghost-in-scenarios        celery                     PASS    (シナリオの段 8 件)
+  M-12   model:no-ghost-in-scenarios        doctrine-and-lens          PASS    (シナリオの段 7 件)
+  M-12   model:no-ghost-in-scenarios        fixture-rare-states(架空)    PASS    (シナリオの段 4 件)
+  M-12   model:no-ghost-in-scenarios        lens-shipping              PASS    (シナリオの段 8 件)
+  M-13   browser:no-external-request        index.html                 PASS    (実ブラウザの assert 7 件)
+  M-13   build:no-runtime-fetch             index.html                 PASS    (生成物 1 件)
+  M-14   browser:ops-count                  celery                     VACUOUS (実クリックで測った要素 0 件) 実クリックで測った要素 が 0 件。何も検めていない  ← 了解済: 全 5 要素が realization: not_applicable(外部の実体であり、この木にコードも試験も無い)。到達を数える対象が 0 件である。**この対象について M-14 は何も言っていない。** 束ねて数えていた頃は、他の対象の到達で隠れていた
+  M-14   build:reachability                 celery                     VACUOUS (到達可能な要素 0 件) 到達可能な要素 が 0 件。何も検めていない  ← 了解済: 全 5 要素が realization: not_applicable(外部の実体であり、この木にコードも試験も無い)。到達を数える対象が 0 件である。**この対象について M-14 は何も言っていない。** 束ねて数えていた頃は、他の対象の到達で隠れていた
+  M-14   browser:ops-count                  doctrine-and-lens          PASS    (実クリックで測った要素 8 件)
+  M-14   build:reachability                 doctrine-and-lens          PASS    (到達可能な要素 8 件)
+  M-14   browser:ops-count                  fixture-rare-states(架空)    VACUOUS (実クリックで測った要素 0 件) 実クリックで測った要素 が 0 件。何も検めていない  ← 了解済: 全 3 要素が realization: not_applicable(架空であり実在の成果物を指さない)。同上
+  M-14   build:reachability                 fixture-rare-states(架空)    VACUOUS (到達可能な要素 0 件) 到達可能な要素 が 0 件。何も検めていない  ← 了解済: 全 3 要素が realization: not_applicable(架空であり実在の成果物を指さない)。同上
+  M-14   browser:ops-count                  lens-shipping              PASS    (実クリックで測った要素 1 件)
+  M-14   build:reachability                 lens-shipping              PASS    (到達可能な要素 1 件)
+  M-15   model:na-has-reason                celery                     VACUOUS (not_applicable な契約 0 件) not_applicable な契約 が 0 件。何も検めていない  ← 了解済: not_applicable の契約が無い(claimed 3・unknown 1)
+  M-15   model:na-has-reason                doctrine-and-lens          PASS    (not_applicable な契約 1 件)
+  M-15   model:na-has-reason                fixture-rare-states(架空)    PASS    (not_applicable な契約 1 件)
+  M-15   model:na-has-reason                lens-shipping              VACUOUS (not_applicable な契約 0 件) not_applicable な契約 が 0 件。何も検めていない  ← 了解済: not_applicable の契約が無い(verified 1・claimed 1・unknown 1)。要素の側には明示 NA が 5 件あるが、それは実現の非該当であって契約の状態ではない
+  M-16   model:evidence-fingerprinted       celery                     VACUOUS (verified な契約の証跡 0 件) verified な契約の証跡 が 0 件。何も検めていない  ← 了解済: verified の契約が 0 件なので、その証跡も 0 件である(M-06 と同じ理由の帰結)
+  M-16   model:evidence-fingerprinted       doctrine-and-lens          PASS    (verified な契約の証跡 2 件)
+  M-16   model:evidence-fingerprinted       fixture-rare-states(架空)    PASS    (verified な契約の証跡 1 件)
+  M-16   model:evidence-fingerprinted       lens-shipping              PASS    (verified な契約の証跡 1 件)
+  M-L1   browser:label-no-overlap           index.html                 PASS    (掃引した画面 5 件)
+  M-N1   meta:gate-fires                    M-13/M-14 の計算経路            PASS    (正負の試験 12 件)
+  M-R1   meta:registry-consistent           gold-model/registry.json   PASS    (対応の検査 9 件)
+  M-S1   meta:single-source                 research/system-map        PASS    (走査した .mjs 15 件)
+
+計: PASS 58 / FAIL 0 / VACUOUS 16 / SKIP 0 / ERROR 0(VACUOUS/SKIP のうち了解済 16)
+※ VACUOUS・SKIP・ERROR は PASS ではない。合計に混ぜない。
+
+一括検証: 全 8 段通過。登録された検査器 23 件すべてが判定を出した。
+ただしこの緑は「16 件については何も検めていない」ことを含む(了解の記録を見よ)。

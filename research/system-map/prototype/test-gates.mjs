@@ -11,15 +11,23 @@ import { fileURLToPath } from "node:url";
 import { computeOpsRows, assertM14, checkNoRuntimeFetch, UI_STRUCTURE } from "./gates.mjs";
 // 対象の一覧と操作数の上限は registry.json が正本。ここでは持たない。
 import { loadModels, MAX_OPS } from "../gold-model/spec.mjs";
+import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const realModels = loadModels("gates");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
-let failures = 0;
+let failures = 0, checks = 0;
+const failed = [];
 const t = (name, fn) => {
+  checks++;
   try { fn(); console.log("ok   " + name); }
-  catch (e) { failures++; console.log("NG   " + name + " — " + e.message.split("\n")[0]); }
+  catch (e) {
+    failures++;
+    const why = e.message.split("\n")[0];
+    failed.push(name + " — " + why);
+    console.log("NG   " + name + " — " + why);
+  }
 };
 const expectThrow = (fn, name) => {
   let msg = null;
@@ -119,4 +127,15 @@ t("M-13 静的・負: fetch( / XMLHttpRequest を仕込むと検出される", (
 });
 
 console.log(failures === 0 ? "\n全件通過" : `\n${failures} 件の失敗`);
-process.exit(failures === 0 ? 0 : 1);
+
+// 判定の記録。ここが検めているのは模型ではなく **門そのものが発火するか** である。
+// 負の入力を通してしまう門は、緑に見えても何も守っていない。
+const today = todayFrom(process.argv.slice(2));
+const records = [verdict({
+  invariant: "M-N1", checker: "meta:gate-fires", target: "M-13/M-14 の計算経路",
+  examined: checks, examined_unit: "正負の試験",
+  violations: failed.map((n) => ({ code: "meta.gate_did_not_fire", message: n })),
+})];
+const reportPath = reportPathFrom(process.argv.slice(2));
+if (reportPath) writeReport(reportPath, "unit", records);
+process.exit(gateExitCode(records, today.date));

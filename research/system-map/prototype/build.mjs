@@ -15,18 +15,32 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { computeOpsRows, assertM14, checkNoRuntimeFetch } from "./gates.mjs";
+import { computeOpsRows, reachabilityVerdicts, checkNoRuntimeFetch } from "./gates.mjs";
 import { loadModels, MAX_OPS, STATUS_DISPLAY_ORDER } from "../gold-model/spec.mjs";
+import { verdict, reportPathFrom, writeReport, formatRecord, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 // 対象の一覧と並びは registry.json が正本。並びが画面の並びになる。
 const models = loadModels("build");
+const reportPath = reportPathFrom(process.argv.slice(2));
+const today = todayFrom(process.argv.slice(2));
+const records = [];
 
 // ---- M-14 の機械判定(build 時) ----
 // 判定器は gates.mjs。発火することは test-gates.mjs の負の試験が確かめる。
 // 操作数の上限は台帳 v3.2-16(registry.json の policy.max_ops)。
+//
+// **対象ごとに判ずる。** 四対象を束ねて数えると、到達可能な要素が 0 件の対象が
+// 隠れる(実測: celery と fixture)。束ねた最大操作数だけを見ていると緑に見える。
 const m14 = computeOpsRows(models);
-const { max: m14max } = assertM14(m14, MAX_OPS);
+for (const r of reachabilityVerdicts(models, MAX_OPS)) {
+  records.push(verdict({
+    invariant: "M-14", checker: "build:reachability", target: r.target,
+    examined: r.examined, examined_unit: "到達可能な要素", violations: r.violations,
+  }));
+}
+const reachableAll = m14.filter((r) => r.status === "reachable");
+const m14max = reachableAll.length ? Math.max(...reachableAll.map((r) => r.ops)) : null;
 
 // ---- 実データ overlay(Phase 2 予習) ----
 // 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を混ぜない —
@@ -458,10 +472,22 @@ render();
 `;
 
 // ---- M-13 の機械判定(build 終端) ----
-if (!checkNoRuntimeFetch(html)) {
-  console.error("M-13 FAIL: 生成物に実行時の外部読み取り(fetch/XHR)が在る");
-  process.exit(1);
+// 生成物は一つなので、対象は成果物そのもの。見た件数は 1(綴りを走査した回数)。
+const noFetch = checkNoRuntimeFetch(html);
+records.push(verdict({
+  invariant: "M-13", checker: "build:no-runtime-fetch", target: "index.html",
+  examined: 1, examined_unit: "生成物",
+  violations: noFetch ? [] : [{ code: "gate.runtime_fetch", message: "生成物に実行時の外部読み取り(fetch/XHR)が在る" }],
+}));
+
+for (const r of records) console.log(formatRecord(r, ackFor(r, today.date)));
+if (reportPath) writeReport(reportPath, "build", records);
+
+const code = gateExitCode(records, today.date);
+if (code !== 0) {
+  console.error(`\nbuild の門が通らない(終了コード ${code})。index.html は書かない。`);
+  process.exit(code);
 }
 
 writeFileSync(join(here, "index.html"), html);
-console.log("index.html を生成した。M-14 最大操作数:", m14max, "/ M-13: 外部読み取りなし");
+console.log("index.html を生成した。M-14 最大操作数:", m14max ?? "(到達可能な要素なし)", "/ M-13: 外部読み取りなし");
