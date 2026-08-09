@@ -103,9 +103,13 @@ function fromLedger(pluginsDir: string, projectDir: string): string | null {
   // 環境（Windows・macOS）で「このプロジェクト向けの登録を先に見る」が必ず外れ、
   // 別のプロジェクト向けに入れた版が走る。
   const here = forCompare(resolve(projectDir));
-  const preferred =
-    entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here) ??
-    entries[0];
+  const mine = entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here);
+  // `projectPath` を持たない登録は user/local の範囲であり、どのプロジェクトでも使ってよい。
+  const global = entries.find((e) => !e.projectPath);
+  // **別のプロジェクト向けの登録は使わない。** 以前は `entries[0]` へ落ちており、
+  // この木の実測では台帳の唯一の登録が別のプロジェクトを指したまま、その版が
+  // 黙って走っていた（doctrine#212 第2信・ADR-031 決定6）。使わずに複製へ降りる。
+  const preferred = mine ?? global;
   const installPath = preferred?.installPath;
   if (!installPath || !existsSync(installPath)) return null;
   // 廃版には `.orphaned_at` が付く。台帳は版を上げても古い項が残ることがあるので、
@@ -128,9 +132,14 @@ function fromCache(pluginsDir: string): string | null {
   } catch {
     return null;
   }
-  // 版番号は数値成分で比べる（"0.10.0" > "0.9.0" を文字列比較で誤らないため）。
+  // 版のディレクトリとして認める形。以前は `split(".")` + `parseInt || 0` だったので、
+  // `backup-0.12.0` が `[0, 12, 0]` と読まれ、実版 `0.10.0` を追い越した（実測）。
+  // 前置きの版（`0.11.0-rc1`）も `[0, 11, 0]` として実版と同順に並んでいた。
+  // 形の合うものだけを候補にする。前置きの版は明示の指定でしか選べない。
   const versions = names
-    .map((name) => ({ name, parts: name.split(".").map((n) => Number.parseInt(n, 10) || 0) }))
+    .map((name) => ({ name, m: /^(\d+)\.(\d+)\.(\d+)$/.exec(name) }))
+    .filter((x): x is { name: string; m: RegExpExecArray } => x.m !== null)
+    .map(({ name, m }) => ({ name, parts: [Number(m[1]), Number(m[2]), Number(m[3])] }))
     .sort(
       (a, b) =>
         (b.parts[0] ?? 0) - (a.parts[0] ?? 0) ||

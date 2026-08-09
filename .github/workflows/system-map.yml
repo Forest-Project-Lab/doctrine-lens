@@ -22,6 +22,29 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
       - run: npm ci
+      # 固定した commit の上流を置く。再現性の要る段なので、食い違えば止める。
+      - name: doctrine プラグインを固定した commit で取る
+        run: |
+          set -euo pipefail
+          pin=research/system-map/doctrine.pin.json
+          commit=$(python3 -c "import json;print(json.load(open('$pin'))['commit'])")
+          want=$(python3 -c "import json;print(json.load(open('$pin'))['version'])")
+          git init -q "$RUNNER_TEMP/doctrine"
+          git -C "$RUNNER_TEMP/doctrine" remote add origin https://github.com/Forest-Project-Lab/doctrine.git
+          git -C "$RUNNER_TEMP/doctrine" fetch -q --depth 1 origin "$commit"
+          git -C "$RUNNER_TEMP/doctrine" checkout -q FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/doctrine" rev-parse HEAD)" = "$commit"
+          dest="$RUNNER_TEMP/claude/plugins/cache/forest-project-lab/doctrine/$want"
+          mkdir -p "$(dirname "$dest")"
+          mv "$RUNNER_TEMP/doctrine/plugin" "$dest"
+          echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/claude" >> "$GITHUB_ENV"
+      - name: 解決が固定と合うことを確かめる
+        run: node tools/doctrine-path.mjs --require-pin > /dev/null
       - run: npx playwright install --with-deps chromium-headless-shell
       - run: node research/system-map/prototype/verify.mjs
+      # 走らせた結果として作業木が動いていないこと（成果物の鮮度）。
+      - name: 成果物が古びていない
+        run: git diff --exit-code -- research/system-map/

@@ -234,8 +234,20 @@ const MUTATIONS = [
   {
     label: "台帳のプロジェクト優先を外す（別のプロジェクト向けの版が走る）",
     file: "src/doctrine/locate.ts",
-    from: "entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here) ??",
-    to: "entries.find(() => false) ??",
+    from: "const mine = entries.find((e) => e.projectPath && forCompare(resolve(e.projectPath)) === here);",
+    to: "const mine = entries.find(() => false);",
+  },
+  {
+    label: "別のプロジェクト向けの登録を先頭から採る（以前の欠陥へ戻す）",
+    file: "src/doctrine/locate.ts",
+    from: "  const preferred = mine ?? global;",
+    to: "  const preferred = mine ?? global ?? entries[0];",
+  },
+  {
+    label: "版のディレクトリの形の検めを外す（backup-0.12.0 が実版を追い越す）",
+    file: "src/doctrine/locate.ts",
+    from: '    .map((name) => ({ name, m: /^(\\d+)\\.(\\d+)\\.(\\d+)$/.exec(name) }))',
+    to: '    .map((name) => ({ name, m: /^(.*?)\\.(\\d+)\\.(\\d+)$/.exec(name) }))',
   },
   {
     label: "経路の区切りの正規化を外す（Windows でだけ範囲が外れる）",

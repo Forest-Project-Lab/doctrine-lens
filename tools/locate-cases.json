@@ -1,0 +1,94 @@
+{
+  "schema": "doctrine-lens/locate-cases/1",
+  "$comment": "上流の実体を解決する規則の事例表。**この表が規則の正本である。** 同じ表を二つの実装へ当てる —— npm script が使う tools/lib/locate-plugin.mjs と、拡張機能が使う src/doctrine/locate.ts。両者は既に乖離していた(.orphaned_at をこちらだけが検め、突き合わせが素の === だった)ため、規則を一箇所に置き、食い違いを機械で捕まえる。",
+
+  "cases": [
+    {
+      "id": "ledger-matches-project",
+      "why": "このプロジェクト向けの登録が在れば、それを使う",
+      "ledger": [{ "projectPath": "<project>", "installPath": "<cache>/0.10.0" }],
+      "cache": ["0.10.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "ledger" }
+    },
+    {
+      "id": "ledger-entry-foreign",
+      "why": "台帳の唯一の登録が別のプロジェクトを指すとき、黙って使わない。この木の実測がまさにこれで、0.10.0 を静かに引いていた",
+      "ledger": [{ "projectPath": "<other>", "installPath": "<cache>/0.9.0" }],
+      "cache": ["0.9.0", "0.10.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "ledger-no-project-path",
+      "why": "projectPath を持たない登録(user/local の範囲)は従来どおり使える",
+      "ledger": [{ "installPath": "<cache>/0.10.0" }],
+      "cache": ["0.10.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "ledger" }
+    },
+    {
+      "id": "ledger-orphaned",
+      "why": "台帳が指す先が廃版なら使わない。台帳は版を上げても古い項が残る",
+      "ledger": [{ "projectPath": "<project>", "installPath": "<cache>/0.9.0" }],
+      "cache": ["0.9.0", "0.10.0"],
+      "orphaned": ["0.9.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "ledger-install-missing",
+      "why": "台帳が指す先が実在しなければ複製へ降りる",
+      "ledger": [{ "projectPath": "<project>", "installPath": "<cache>/9.9.9" }],
+      "cache": ["0.10.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "cache-numeric-order",
+      "why": "版番号は数値で比べる。文字列比較だと 0.9.0 が 0.10.0 に勝つ",
+      "ledger": [],
+      "cache": ["0.9.0", "0.10.0", "0.2.1"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "cache-skips-orphaned",
+      "why": "複製の中の廃版は、実体が残っていても選ばない",
+      "ledger": [],
+      "cache": ["0.9.0", "0.10.0"],
+      "orphaned": ["0.10.0"],
+      "expect": { "root": "<cache>/0.9.0", "via": "cache" }
+    },
+    {
+      "id": "cache-ignores-prerelease",
+      "why": "0.11.0-rc1 は三成分の解釈だと [0,11,0] になり、実版 0.11.0 と同順で先に来うる。明示の指定でしか選べないようにする",
+      "ledger": [],
+      "cache": ["0.11.0", "0.11.0-rc1"],
+      "expect": { "root": "<cache>/0.11.0", "via": "cache" }
+    },
+    {
+      "id": "cache-ignores-non-version-dirs",
+      "why": "版の形をしていないディレクトリは候補にしない",
+      "ledger": [],
+      "cache": ["0.10.0", "tmp", "backup-0.12.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "nothing-installed",
+      "why": "台帳も複製も無ければ、既定へ寄せずに「無い」と言う",
+      "ledger": [],
+      "cache": [],
+      "expect": { "root": null, "via": "unavailable" }
+    },
+    {
+      "id": "ledger-broken-json",
+      "why": "台帳が壊れていても複製へ降りる(例外で全体を止めない)",
+      "ledger": "壊れた JSON",
+      "cache": ["0.10.0"],
+      "expect": { "root": "<cache>/0.10.0", "via": "cache" }
+    },
+    {
+      "id": "project-path-case-differs",
+      "why": "経路の大小文字を区別しない環境では、素の === だと「このプロジェクト向け」が必ず外れる",
+      "ledger": [{ "projectPath": "<project-upper>", "installPath": "<cache>/0.9.0" }],
+      "cache": ["0.9.0", "0.10.0"],
+      "expect_case_insensitive_only": true,
+      "expect": { "root": "<cache>/0.9.0", "via": "ledger" }
+    }
+  ]
+}

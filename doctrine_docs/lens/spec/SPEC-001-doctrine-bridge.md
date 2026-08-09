@@ -49,8 +49,14 @@ llm_context: task
 
 入力は無い。出力は doctrine プラグインの実体パス、または不在を示す値。
 
-解決は既存の `tools/doctrine-path.mjs` と同じ順に従う。導入台帳の `installPath` を先に見て、
-無ければキャッシュ配下の最も新しい版のうち `.orphaned_at` を持たないものを選ぶ。
+解決は `tools/doctrine-path.mjs` と同じ順に従う。規則の正本は `tools/locate-cases.json` であり、
+同じ事例表を両方の実装へ当てて食い違いを機械で捕まえる（`tools/locate-conformance.test.mjs`）。
+
+導入台帳のうち**このプロジェクト向けの登録**、または `projectPath` を持たない登録（user/local の
+範囲）だけを使う。**別のプロジェクト向けの登録は使わない** — 使うと、別の作業場に入れた版が
+何の断りもなく走る。無ければ複製配下の最も新しい版のうち `.orphaned_at` を持たないものを選ぶ。
+版のディレクトリは `<数>.<数>.<数>` の形のものだけを候補にする（`backup-0.12.0` のような名が
+実版を追い越さないため。前置きの版は明示の指定でしか選べない）。
 
 ### 登録簿の取得
 
@@ -170,10 +176,10 @@ doctrine プラグインの `trace-index.py` で取り直す。
 
 - sha256:2a9f70c295f7e4434f9c1091db89c59bc70488b6864efd2134a8d8f5822a71fc
 - sha256:46b971cea14751ae513f2b0da58d9c103c0499ab164c76f693084450a1e8ccc1
-- sha256:52d9f75adad2e216156c57b8794a538103e285ae7d1a58af885858bf5bf1b615
 - sha256:6e93d947d92bd1bd7e917982c8ef8da53a0dd0af5c32fd9f36dc01f3a42452d1
 - sha256:7b33d71d2e80ecc832defd37e7b92df92b3482ecb859ea9b4633ed88b93365ad
 - sha256:da0cf77ce8851d9363b1ee3db91c9bed4570ab41916d0527e86337833bd7da01
 - sha256:dc0c51bf743bcd74392ccdc420e75252d6c68eeeb2c6e164c203defeb48fdbb7
 - sha256:ebbd134facc7e7b0d8010cb0047808e48ce163b18832c9ffca80ec4d55317888
 - sha256:ece367ec229fa93b36ddfcbf8f0a2cdbfbe8d5620b345327a679a2c3bd25caf8
+- sha256:f81fccd702875030065480859e734309a75822d087937e979ccd6d3f076e5b07

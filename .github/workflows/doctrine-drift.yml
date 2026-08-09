@@ -1,0 +1,62 @@
+# 固定した上流と、上流の `main` のずれを見張る。
+#
+# なぜ要るか(ADR-031 決定6): 固定は再現性を買うが、**固定そのものが黙って古びる**。
+# それは同じ病気の遅い形である。固定を正当化できるのは、ずれを鳴らす仕掛けが対に
+# 在るときだけである。
+#
+# この段は**必須の検査にしない**。上流が進むのはこのリポジトリの欠陥ではない。
+# ただし**沈黙もさせない** —— ずれたら issue を起こすか、既にあれば更新する。
+name: doctrine drift
+on:
+  schedule:
+    - cron: "17 3 * * 1"   # 毎週月曜 03:17 UTC
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 固定と上流の main を突き合わせる
+        id: cmp
+        run: |
+          set -euo pipefail
+          pin=research/system-map/doctrine.pin.json
+          pin_commit=$(python3 -c "import json;print(json.load(open('$pin'))['commit'])")
+          pin_version=$(python3 -c "import json;print(json.load(open('$pin'))['version'])")
+          head_commit=$(git ls-remote https://github.com/Forest-Project-Lab/doctrine.git refs/heads/main | cut -f1)
+          git init -q upstream
+          git -C upstream remote add origin https://github.com/Forest-Project-Lab/doctrine.git
+          git -C upstream fetch -q --depth 1 origin "$head_commit"
+          git -C upstream checkout -q FETCH_HEAD
+          head_version=$(python3 -c "import json;print(json.load(open('upstream/plugin/.claude-plugin/plugin.json'))['version'])")
+          {
+            echo "pin_commit=$pin_commit"
+            echo "pin_version=$pin_version"
+            echo "head_commit=$head_commit"
+            echo "head_version=$head_version"
+            if [ "$pin_commit" = "$head_commit" ]; then echo "drifted=no"; else echo "drifted=yes"; fi
+          } >> "$GITHUB_OUTPUT"
+          echo "固定 $pin_version / ${pin_commit:0:7}   上流 main $head_version / ${head_commit:0:7}"
+
+      - name: ずれを issue へ載せる
+        if: steps.cmp.outputs.drifted == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PIN_V: ${{ steps.cmp.outputs.pin_version }}
+          PIN_C: ${{ steps.cmp.outputs.pin_commit }}
+          HEAD_V: ${{ steps.cmp.outputs.head_version }}
+          HEAD_C: ${{ steps.cmp.outputs.head_commit }}
+        run: |
+          set -euo pipefail
+          title="上流 doctrine の固定がずれている"
+          body=$(printf '固定と上流の `main` がずれています。\n\n| | 版 | commit |\n|---|---|---|\n| 固定 (`research/system-map/doctrine.pin.json`) | %s | `%s` |\n| 上流 `main` | %s | `%s` |\n\nずれていること自体は欠陥ではありません。**ずれに気付けないことが欠陥です。**\n固定を上げるか、上げない理由を記録してください。\n\nこの段は必須の検査ではありません（自動で更新されます）。\n' \
+            "$PIN_V" "$PIN_C" "$HEAD_V" "$HEAD_C")
+          existing=$(gh issue list --search "$title in:title" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

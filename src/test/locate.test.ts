@@ -293,7 +293,15 @@ test("台帳は、このプロジェクト向けの登録を先に見る", () =>
       "utf8",
     );
     assert.equal(locatePluginRoot(dir, "", dir), mine, "このプロジェクト向けの登録を選ぶ");
-    assert.equal(locatePluginRoot("/無関係", "", dir), other, "無ければ先頭へ落ちる");
+    // **ここは以前「無ければ先頭へ落ちる」を確かめていた。** つまり欠陥の側を凍結して
+    // いた——別のプロジェクト向けに入れた版が、何の断りもなく走る振る舞いである。
+    // この木の実測では台帳の唯一の登録が別のプロジェクトを指しており、まさにそれが
+    // 起きていた（doctrine#212 第2信・ADR-031 決定6）。落ちない。
+    assert.equal(
+      locatePluginRoot("/無関係", "", dir),
+      null,
+      "別のプロジェクト向けの登録しか無ければ、黙って使わずに複製へ降りる",
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

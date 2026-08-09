@@ -1,61 +1,52 @@
 #!/usr/bin/env node
-// 導入済み doctrine プラグインの実体パスを解決して stdout に 1 行で出す。
-//
-// なぜ要るか: プラグインの実体は ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
-// に版番号つきで置かれ、更新のたびにパスが変わる。npm script にこのパスを直書きすると
-// 更新のたびに壊れるため、導入台帳（installed_plugins.json）から引く。
+// 導入済み doctrine プラグインの実体を解決して、その経路を stdout に 1 行で出す。
 //
 //   使い方: python3 "$(node tools/doctrine-path.mjs)/scripts/docs-audit.py" --root-from .
+//           node tools/doctrine-path.mjs --json            解決の跡ごと出す
+//           node tools/doctrine-path.mjs --require-pin     固定と食い違えば止まる
 //
-// 解決順: 1) 台帳の installPath（このプロジェクト向けの登録を優先） → 2) キャッシュ配下の
-// 最新版ディレクトリ。どちらも無ければ導入コマンドを案内して終了コード 1 で終わる。
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+// 解決の規則は tools/lib/locate-plugin.mjs に在り、その正本は tools/locate-cases.json
+// である(同じ表を src/doctrine/locate.ts へも当てる。tools/locate-conformance.test.mjs)。
+//
+// **解決した版と commit は必ず stderr に出す。** 以前はこの道具が経路しか出さず、
+// 手元の全ての門が 0.10.0 に対して回っているのに上流が 0.11.0 を出している、という
+// ずれを誰も申告しなかった(doctrine#212 第2信・ADR-031 決定6)。
+//
+// stdout は経路だけを保つ。npm script が `$(...)` で受けるためである。
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { resolvePlugin, readPin, PLUGIN_KEY } from "./lib/locate-plugin.mjs";
 
-const PLUGIN_KEY = "doctrine@forest-project-lab";
-const [MARKETPLACE, PLUGIN] = ["forest-project-lab", "doctrine"];
+const here = dirname(fileURLToPath(import.meta.url));
+const argv = process.argv.slice(2);
+const flag = (name) => argv.includes(name);
+const value = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
 
-const configDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
-const pluginsDir = join(configDir, "plugins");
-
-function fromLedger() {
-  const ledger = join(pluginsDir, "installed_plugins.json");
-  if (!existsSync(ledger)) return null;
-  let entries;
-  try {
-    entries = JSON.parse(readFileSync(ledger, "utf8"))?.plugins?.[PLUGIN_KEY];
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(entries) || entries.length === 0) return null;
-  const here = resolve(process.cwd());
-  // このプロジェクト向けの登録を優先し、無ければ user/local スコープの登録を使う。
-  const preferred = entries.find((e) => e.projectPath && resolve(e.projectPath) === here) ?? entries[0];
-  return preferred.installPath && existsSync(preferred.installPath) ? preferred.installPath : null;
+const pinPath = value("--pin") ?? join(here, "..", "research", "system-map", "doctrine.pin.json");
+let pin = null;
+try {
+  pin = readPin(pinPath);
+} catch (e) {
+  console.error(`固定の記録を読めない(${pinPath}): ${e.message}`);
+  process.exit(2);
 }
 
-function fromCache() {
-  const dir = join(pluginsDir, "cache", MARKETPLACE, PLUGIN);
-  if (!existsSync(dir)) return null;
-  const versions = readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    // 版番号は数値成分で比較する（"0.10.0" > "0.9.0" を文字列比較で誤らないため）。
-    .map((d) => ({ name: d.name, parts: d.name.split(".").map((n) => Number.parseInt(n, 10) || 0) }))
-    .sort((a, b) => b.parts[0] - a.parts[0] || b.parts[1] - a.parts[1] || b.parts[2] - a.parts[2]);
-  for (const v of versions) {
-    const candidate = join(dir, v.name);
-    // 廃版は .orphaned_at が付く。実体が残っていても選ばない。
-    if (!existsSync(join(candidate, ".orphaned_at"))) return candidate;
-  }
-  return null;
+const got = resolvePlugin({
+  projectDir: value("--project") ?? join(here, ".."),
+  override: value("--doctrine") ?? process.env.SYSTEMMAP_DOCTRINE_PATH ?? "",
+  pin,
+});
+
+if (flag("--json")) {
+  process.stdout.write(JSON.stringify({ schema: "doctrine-lens/plugin-resolution/1", ...got, pin }, null, 2) + "\n");
+  process.exit(got.root ? (flag("--require-pin") && got.pin_state !== "matched" ? 3 : 0) : 1);
 }
 
-const found = fromLedger() ?? fromCache();
-if (!found) {
+if (!got.root) {
   console.error(
     [
-      `doctrine プラグインが見つかりません（探した場所: ${pluginsDir}）。`,
+      `doctrine プラグインが見つかりません。`,
+      ...got.trace.map((t) => `  ${t}`),
       "次を実行して導入してください:",
       "  claude plugin marketplace add https://github.com/Forest-Project-Lab/doctrine.git",
       `  claude plugin install ${PLUGIN_KEY} --scope project`,
@@ -64,4 +55,16 @@ if (!found) {
   );
   process.exit(1);
 }
-process.stdout.write(found);
+
+// 何を引いたかを必ず言う。黙って引かない。
+const shortCommit = got.commit ? got.commit.slice(0, 7) : "commit 不明";
+console.error(`doctrine: 版 ${got.version ?? "不明"} / ${shortCommit} / ${got.resolved_via} から引いた`);
+if (pin && got.pin_state !== "matched") {
+  console.error(
+    `doctrine: **固定(${pin.version} / ${pin.commit.slice(0, 7)})と食い違う。** 引いたのは ${got.version ?? "不明"} である。` +
+      (flag("--require-pin") ? "" : " 再現性の要る段は --require-pin を付けて止めること。"),
+  );
+  if (flag("--require-pin")) process.exit(3);
+}
+
+process.stdout.write(got.root);
