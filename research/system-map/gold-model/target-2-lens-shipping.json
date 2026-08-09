@@ -526,7 +526,7 @@
     {
       "id": "a-package-scripts",
       "target_kind": "code_range",
-      "target": "package.json scripts(package・vscode:prepublish)",
+      "target": "doctrine-lens: package.json(scripts の package・vscode:prepublish)",
       "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "observed_at": "2026-08-04",
       "authority": "gold_model",

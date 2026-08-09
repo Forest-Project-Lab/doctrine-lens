@@ -77,10 +77,13 @@ async function sweep(htmlPath) {
 // ---- 負: 退避を切った変種(Celery レーンが重なる)を検出する ----
 {
   const tmp = mkdtempSync(join(tmpdir(), "labels-"));
-  execFileSync("node", [join(here, "build.mjs")], { cwd: here, env: { ...process.env, SYSTEMMAP_NO_STAGGER: "1" }, stdio: "pipe" });
-  copyFileSync(join(here, "index.html"), join(tmp, "no-stagger.html"));
-  execFileSync("node", [join(here, "build.mjs")], { cwd: here, stdio: "pipe" }); // 本番状態へ戻す
-  const found = await sweep(join(tmp, "no-stagger.html"));
+  // **出荷物をその場で書き換えない。** 以前はここで commit 済みの index.html を
+  // 負の例で上書きし、二回目の build で戻していた。二回目が落ちれば、リポジトリは
+  // 負の例の成果物を抱えたままになり、src/systemMap.ts がそれを出荷する。
+  // 一度だけ、一時の置き場へ出す。負の例は同じ生成器を通るので検出器は弱まらない。
+  const neg = join(tmp, "no-stagger.html");
+  execFileSync("node", [join(here, "build.mjs"), "--no-stagger", "--out", neg], { cwd: here, stdio: "pipe" });
+  const found = await sweep(neg);
   report(found.length > 0, "負: 退避を切った変種の重なりが検出される(回帰負例=Celery)", found.length === 0 ? "検出されず(飾りの検出器)" : found[0]);
 }
 

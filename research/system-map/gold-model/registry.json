@@ -241,6 +241,14 @@
       ]
     },
     {
+      "id": "M-17",
+      "statement": "実現先になりうるアンカーの指す先は、URL かリポジトリ接頭つきの相対経路である(裸の経路を許さない)",
+      "source": "schema.json の TraceAnchor.target(S4)・ADR-031",
+      "checkers": [
+        "model:anchor-target-grammar"
+      ]
+    },
+    {
       "id": "M-L1",
       "statement": "SVG のラベル同士が視覚的に重ならない",
       "source": "レビュー指摘 2026-08-04 §4",
@@ -361,6 +369,12 @@
     {
       "id": "model:evidence-fingerprinted",
       "invariant": "M-16",
+      "gate": "model",
+      "module": "gold-model/check-model.mjs"
+    },
+    {
+      "id": "model:anchor-target-grammar",
+      "invariant": "M-17",
       "gate": "model",
       "module": "gold-model/check-model.mjs"
     },
@@ -553,6 +567,26 @@
       "verdict": "VACUOUS",
       "reason": "全 3 要素が realization: not_applicable(架空であり実在の成果物を指さない)。同上",
       "source": "gold-model/fixture-rare-states.json の elements(scheduler・generator・operator)",
+      "checked_at": "2026-08-09",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-17",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "reason": "この対象のアンカーは全て external_doc(公開文書)である。実現先になりうる種別(code_range/test)を一つも持たないので、指す先の文法を検める対象が無い",
+      "source": "gold-model/target-3-celery.json の anchors",
+      "checked_at": "2026-08-09",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-17",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "reason": "この架空の対象は document のアンカーを一つ持つだけで、実現先になりうる種別を持たない",
+      "source": "gold-model/fixture-rare-states.json の anchors",
       "checked_at": "2026-08-09",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
