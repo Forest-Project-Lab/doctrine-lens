@@ -3,6 +3,9 @@
 //   node build-overlay.mjs [--repo <prefix>=<path>]... [--docs-root <prefix>=<path>]...
 //                          [--doctrine <path>] [--out-dir <path>] [--check] [--print-plan]
 //
+// --check は **鮮度**を見る(いまの rev で生成した物と一致するか)。決定論は、同じ rev で
+// 二度生成して比べることで確かめる —— TZ と LC_ALL を変えても byte 一致することを実測した。
+//
 // 宣言済み CLI(上流 ICD 002 trace-index-api)を build 時に一度だけ実行し、対象の
 // アンカーへ「実測の範囲・指紋」を重ねる。
 // - 読むのは CLI の返す値だけ(台帳 v3.2-14。`.claude/.cache` は読まない)。
@@ -211,18 +214,23 @@ for (const o of overlays) {
   const path = join(outDir, `overlay-${o.target}.json`);
   const body = stringifyStable(o) + "\n";
   if (flag("--check")) {
+    // **これは鮮度の問いであって、決定論の問いではない。**
+    // overlay は生成した時点の HEAD を記録する。overlay そのものを commit すると
+    // HEAD が進むので、commit 済みの overlay は構造上いつも一つ前の rev を指す。
+    // したがって --check は「この overlay はいまの rev で生成された物か」を答える。
+    // 決定論(同じ入力から同じ byte)は、同じ rev で二度生成して比べることで確かめる。
     const current = existsSync(path) ? readFileSync(path, "utf8") : "";
     if (current !== body) {
       changed++;
       const at = [...body].findIndex((c, i) => c !== current[i]);
-      console.error(`古びている: ${path}(最初の食い違いは ${at} バイト目)`);
+      console.error(`いまの rev で生成した物と違う: ${path}(最初の食い違いは ${at} バイト目)`);
     }
     continue;
   }
   writeFileSync(path, body, "utf8");
 }
 if (flag("--check")) {
-  console.log(changed === 0 ? "overlay は commit 済みの物と byte 一致" : `${changed} 件の overlay が古びている`);
+  console.log(changed === 0 ? "overlay はいまの rev で生成した物と byte 一致" : `${changed} 件の overlay がいまの rev の物でない`);
   process.exit(changed === 0 ? 0 : 1);
 }
 
