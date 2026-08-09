@@ -9,6 +9,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+// 対象を位置で指さない。名を変えたら targetIndex が例外で止まる(別の対象を黙って撮らない)。
+import { targetIndex } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const shotsDir = join(here, "shots");
@@ -58,12 +60,12 @@ await shot("04-scenario-t1", "対象1 シナリオ画面(正常系+例外系)");
 await p.locator('nav button[data-v="assurance"]').click();
 await shot("05-assurance-t1", "対象1 保証画面 — 状態を重い順、unknown は負の出所つき");
 // 対象2
-await p.selectOption("#target", "1");
+await p.selectOption("#target", targetIndex("lens-shipping"));
 await shot("06-assurance-t2", "対象2 保証画面 — claimed(stale .vsix 事故)と unknown");
 await p.locator('nav button[data-v="system"]').click();
 await shot("07-system-t2", "対象2 全体 — 人・運用・外部系(行内複数箱・上から入る戻り辺)");
 // 対象3
-await p.selectOption("#target", "2");
+await p.selectOption("#target", targetIndex("celery"));
 await shot("08-system-t3", "対象3(Celery)全体");
 await p.locator('nav button[data-v="assurance"]').click();
 await shot("09-assurance-t3", "対象3 保証画面 — 順序保証の unknown(負の出所2件)");
@@ -73,7 +75,7 @@ await shot("10-impact", "変更影響画面 — 答えの正本は既存 Lens �
 await p.locator('nav button[data-v="inspect"]').click();
 await shot("11-inspect", "検査画面 — M-13(実ブラウザ)・M-14(実経路)の判定と全要素の到達表");
 // 希少状態 fixture(架空)
-await p.selectOption("#target", "3");
+await p.selectOption("#target", targetIndex("fixture-rare-states(架空)"));
 await p.locator('nav button[data-v="assurance"]').click();
 await shot("15-assurance-fixture", "fixture(架空): planned/failed/stale を含む保証画面 — H 層 T6 用");
 

@@ -1,0 +1,69 @@
+{
+  "schema": "system-map/registry/1",
+  "$comment": "M 層の正本のうち、JSON Schema が構造として書けないもの——政策・対象の一覧・段の一覧を持つ。形と語彙は schema.json が正本であり、ここには写さない(spec.mjs が導いて突き合わせる)。データであってコードでないのは意図である: .mjs にすると条件によって門を消せてしまい、それはここが潰そうとしている欠陥そのものになる。",
+
+  "policy": {
+    "max_ops": {
+      "value": 3,
+      "source": "合意台帳 v3.2-16(所有者裁定 2026-08-04)",
+      "$comment": "要素からコードまたは証拠への到達に許す操作数。1操作 = 利用者による一回の明示的な起動。"
+    },
+    "realization_accepted_kinds": {
+      "value": ["code_range", "test"],
+      "source": "所有者判定 2026-08-04(#204 §6)・ADR-031 決定4",
+      "$comment": "schema.json の TraceAnchor.target_kind の真部分集合であること(spec.mjs が検める)。document・artifact・external_doc は根拠や参照であって、コードまたは試験への到達ではない。"
+    },
+    "ui_structure": {
+      "drillOps": 1,
+      "selectOps": 1,
+      "extraExpands": 0,
+      "linkClickOps": 1,
+      "source": "index.html の画面遷移",
+      "$comment": "実ブラウザの操作数と一致することは test-m14-browser.mjs が突き合わせる。画面を変えたらここを変える。"
+    },
+    "status_display_order": {
+      "value": ["failed", "stale", "unknown", "claimed", "planned", "verified", "not_applicable"],
+      "source": "保証画面は重い順に並べる(Phase 1)",
+      "$comment": "schema.json の VerificationStatus.enum の並べ替えであること(spec.mjs が検める)。語彙そのものは持たない。"
+    }
+  },
+
+  "targets": [
+    {
+      "file": "target-1-doctrine-and-lens.json",
+      "roles": ["model", "build", "gates", "labels", "overlay"]
+    },
+    {
+      "file": "target-2-lens-shipping.json",
+      "roles": ["model", "build", "gates", "labels"]
+    },
+    {
+      "file": "target-3-celery.json",
+      "roles": ["model", "build", "gates", "labels"]
+    },
+    {
+      "file": "fixture-rare-states.json",
+      "roles": ["model", "build", "gates", "labels"],
+      "fictional": true,
+      "$comment": "架空。H 層 T6(希少状態の読み分け)専用。実在の成果物を指さない。"
+    }
+  ],
+
+  "roles": {
+    "model": "validate.mjs が模型単体で検める対象",
+    "build": "index.html に載せる対象(並び順が画面の並び順になる)",
+    "gates": "test-gates.mjs とブラウザ試験が掃引する対象",
+    "labels": "ラベルの重なりを掃引する対象",
+    "overlay": "宣言済み CLI の実測を重ねる対象"
+  },
+
+  "gates": [
+    { "id": "model", "label": "validator(M-01〜16・四対象)", "cwd": "gold-model", "cmd": ["node", "validate.mjs"], "args_from": "targets:model" },
+    { "id": "build", "label": "build(既定 = overlay なし。M-13 静的・M-14 計算)", "cwd": "prototype", "cmd": ["node", "build.mjs"] },
+    { "id": "single-source", "label": "正本の単一性(事実の二重定義が無い)", "cwd": "prototype", "cmd": ["node", "test-single-source.mjs"] },
+    { "id": "unit", "label": "M-14 計算経路の正負(test-gates)", "cwd": "prototype", "cmd": ["node", "test-gates.mjs"] },
+    { "id": "browser-m13", "label": "M-13 実ブラウザ(操作単位 assert・オフライン・負例5)", "cwd": "prototype", "cmd": ["node", "test-m13-browser.mjs"] },
+    { "id": "browser-m14", "label": "M-14 実操作(全到達要素のクリック計測・全リンク到達)", "cwd": "prototype", "cmd": ["node", "test-m14-browser.mjs"] },
+    { "id": "browser-labels", "label": "ラベル重なり(全対象+ドリル・回帰負例)", "cwd": "prototype", "cmd": ["node", "test-labels-browser.mjs"] }
+  ]
+}

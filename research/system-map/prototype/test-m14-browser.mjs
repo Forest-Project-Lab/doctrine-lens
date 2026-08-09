@@ -9,13 +9,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { computeOpsRows } from "./gates.mjs";
+import { loadModels, targetIndex } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
-const files = ["target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"];
-const models = files.map(gm);
+// 対象の一覧と、画面での指し方は registry.json / spec.mjs が正本。ここでは持たない。
+const models = loadModels("gates");
 const rows = computeOpsRows(models);
-const targetIndex = Object.fromEntries(models.map((m, i) => [m.target, String(i)]));
 
 let failures = 0;
 const report = (ok, name, detail = "") => {
@@ -33,7 +32,7 @@ for (const r of rows.filter((r) => r.status === "reachable")) {
   const m = models.find((m) => m.target === r.target);
   const e = m.elements.find((e) => e.id === r.element);
   // 初期化(初期化操作は要素到達の操作数に数えない — 起点は「対象のシステム画面」)
-  await p.selectOption("#target", targetIndex[r.target]);
+  await p.selectOption("#target", targetIndex(r.target));
   await p.locator('nav button[data-v="system"]').click();
   let clicks = 0;
   if ((e.parent ?? null) !== null) {
@@ -73,7 +72,7 @@ for (const r of rows.filter((r) => r.status === "reachable")) {
 for (const r of rows.filter((r) => r.status === "not_applicable").slice(0, 3)) {
   const m = models.find((m) => m.target === r.target);
   const e = m.elements.find((e) => e.id === r.element);
-  await p.selectOption("#target", targetIndex[r.target]);
+  await p.selectOption("#target", targetIndex(r.target));
   await p.locator('nav button[data-v="system"]').click();
   if ((e.parent ?? null) !== null) await p.locator(`[data-drill="${e.parent}"]`).click();
   await p.locator(`svg g[data-el="${e.id}"]`).click();

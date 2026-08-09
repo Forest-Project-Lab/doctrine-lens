@@ -6,15 +6,14 @@
 //
 //   node validate.mjs target-*.json
 import { readFileSync } from "node:fs";
+// 語彙は schema.json が正本。ここでは持たない(spec.mjs が導いて突き合わせる)。
+import { STATES, EVIDENCE_KEYS, REVIEW_STATUSES, AUTHORITIES } from "./spec.mjs";
 
 const files = process.argv.slice(2);
 if (files.length === 0) {
   console.error("usage: node validate.mjs <model.json> [...]");
   process.exit(2);
 }
-
-const STATES = ["unknown", "claimed", "planned", "verified", "failed", "stale", "not_applicable"];
-const EVIDENCE_KEYS = ["ref", "environment", "version", "exit_status", "observed_at"];
 
 let anyFail = false;
 
@@ -119,7 +118,7 @@ for (const file of files) {
 
   // M-07 全エンティティが review_status を持つ(表示側の混入検査は Phase 1)
   {
-    const bad = [...elements, ...flows, ...contracts, ...scenarios].filter((x) => !["proposed", "confirmed"].includes(x.review_status));
+    const bad = [...elements, ...flows, ...contracts, ...scenarios].filter((x) => !REVIEW_STATUSES.includes(x.review_status));
     bad.length ? fail("M-07", `review_status の無い/不正な項: ${bad.map((x) => x.id).join(", ")}`)
       : pass("M-07", "正本表示への混入検査はプロトタイプ側(Phase 1)");
   }
@@ -139,7 +138,7 @@ for (const file of files) {
 
   // M-10 鮮度判定の権威はちょうど一つ
   {
-    const bad = anchors.filter((a) => !["doctrine", "gold_model"].includes(a.authority));
+    const bad = anchors.filter((a) => !AUTHORITIES.includes(a.authority));
     bad.length ? fail("M-10", `authority が不正な anchor: ${bad.map((a) => a.id).join(", ")}`) : pass("M-10");
   }
 

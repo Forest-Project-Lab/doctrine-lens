@@ -5,30 +5,27 @@
 //
 // どれか一つでも落ちれば非ゼロで終わる。CI(.github/workflows/system-map.yml)がこれを必須で回す。
 import { execFileSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const gold = join(here, "..", "gold-model");
-
-const steps = [
-  ["validator(M-01〜16・四対象)", "node", ["validate.mjs", "target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"], gold],
-  ["build(既定 = overlay なし。M-13 静的・M-14 計算)", "node", ["build.mjs"], here],
-  ["M-14 計算経路の正負(test-gates)", "node", ["test-gates.mjs"], here],
-  ["M-13 実ブラウザ(操作単位 assert・オフライン・負例5)", "node", ["test-m13-browser.mjs"], here],
-  ["M-14 実操作(全到達要素のクリック計測・全リンク到達)", "node", ["test-m14-browser.mjs"], here],
-  ["ラベル重なり(全対象+ドリル・回帰負例)", "node", ["test-labels-browser.mjs"], here],
-];
+// 段の一覧と、各段が受け取る対象は registry.json が正本。ここでは持たない。
+import { GATES } from "../gold-model/spec.mjs";
 
 let failed = 0;
-for (const [name, cmd, args, cwd] of steps) {
-  process.stdout.write(`\n===== ${name} =====\n`);
+const failedIds = [];
+for (const g of GATES) {
+  process.stdout.write(`\n===== ${g.label} =====\n`);
   try {
-    execFileSync(cmd, args, { cwd, stdio: "inherit" });
-  } catch {
+    execFileSync(g.bin, g.args, { cwd: g.cwd, stdio: "inherit" });
+  } catch (e) {
     failed++;
-    console.error(`FAILED: ${name}`);
+    failedIds.push(g.id);
+    // 例外の中身を捨てない。子の標準出力は継いでいるが、終了の仕方(符号・シグナル)は
+    // 例外にしか無い —— 握り潰すと「落ちた」以上のことが言えなくなる。
+    const how = e?.signal ? `シグナル ${e.signal}` : `終了コード ${e?.status ?? "不明"}`;
+    console.error(`FAILED: ${g.label} — ${how}`);
   }
 }
-console.log(failed === 0 ? "\n一括検証: 全段通過" : `\n一括検証: ${failed} 段が失敗`);
+console.log(
+  failed === 0
+    ? `\n一括検証: 全 ${GATES.length} 段通過`
+    : `\n一括検証: ${GATES.length} 段中 ${failed} 段が失敗(${failedIds.join(", ")})`,
+);
 process.exit(failed === 0 ? 0 : 1);
