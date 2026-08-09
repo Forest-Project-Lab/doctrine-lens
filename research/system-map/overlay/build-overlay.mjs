@@ -12,6 +12,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadModels } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "..", "..", "..");
@@ -29,7 +30,13 @@ if (trace.schema !== "trace-index/1") {
 }
 const headRev = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8" }).trim();
 
-const model = JSON.parse(readFileSync(join(here, "..", "gold-model", "target-1-doctrine-and-lens.json"), "utf8"));
+// 実測を重ねる対象は registry.json が正本(役割 overlay)。ここでは名を持たない。
+const overlayTargets = loadModels("overlay");
+if (overlayTargets.length !== 1) {
+  console.error(`overlay の対象がちょうど一つでない: ${overlayTargets.length} 件。複数対象は別の主題。`);
+  process.exit(2);
+}
+const model = overlayTargets[0];
 const pathOf = (t) => (t.match(/src\/[\w\/.-]+\.ts/) ?? [null])[0];
 
 const entries = [];

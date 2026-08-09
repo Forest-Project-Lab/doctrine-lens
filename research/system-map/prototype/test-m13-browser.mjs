@@ -17,11 +17,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { loadModels, targetIndex } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexPath = join(here, "index.html");
-const models = ["target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"]
-  .map((f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8")));
+// 対象の一覧は registry.json が正本。ここでは持たない。
+const models = loadModels("gates");
 
 let failures = 0;
 const report = (ok, name, detail = "") => {
@@ -74,7 +75,7 @@ async function sweep(url, { offline = false } = {}) {
   for (let i = 0; i < models.length; i++) {
     const m = models[i];
     await step(`対象切替 ${m.target}`, async () => {
-      await p.selectOption("#target", String(i));
+      await p.selectOption("#target", targetIndex(m.target));
       const purposeHead = m.system.purpose.slice(0, 12);
       await expectText("#left", purposeHead, `対象 ${m.target} の目的`);
       const boxes = await p.locator("svg g[data-el]").count();
@@ -85,7 +86,7 @@ async function sweep(url, { offline = false } = {}) {
 
   // 対象1で: 要素選択 → パネル一致、ドリル → 親・現在位置・子、復帰
   await step("対象1へ戻す", async () => {
-    await p.selectOption("#target", "0");
+    await p.selectOption("#target", targetIndex(models[0].target));
     await expectText("#left", models[0].system.purpose.slice(0, 12), "対象1の目的");
   });
   await step("要素選択(lens)", async () => {

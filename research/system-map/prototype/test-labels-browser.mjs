@@ -12,8 +12,12 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+// 掃引する対象と、画面での指し方は registry.json / spec.mjs が正本。ここでは持たない。
+import { targetIds, targetIndex } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** ドリルの重なりを見る対象。`lens` を内部に持つのはこの対象だけである。 */
+const DRILL_TARGET = "doctrine-and-lens";
 let failures = 0;
 const report = (ok, name, detail = "") => {
   if (!ok) failures++;
@@ -48,15 +52,16 @@ async function sweep(htmlPath) {
   p.on("pageerror", (e) => { throw new Error("pageerror: " + e.message); });
   await p.goto("file://" + htmlPath);
   const found = [];
-  for (const i of ["0", "1", "2", "3"]) {
-    await p.selectOption("#target", i);
+  // 掃引する対象は registry.json が正本。増やせばここも自動で増える。
+  for (const id of targetIds("labels")) {
+    await p.selectOption("#target", targetIndex(id));
     const ov = await collectOverlaps(p);
-    if (ov.length) found.push(`対象${i}: ${ov[0]}(計 ${ov.length} 組)`);
+    if (ov.length) found.push(`対象 ${id}: ${ov[0]}(計 ${ov.length} 組)`);
   }
-  await p.selectOption("#target", "0");
+  await p.selectOption("#target", targetIndex(DRILL_TARGET));
   await p.locator('[data-drill="lens"]').click();
   const ovd = await collectOverlaps(p);
-  if (ovd.length) found.push(`対象0ドリル: ${ovd[0]}(計 ${ovd.length} 組)`);
+  if (ovd.length) found.push(`対象 ${DRILL_TARGET} のドリル: ${ovd[0]}(計 ${ovd.length} 組)`);
   await p.close();
   return found;
 }

@@ -16,20 +16,17 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, assertM14, checkNoRuntimeFetch } from "./gates.mjs";
+import { loadModels, MAX_OPS, STATUS_DISPLAY_ORDER } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
-const models = [
-  gm("target-1-doctrine-and-lens.json"),
-  gm("target-2-lens-shipping.json"),
-  gm("target-3-celery.json"),
-  gm("fixture-rare-states.json"), // 架空。H 層 T6(希少状態の読み分け)専用
-];
+// 対象の一覧と並びは registry.json が正本。並びが画面の並びになる。
+const models = loadModels("build");
 
 // ---- M-14 の機械判定(build 時) ----
 // 判定器は gates.mjs。発火することは test-gates.mjs の負の試験が確かめる。
+// 操作数の上限は台帳 v3.2-16(registry.json の policy.max_ops)。
 const m14 = computeOpsRows(models);
-const { max: m14max } = assertM14(m14, 3);
+const { max: m14max } = assertM14(m14, MAX_OPS);
 
 // ---- 実データ overlay(Phase 2 予習) ----
 // 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を混ぜない —
@@ -397,7 +394,7 @@ function viewScenario() {
 }
 
 function viewAssurance() {
-  const order = ["failed", "stale", "unknown", "claimed", "planned", "verified", "not_applicable"];
+  const order = [${STATUS_DISPLAY_ORDER.map((s) => JSON.stringify(s)).join(", ")}];
   const cs = [...M().contracts].sort((a, b) => order.indexOf(a.verification_status) - order.indexOf(b.verification_status));
   return \`<div class="q">この画面の一問: 何が守られるべきで、何が証拠付きで確認され、何がまだ主張・計画段階なのか</div>
     <p class="small">「記載がない」と「問題がない」は同じ表示にしない。verified は条件(版・環境・観測日・証拠)を必ず併記する。</p>

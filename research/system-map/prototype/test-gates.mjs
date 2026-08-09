@@ -9,10 +9,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, assertM14, checkNoRuntimeFetch, UI_STRUCTURE } from "./gates.mjs";
+// 対象の一覧と操作数の上限は registry.json が正本。ここでは持たない。
+import { loadModels, MAX_OPS } from "../gold-model/spec.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const gm = (f) => JSON.parse(readFileSync(join(here, "..", "gold-model", f), "utf8"));
-const realModels = ["target-1-doctrine-and-lens.json", "target-2-lens-shipping.json", "target-3-celery.json", "fixture-rare-states.json"].map(gm);
+const realModels = loadModels("gates");
 const clone = (x) => JSON.parse(JSON.stringify(x));
 
 let failures = 0;
@@ -30,7 +31,7 @@ const expectThrow = (fn, name) => {
 // ---- 正: 現物 ----
 t("正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選ぶ+開く=3)で全て到達・NA・超過なし", () => {
   const rows = computeOpsRows(realModels);
-  const { max, reachable, na } = assertM14(rows, 3);
+  const { max, reachable, na } = assertM14(rows, MAX_OPS);
   if (max > 3) throw new Error("max=" + max);
   const child = rows.find((r) => r.element === "lens.model");
   if (child.ops !== 3) throw new Error("子要素の実操作が 3 でない: " + child.ops);
@@ -43,7 +44,7 @@ t("正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選�
 // ---- 負: 画面遷移を深くする(同じ計算経路) ----
 t("負: 展開を 1 段挟む画面遷移にすると子が 4 操作になり落ちる", () => {
   const deepUi = { ...UI_STRUCTURE, extraExpands: 1 };
-  const msg = expectThrow(() => assertM14(computeOpsRows(realModels, deepUi), 3), "M-14(4 操作)");
+  const msg = expectThrow(() => assertM14(computeOpsRows(realModels, deepUi), MAX_OPS), "M-14(4 操作)");
   if (!/操作超過/.test(msg)) throw new Error("落ちた理由が操作超過でない: " + msg);
 });
 
@@ -52,42 +53,42 @@ t("負: 境界 — 親のみの最小モデルで展開 1 段(計 3)は通り、
     target: "mini", elements: [{ id: "top", parent: null, realized_by: ["a"] }],
     contracts: [], anchors: [{ id: "a", target_kind: "code_range", url: "https://example.com/x" }],
   }];
-  assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 1 }), 3);
-  expectThrow(() => assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 2 }), 3), "境界");
+  assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 1 }), MAX_OPS);
+  expectThrow(() => assertM14(computeOpsRows(mini, { ...UI_STRUCTURE, extraExpands: 2 }), MAX_OPS), "境界");
 });
 
 // ---- 負: モデルを実際に壊す(同じ計算経路) ----
 t("負: realized_by が実在しない anchor を指すと「壊れた参照」で落ちる", () => {
   const broken = clone(realModels);
   broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["no-such-anchor"];
-  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "リンク切れ");
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "リンク切れ");
   if (!/壊れた参照/.test(msg)) throw new Error("落ちた理由が壊れた参照でない: " + msg);
 });
 
 t("負: anchor から URL を消すと「壊れた参照」で落ちる", () => {
   const broken = clone(realModels);
   delete broken[0].anchors.find((a) => a.id === "a-consequence-code").url;
-  expectThrow(() => assertM14(computeOpsRows(broken), 3), "URL 無し");
+  expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "URL 無し");
 });
 
 t("負: document アンカーを実現先に渡すと種別で落ちる(文書は Code/Test/Evidence でない)", () => {
   const broken = clone(realModels);
   broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-req000"]; // document
-  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "document 種別");
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "document 種別");
   if (!/実現先にならない/.test(msg)) throw new Error("落ちた理由が種別でない: " + msg);
 });
 
 t("負: artifact アンカー(リポジトリ tree)を実現先に渡すと種別で落ちる", () => {
   const broken = clone(realModels);
   broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-lens-repo"]; // artifact
-  expectThrow(() => assertM14(computeOpsRows(broken), 3), "artifact 種別");
+  expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "artifact 種別");
 });
 
 t("負: 必須属性の欠けた証拠は「壊れ」で落ちる(NA でない要素の契約で検証)", () => {
   const broken = clone(realModels);
   const c = broken[0].contracts.find((c) => c.id === "c-lens-honest"); // subject=lens(到達可能要素)
   delete c.evidence[0].environment; // 証跡最小形を欠く
-  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "証拠属性");
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "証拠属性");
   if (!/必須属性/.test(msg)) throw new Error("落ちた理由が証拠属性でない: " + msg);
 });
 
@@ -95,7 +96,7 @@ t("負: 実現も明示 NA も無い要素(provenance だけ)は「未登録」�
   const broken = clone(realModels);
   const e = broken[0].elements.find((e) => e.id === "maintainer");
   delete e.realization; // provenance は残る — 代用にならないことの証明
-  const msg = expectThrow(() => assertM14(computeOpsRows(broken), 3), "未登録");
+  const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "未登録");
   if (!/未登録/.test(msg)) throw new Error("落ちた理由が未登録でない: " + msg);
 });
 

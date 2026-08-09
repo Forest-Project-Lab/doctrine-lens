@@ -1,0 +1,170 @@
+// M 層の正本から導く唯一の口。**ここは事実を一つも持たない。**
+//
+// 形と語彙は schema.json、政策と対象の一覧と段の一覧は registry.json が正本である。
+// このファイルがするのは、その二つから読み出し、突き合わせ、凍らせて配ることだけである。
+//
+// なぜ要るか: 同じ事実が六箇所以上に手書きされていた(test-single-source.mjs が数える)。
+// 増やすときに一箇所を忘れても落ちないものが在り、静止画は別の対象を撮り、掃引は別の
+// 対象を掃いていた。落ちないので気付けない。
+//
+// 突き合わせは読み込みの時点で行い、食い違えば **例外で止まる**。黙って既定へ寄せない。
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+const die = (msg) => {
+  throw new Error(`M 層の正本が食い違っている: ${msg}`);
+};
+
+const readJson = (p) => {
+  if (!existsSync(p)) die(`${p} が無い`);
+  try {
+    return JSON.parse(readFileSync(p, "utf8"));
+  } catch (e) {
+    die(`${p} を読めない — ${e.message}`);
+  }
+};
+
+export const SCHEMA = Object.freeze(readJson(join(here, "schema.json")));
+export const REGISTRY = Object.freeze(readJson(join(here, "registry.json")));
+
+if (REGISTRY.schema !== "system-map/registry/1") die(`registry.json の schema が想定外: ${REGISTRY.schema}`);
+
+// ---- 語彙(schema.json から導く。ここに綴りを置かない) ----
+const def = (name) => SCHEMA.$defs?.[name] ?? die(`schema.json に $defs.${name} が無い`);
+const enumOf = (name, path) => {
+  let node = def(name);
+  for (const k of path) node = node?.[k];
+  const v = node?.enum ?? node;
+  if (!Array.isArray(v) || v.length === 0) die(`schema.json の ${name}.${path.join(".")} が列挙でない`);
+  return Object.freeze([...v]);
+};
+
+/** 保証の七状態。契約の verification_status。 */
+export const STATES = enumOf("VerificationStatus", []);
+/** proposed / confirmed。AI の推定値は proposed に留まる。 */
+export const REVIEW_STATUSES = enumOf("ReviewStatus", []);
+/** 証跡の最小形。空でないことは schema 側が言う。 */
+export const EVIDENCE_KEYS = Object.freeze([...(def("Evidence").required ?? die("Evidence.required が無い"))]);
+/** 鮮度判定の権威。ちょうど一つであること(M-10)。 */
+export const AUTHORITIES = enumOf("TraceAnchor", ["properties", "authority"]);
+/** アンカーの種別の全体集合。 */
+export const TARGET_KINDS = enumOf("TraceAnchor", ["properties", "target_kind"]);
+/** 出所の判定。present / silent。 */
+export const SOURCE_VERDICTS = enumOf("Source", ["properties", "verdict"]);
+/** 模型の schema 値。 */
+export const MODEL_SCHEMA_ID = SCHEMA.properties?.schema?.const ?? die("schema.json に properties.schema.const が無い");
+
+// ---- 政策(registry.json から導く) ----
+const pol = (k) => REGISTRY.policy?.[k] ?? die(`registry.json に policy.${k} が無い`);
+
+/** 要素からコードまたは証拠への到達に許す操作数(台帳 v3.2-16)。 */
+export const MAX_OPS = pol("max_ops").value;
+/** 実現先として数えるアンカーの種別(ADR-031 決定4)。 */
+export const REALIZATION_KINDS = Object.freeze([...pol("realization_accepted_kinds").value]);
+/** 実 UI の操作構造。index.html の画面遷移と一致させる。 */
+export const UI_STRUCTURE = Object.freeze({
+  drillOps: pol("ui_structure").drillOps,
+  selectOps: pol("ui_structure").selectOps,
+  extraExpands: pol("ui_structure").extraExpands,
+  linkClickOps: pol("ui_structure").linkClickOps,
+});
+/** 保証画面の並び順(重い順)。語彙そのものは STATES が正本。 */
+export const STATUS_DISPLAY_ORDER = Object.freeze([...pol("status_display_order").value]);
+
+// ---- 突き合わせ(読み込みの時点で止める) ----
+if (typeof MAX_OPS !== "number" || !Number.isInteger(MAX_OPS) || MAX_OPS < 1) {
+  die(`policy.max_ops.value が正の整数でない: ${MAX_OPS}`);
+}
+for (const k of REALIZATION_KINDS) {
+  if (!TARGET_KINDS.includes(k)) die(`実現先の種別 ${k} が schema.json の target_kind に無い`);
+}
+if (REALIZATION_KINDS.length >= TARGET_KINDS.length) {
+  die("実現先の種別が target_kind の全体と同じ。真部分集合であること(全部を実現先と呼ぶなら M-14 は何も言っていない)");
+}
+{
+  const a = [...STATUS_DISPLAY_ORDER].sort();
+  const b = [...STATES].sort();
+  if (a.length !== b.length || a.some((x, i) => x !== b[i])) {
+    die(`policy.status_display_order が七状態の並べ替えでない:\n  表示順 ${JSON.stringify(STATUS_DISPLAY_ORDER)}\n  七状態 ${JSON.stringify(STATES)}`);
+  }
+}
+for (const k of ["drillOps", "selectOps", "extraExpands", "linkClickOps"]) {
+  if (typeof UI_STRUCTURE[k] !== "number") die(`policy.ui_structure.${k} が数でない`);
+}
+
+// ---- 対象(registry.json が並びを持ち、id は模型自身が持つ) ----
+const rawTargets = REGISTRY.targets;
+if (!Array.isArray(rawTargets) || rawTargets.length === 0) die("registry.json に targets が無い");
+
+const KNOWN_ROLES = Object.keys(REGISTRY.roles ?? {});
+if (KNOWN_ROLES.length === 0) die("registry.json に roles の説明が無い");
+
+const loaded = rawTargets.map((t, i) => {
+  if (!t.file) die(`targets[${i}] に file が無い`);
+  const path = join(here, t.file);
+  const model = readJson(path);
+  if (model.schema !== MODEL_SCHEMA_ID) {
+    die(`${t.file} の schema が ${MODEL_SCHEMA_ID} でない: ${model.schema}`);
+  }
+  if (!model.target) die(`${t.file} に target が無い`);
+  const roles = t.roles ?? [];
+  for (const r of roles) if (!KNOWN_ROLES.includes(r)) die(`${t.file} の役割 ${r} が registry.roles に無い`);
+  return { id: model.target, file: t.file, path, roles: Object.freeze([...roles]), fictional: t.fictional === true, model };
+});
+
+{
+  const ids = loaded.map((t) => t.id);
+  const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
+  if (dup.length) die(`対象の id が重複している: ${[...new Set(dup)].join(", ")}`);
+  for (const r of KNOWN_ROLES) {
+    if (!loaded.some((t) => t.roles.includes(r))) die(`役割 ${r} を持つ対象が一つも無い(死んだ役割)`);
+  }
+}
+
+/** 並びは registry.json の targets の順。build の並びと画面の並びが一致する。 */
+export const TARGETS = Object.freeze(loaded.map((t) => Object.freeze({ id: t.id, file: t.file, path: t.path, roles: t.roles, fictional: t.fictional })));
+
+/** 役割で絞った対象。役割を渡さなければ全部。 */
+export function targetsWithRole(role) {
+  if (role === undefined) return TARGETS;
+  if (!KNOWN_ROLES.includes(role)) die(`未知の役割: ${role}`);
+  return TARGETS.filter((t) => t.roles.includes(role));
+}
+
+/** 役割で絞ったファイル名。validate.mjs へ渡す引数など。 */
+export const targetFiles = (role) => targetsWithRole(role).map((t) => t.file);
+
+/** 役割で絞った id。 */
+export const targetIds = (role) => targetsWithRole(role).map((t) => t.id);
+
+/** 役割で絞った模型(読み直す。呼び手が壊しても他へ波及させない)。 */
+export const loadModels = (role) => targetsWithRole(role).map((t) => readJson(t.path));
+
+/**
+ * 画面の `<select>` に渡す値。いまは build の並びの添字である。
+ * **id を渡すこと。** 知らない id は例外で止まる —— 対象の名を変えたときに、
+ * 別の対象を黙って撮る/掃くのを防ぐ。
+ */
+export function targetIndex(id) {
+  const list = targetsWithRole("build");
+  const i = list.findIndex((t) => t.id === id);
+  if (i < 0) die(`対象 ${id} が build の一覧に無い(名を変えたなら registry の指す模型を直す)`);
+  return String(i);
+}
+
+/** verify.mjs が回す段。args_from は対象の一覧から解く。 */
+export const GATES = Object.freeze(
+  (REGISTRY.gates ?? die("registry.json に gates が無い")).map((g) => {
+    const args = [...(g.cmd ?? []).slice(1)];
+    if (g.args_from) {
+      const m = /^targets:(\w+)$/.exec(g.args_from);
+      if (!m) die(`gates[${g.id}].args_from の形が想定外: ${g.args_from}`);
+      args.push(...targetFiles(m[1]));
+    }
+    if (!g.cwd || !["gold-model", "prototype", "overlay"].includes(g.cwd)) die(`gates[${g.id}].cwd が想定外: ${g.cwd}`);
+    return Object.freeze({ id: g.id, label: g.label, bin: g.cmd[0], args: Object.freeze(args), cwd: join(here, "..", g.cwd) });
+  }),
+);

@@ -9,21 +9,19 @@
 // - 操作数は実際の UI の操作構造(uiStructure)から数える。負の試験は同じ計算経路に
 //   「変更した画面遷移」を与えて落とす(判定器へ結果を直接渡さない)。
 
-/** 実 UI の操作構造。index.html の画面遷移と一致させること(変えたらここも変える)。
- *  一致することは test-m14-browser.mjs が「実ブラウザの操作数」と突き合わせて確かめる。 */
-export const UI_STRUCTURE = {
-  drillOps: 1,     // 子要素は「内部を見る」で階層を降りてから選ぶ(親要素は 0)
-  selectOps: 1,    // 図の箱を選ぶ → 詳細パネルが開く
-  extraExpands: 0, // パネル内でリンクが見えるまでに要する展開の数(現 UI は 0 — 12 節は常時展開)
-  linkClickOps: 1, // パネル内のリンクを開く
-};
+// 政策と語彙は registry.json / schema.json が正本。ここでは持たない。
+//
+// UI_STRUCTURE  実 UI の操作構造。index.html の画面遷移と一致させること(変えたら registry を変える)。
+//               一致することは test-m14-browser.mjs が「実ブラウザの操作数」と突き合わせて確かめる。
+// REALIZATION_KINDS
+//               M-14 が実現先として認めるアンカー種別。document・artifact・external_doc は数えない
+//               (それらは 11 節の根拠・参照であり、Code/Test/Evidence への到達ではない。ADR-031 決定4)。
+// EVIDENCE_KEYS 証跡の最小形。schema.json の Evidence.required が正本。
+import { UI_STRUCTURE, REALIZATION_KINDS, EVIDENCE_KEYS } from "../gold-model/spec.mjs";
+
+export { UI_STRUCTURE, REALIZATION_KINDS };
 
 const isUrl = (s) => /^https?:\/\/\S+$/.test(s ?? "");
-
-/** M-14 が実現先として認めるアンカー種別。document・artifact・external_doc は数えない
- *  (それらは 11 節の根拠・参照であり、Code/Test/Evidence への到達ではない)。 */
-export const REALIZATION_KINDS = ["code_range", "test"];
-const EVIDENCE_KEYS = ["ref", "environment", "version", "exit_status", "observed_at"];
 
 /** 要素の「実現・証拠」到達先を解決する。 */
 export function resolveDestinations(model, e) {

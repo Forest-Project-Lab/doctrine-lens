@@ -1,10 +1,20 @@
-# system-map 実験ブランチの必須検証(レビュー指摘 2026-08-04 §5: 一括検証の CI 接続)。
-# 対象は experiment/system-map のみ — main の check.yml には触れない。
+# system-map の必須検証(レビュー指摘 2026-08-04 §5: 一括検証の CI 接続)。
+#
+# **PR でも走らせる。** `push` の枝だけを見ていた頃、実験の枝名以外で立てた PR では
+# この段が一度も走らなかった。PR 上で赤が見えないと RED → FIX → VERIFY を示せない
+# (ADR-031 の作業の前提)。
+#
+# **対象の絞りを外した。** 絞りは `research/system-map/**` だけを見ていたが、
+# `index.html` は `src/systemMap.ts` が束ねの時点で内蔵して出荷する。出荷の経路を
+# 変える変更がこの段を素通りしていた。絞りを足して塞ぐこともできるが、同じ一覧を
+# `push` と `pull_request` の両方へ書くことになり(GitHub Actions は YAML の錨を
+# 解釈しない)、片方だけ古びる。**絞りを持たなければ、穴も重複も無い。**
+# 代償は毎 PR で数分回ることであり、見落としより安い。
 name: system-map verify
 on:
   push:
     branches: ["experiment/system-map", "main"]
-    paths: ["research/system-map/**", ".github/workflows/system-map.yml"]
+  pull_request:
 jobs:
   verify:
     runs-on: ubuntu-latest
