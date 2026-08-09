@@ -235,7 +235,22 @@
             }
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "$comment": "realization と realized_by は排他である。両方あると、実現が非該当だと言いながら実現先も指すことになり、どちらを信じるかが決まらない。properties を併記するのは ajv の strictRequired（required に挙げた名がその部分スキーマで定義されているか）を満たすためである。",
+          "not": {
+            "required": [
+              "realization",
+              "realized_by"
+            ],
+            "properties": {
+              "realization": true,
+              "realized_by": true
+            }
+          }
+        }
+      ]
     },
     "Flow": {
       "type": "object",
@@ -391,23 +406,28 @@
       "properties": {
         "ref": {
           "type": "string",
-          "description": "証拠への到達可能な参照(URL・パス・anchor id)"
+          "description": "証拠への到達可能な参照(URL・パス・anchor id)",
+          "minLength": 1
         },
         "fingerprint": {
           "type": "string"
         },
         "environment": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "version": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "exit_status": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1
         },
         "observed_at": {
           "type": "string",
-          "format": "date"
+          "format": "date",
+          "minLength": 1
         }
       }
     },

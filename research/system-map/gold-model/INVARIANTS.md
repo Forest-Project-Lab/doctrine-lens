@@ -43,11 +43,14 @@
 | M-14 | 要素→コードまたは証拠への到達が規定操作数以内 | `build:reachability` ・ `browser:ops-count` | v3.2-3・16 |
 | M-15 | `not_applicable` の `Contract` は `na_reason` と present の出所を持つ | `model:na-has-reason` | doctrine S1 |
 | M-16 | `verified` の `Evidence` は `fingerprint` を持つ。または `version` に commit SHA を置く | `model:evidence-fingerprinted` | doctrine S2 |
+| M-18 | 模型が `schema.json` に適合する(形と語彙の全体) | `model:schema-shape` | `gold-model/schema.json` |
 | M-17 | 実現先になりうるアンカーの指す先は、URL かリポジトリ接頭つきの相対経路である | `model:anchor-target-grammar` | `schema.json` の `TraceAnchor.target`(S4) |
 | M-L1 | SVG のラベル同士が視覚的に重ならない | `browser:label-no-overlap` | レビュー指摘 2026-08-04 §4 |
 | M-S1 | M 層の事実が正本の外に手書きされていない | `meta:single-source` | ADR-031 決定8・実行原則5 |
 | M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |
 | M-R1 | 不変条件と検査器が一対一で対応する | `meta:registry-consistent` | ADR-031 決定8 |
+| M-N2 | 負例の表の各行で、名指した検査器が名指した判定と符丁を出す | `meta:negatives-fire` | ADR-031 決定8・ADR-017 |
+| M-N3 | 判定を支える規則を潰すと、対応する確かめが実際に変わる | `meta:rules-load-bearing` | ADR-017・ADR-031 決定5 |
 
 **M-07 は二つに割れている。** 前半(`review_status` が在る)は最初から実装が在ったが、
 後半(`proposed` が正本表示に混ざらない)は**どこにも実装が無いまま**「プロトタイプ側で
@@ -62,8 +65,17 @@
 | build の門(`build.mjs`) | 生成物と到達の計算(M-13 の静的走査・M-14 の計算) |
 | ブラウザの門(`test-m13/m14/labels-browser.mjs`) | 実ブラウザの操作・通信・矩形(M-13・M-14・M-L1) |
 
-加えて、門そのものを見る段が三つある —— 正本の単一性(M-S1)・門の発火(M-N1)・
-対応の整合(M-R1)。一括で回す正本の命令は `verify.mjs` であり、CI が必須で回す。
+加えて、門そのものを見る段が五つある —— 正本の単一性(M-S1)・門の発火(M-N1)・
+対応の整合(M-R1)・負例の表(M-N2)・**規則が荷重を負っていること(M-N3)**。
+最後の一つは「空判定を合格と呼ばない」「PASS 以外は合格でない」「了解の期限」といった
+規則そのものを潰し、対応する確かめが実際に変わることを確かめる —— **規則それ自体は
+守られていない主張**であり、守るものが無ければ一段上で同じ欠陥が起きる。
+
+`schema.json` は **ajv で実行する**(M-18)。以前は一度も実行されておらず、`required` も
+`enum` も `minItems` も書いてあるだけだった。`strict: true` で回すので、綴りを誤った制約は
+「書いてあるのに効かない」ではなく組み立ての時点で落ちる。
+
+一括で回す正本の命令は `verify.mjs` であり、CI が必須で回す。
 
 上流の配布技能(`system-map-draft`)の文書は検収を「二門」と書いているが、
 **実体は三門である。** その文書は上流の側に在り、こちらでは直せない(#212 へ訂正を提案する)。

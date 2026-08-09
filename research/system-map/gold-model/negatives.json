@@ -1,0 +1,304 @@
+{
+  "schema": "system-map/negatives/1",
+  "$comment": "負例の表。**模型を二度書かない** —— 実在の対象へ patch を当てて作る。patch の指す先が解けなければ ERROR にする(黙って飛ばさない)。各行は「どの検査器が」「どの判定を」「どの符丁で」出すかまで書く。文言は変わってよいが、符丁と、咎める対象の id は変わってはならない。",
+  "cases": [
+    {
+      "id": "pos-code-range",
+      "why": "正: code_range のアンカーは実現先として数える",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "PASS"
+      }
+    },
+    {
+      "id": "pos-test-kind",
+      "why": "正: test のアンカーも実現先として数える。**四対象に test の種別は一件も無く、この枝は一度も正で通っていなかった**",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "add",
+          "path": "/anchors/-",
+          "value": {
+            "id": "a-neg-test-anchor",
+            "target_kind": "test",
+            "authority": "doctrine",
+            "target": "doctrine-lens: src/test/locate.test.ts(実現先の種別 test の正例)",
+            "source_revision": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
+            "observed_at": "2026-08-09",
+            "url": "https://github.com/Forest-Project-Lab/doctrine-lens/blob/30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49/src/test/locate.test.ts"
+          }
+        },
+        {
+          "op": "replace",
+          "path": "/elements/@id=lens.model/realized_by",
+          "value": [
+            "a-neg-test-anchor"
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "PASS"
+      }
+    },
+    {
+      "id": "neg-artifact-realization",
+      "why": "負: artifact を実現先にすると種別で落ちる（上流 #212 ギャップ7 の形）",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/elements/@id=lens.model/realized_by",
+          "value": [
+            "a-lens-repo"
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "FAIL",
+        "code": "gate.broken_link",
+        "message_match": "a-lens-repo.*artifact"
+      }
+    },
+    {
+      "id": "neg-document-realization",
+      "why": "負: document を実現先にすると種別で落ちる",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/elements/@id=lens.model/realized_by",
+          "value": [
+            "a-req000"
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "FAIL",
+        "code": "gate.broken_link",
+        "message_match": "a-req000.*document"
+      }
+    },
+    {
+      "id": "neg-unknown-kind",
+      "why": "負: 登録されていない種別はスキーマで落ちる",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/anchors/@id=a-consequence-code/target_kind",
+          "value": "diagram"
+        }
+      ],
+      "expect": {
+        "checker": "model:schema-shape",
+        "verdict": "FAIL",
+        "code": "schema.enum",
+        "message_match": "anchors/\\d+/target_kind"
+      }
+    },
+    {
+      "id": "neg-missing-required",
+      "why": "負: 必須属性の欠落はスキーマで落ちる",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "remove",
+          "path": "/elements/@id=lens/owner"
+        }
+      ],
+      "expect": {
+        "checker": "model:schema-shape",
+        "verdict": "FAIL",
+        "code": "schema.required",
+        "message_match": "elements/\\d+"
+      }
+    },
+    {
+      "id": "neg-empty-required-string",
+      "why": "負: 空文字は「持っている」ではない。以前は偽値の判定だったので exit_status の 0 や空文字が欠落と読まれていた",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/contracts/@id=c-lens-honest/evidence/0/environment",
+          "value": ""
+        }
+      ],
+      "expect": {
+        "checker": "model:schema-shape",
+        "verdict": "FAIL",
+        "code": "schema.minLength",
+        "message_match": "evidence/0/environment"
+      }
+    },
+    {
+      "id": "neg-both-realization",
+      "why": "負: realization と realized_by の同時指定は排他に反する",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "add",
+          "path": "/elements/@id=maintainer/realized_by",
+          "value": [
+            "a-consequence-code"
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "model:schema-shape",
+        "verdict": "FAIL",
+        "code": "schema.not",
+        "message_match": "elements/\\d+"
+      }
+    },
+    {
+      "id": "neg-broken-link",
+      "why": "負: 開ける URL の無いアンカーは壊れた参照",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "remove",
+          "path": "/anchors/@id=a-consequence-code/url"
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "FAIL",
+        "code": "gate.broken_link",
+        "message_match": "a-consequence-code.*URL"
+      }
+    },
+    {
+      "id": "neg-missing-anchor",
+      "why": "負: 実在しないアンカーを指すと壊れた参照",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/elements/@id=lens.model/realized_by",
+          "value": [
+            "no-such-anchor"
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "FAIL",
+        "code": "gate.broken_link",
+        "message_match": "no-such-anchor.*実在しない"
+      }
+    },
+    {
+      "id": "neg-unregistered",
+      "why": "負: 実現も明示の非該当も無い要素は未登録（provenance は代用にならない）",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "remove",
+          "path": "/elements/@id=maintainer/realization"
+        }
+      ],
+      "expect": {
+        "checker": "build:reachability",
+        "verdict": "FAIL",
+        "code": "gate.unregistered",
+        "message_match": "maintainer"
+      }
+    },
+    {
+      "id": "neg-vacuous",
+      "why": "負: 対象を空にすると合格ではなく VACUOUS になる",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/contracts/@id=c-lens-honest/verification_status",
+          "value": "claimed"
+        },
+        {
+          "op": "remove",
+          "path": "/contracts/@id=c-lens-honest/evidence"
+        },
+        {
+          "op": "replace",
+          "path": "/contracts/@id=c-doctrine-audit/verification_status",
+          "value": "claimed"
+        },
+        {
+          "op": "remove",
+          "path": "/contracts/@id=c-doctrine-audit/evidence"
+        }
+      ],
+      "expect": {
+        "checker": "model:verified-has-evidence",
+        "verdict": "VACUOUS",
+        "code": "meta.vacuous"
+      }
+    },
+    {
+      "id": "neg-anchor-unprefixed",
+      "why": "負: 裸の経路は跨リポジトリの取り違えの元（M-17）",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/anchors/@id=a-consequence-code/target",
+          "value": "src/model/consequence.ts"
+        }
+      ],
+      "expect": {
+        "checker": "model:anchor-target-grammar",
+        "verdict": "FAIL",
+        "code": "model.anchor_target_unprefixed",
+        "message_match": "a-consequence-code"
+      }
+    },
+    {
+      "id": "neg-flow-unlabelled",
+      "why": "負: 無名の矢印を作らない（M-09）",
+      "base": "target-1-doctrine-and-lens.json",
+      "patch": [
+        {
+          "op": "remove",
+          "path": "/flows/0/label"
+        }
+      ],
+      "expect": {
+        "checker": "model:schema-shape",
+        "verdict": "FAIL",
+        "code": "schema.required",
+        "message_match": "flows/0"
+      }
+    },
+    {
+      "id": "neg-unknown-without-negative-source",
+      "why": "負: unknown の契約から負の出所を全て外すと落ちる（M-11）。**一件だけ潰しても落ちない** —— この対象は負の出所を二件持つ。負例は「全部消したら落ちる」まで確かめる",
+      "base": "target-3-celery.json",
+      "patch": [
+        {
+          "op": "replace",
+          "path": "/contracts/@id=c-order/provenance",
+          "value": [
+            {
+              "source": "https://docs.celeryq.dev/en/stable/faq.html",
+              "locator": "負例のため出所を present に置き換えた",
+              "checked_at": "2026-08-09",
+              "verdict": "present"
+            }
+          ]
+        }
+      ],
+      "expect": {
+        "checker": "model:unknown-has-negative-source",
+        "verdict": "FAIL",
+        "code": "model.unknown_no_negative_source",
+        "message_match": "c-order"
+      }
+    }
+  ]
+}

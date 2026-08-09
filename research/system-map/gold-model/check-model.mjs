@@ -7,11 +7,21 @@
 // 語彙は schema.json、政策は registry.json が正本(spec.mjs 経由)。ここでは持たない。
 import { STATES, EVIDENCE_KEYS, REVIEW_STATUSES, AUTHORITIES, REALIZATION_KINDS } from "./spec.mjs";
 import { anchorTargetViolations } from "../lib/anchor-target.mjs";
+import { schemaViolations } from "./validate-schema.mjs";
 
 const v = (code, message) => ({ code, message });
 
 /** 検査器の表。鍵は registry.json の checkers[].id と一致すること(test-registry.mjs が検める)。 */
 export const MODEL_CHECKERS = {
+  "model:schema-shape": {
+    invariant: "M-18",
+    unit: "模型",
+    note: "schema.json をそのまま実行する。以前は一度も実行されておらず、required も enum も minItems も誰も検めていなかった",
+    run(m, ctx) {
+      return { examined: 1, violations: schemaViolations(ctx.raw) };
+    },
+  },
+
   "model:id-unique": {
     invariant: "M-01",
     unit: "id",
@@ -283,6 +293,7 @@ export function runModelCheckers(model) {
     anchors: model.anchors ?? [],
   };
   const ctx = {
+    raw: model,
     eById: new Map(m.elements.map((e) => [e.id, e])),
     fById: new Map(m.flows.map((f) => [f.id, f])),
   };
