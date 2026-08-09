@@ -12,6 +12,7 @@ import { computeOpsRows, assertM14, checkNoRuntimeFetch, UI_STRUCTURE } from "./
 // 対象の一覧と操作数の上限は registry.json が正本。ここでは持たない。
 import { loadModels, MAX_OPS } from "../gold-model/spec.mjs";
 import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
+import { parseAnchorTarget } from "../lib/anchor-target.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const realModels = loadModels("gates");
@@ -114,6 +115,39 @@ t("正: 明示 NA(理由つき)は許され、到達判定から除外される"
   const nas = rows.filter((r) => r.status === "not_applicable");
   if (!nas.length) throw new Error("NA 行が無い");
   if (!nas.every((r) => r.note && r.note.length > 0)) throw new Error("理由の無い NA が居る");
+});
+
+// ---- アンカーの指す先の文法(M-17)。null を返さないこと ----
+t("正: リポジトリ接頭つきの経路を、接頭と経路と注記へ分ける", () => {
+  const r = parseAnchorTarget("doctrine: plugin/scripts/trace-index.py(SPEC-026 の注釈対)");
+  if (r.kind !== "path") throw new Error("種別が path でない: " + r.kind);
+  if (r.repo !== "doctrine") throw new Error("接頭が違う: " + r.repo);
+  if (r.path !== "plugin/scripts/trace-index.py") throw new Error("経路が違う: " + r.path);
+  if (!r.note) throw new Error("注記を落とした");
+});
+t("正: 経路の中の空白と日本語を落とさない", () => {
+  const r = parseAnchorTarget("doctrine-lens: src/画面/my file.ts");
+  if (r.kind !== "path" || r.path !== "src/画面/my file.ts") throw new Error(JSON.stringify(r));
+});
+t("正: Windows の区切りを / へ揃える", () => {
+  const r = parseAnchorTarget("doctrine-lens: src\\model\\view.ts");
+  if (r.kind !== "path" || r.path !== "src/model/view.ts") throw new Error(JSON.stringify(r));
+});
+t("正: URL はそのまま URL として扱う", () => {
+  const r = parseAnchorTarget("https://example.com/x");
+  if (r.kind !== "url") throw new Error(JSON.stringify(r));
+});
+t("負: 接頭の無い裸の経路は path にしない(跨リポジトリの取り違えの元)", () => {
+  const r = parseAnchorTarget("src/model/consequence.ts(注釈対)");
+  if (r.kind !== "prose") throw new Error("裸の経路を path として通した: " + JSON.stringify(r));
+});
+t("負: 絶対経路と .. は invalid", () => {
+  if (parseAnchorTarget("doctrine-lens: /etc/passwd").kind !== "invalid") throw new Error("絶対経路を通した");
+  if (parseAnchorTarget("doctrine-lens: ../../x").kind !== "invalid") throw new Error(".. を通した");
+});
+t("負: 駆動器名(C:/x)を接頭と読み違えない", () => {
+  const r = parseAnchorTarget("C:/Users/x/file.ts");
+  if (r.kind === "path" && r.repo === "C") throw new Error("駆動器名を接頭と読んだ");
 });
 
 // ---- M-13(静的側)の発火 ----

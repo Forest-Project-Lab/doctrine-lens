@@ -43,6 +43,7 @@
 | M-14 | 要素→コードまたは証拠への到達が規定操作数以内 | `build:reachability` ・ `browser:ops-count` | v3.2-3・16 |
 | M-15 | `not_applicable` の `Contract` は `na_reason` と present の出所を持つ | `model:na-has-reason` | doctrine S1 |
 | M-16 | `verified` の `Evidence` は `fingerprint` を持つ。または `version` に commit SHA を置く | `model:evidence-fingerprinted` | doctrine S2 |
+| M-17 | 実現先になりうるアンカーの指す先は、URL かリポジトリ接頭つきの相対経路である | `model:anchor-target-grammar` | `schema.json` の `TraceAnchor.target`(S4) |
 | M-L1 | SVG のラベル同士が視覚的に重ならない | `browser:label-no-overlap` | レビュー指摘 2026-08-04 §4 |
 | M-S1 | M 層の事実が正本の外に手書きされていない | `meta:single-source` | ADR-031 決定8・実行原則5 |
 | M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |

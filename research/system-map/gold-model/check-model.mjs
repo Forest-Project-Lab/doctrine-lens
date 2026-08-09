@@ -5,7 +5,8 @@
 // 「絞った集合を回し、違反が無ければ合格」だったので、集合が空でも合格が出ていた。
 //
 // 語彙は schema.json、政策は registry.json が正本(spec.mjs 経由)。ここでは持たない。
-import { STATES, EVIDENCE_KEYS, REVIEW_STATUSES, AUTHORITIES } from "./spec.mjs";
+import { STATES, EVIDENCE_KEYS, REVIEW_STATUSES, AUTHORITIES, REALIZATION_KINDS } from "./spec.mjs";
+import { anchorTargetViolations } from "../lib/anchor-target.mjs";
 
 const v = (code, message) => ({ code, message });
 
@@ -237,6 +238,16 @@ export const MODEL_CHECKERS = {
         if (!(c.provenance ?? []).some((p) => p.verdict === "present")) violations.push(v("model.na_no_present_source", `${c.id} の理由に present の出所が無い`));
       }
       return { examined: subject.length, violations };
+    },
+  },
+
+  "model:anchor-target-grammar": {
+    invariant: "M-17",
+    unit: "実現先になりうるアンカー",
+    note: "接頭は照合の鍵であって飾りではない。剥がすと跨リポジトリの偽陽性が『実測』として出る",
+    run(m) {
+      const subject = (m.anchors ?? []).filter((a) => REALIZATION_KINDS.includes(a.target_kind));
+      return { examined: subject.length, violations: anchorTargetViolations(m, REALIZATION_KINDS) };
     },
   },
 

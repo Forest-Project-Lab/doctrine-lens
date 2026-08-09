@@ -13,17 +13,31 @@
 // - 選択時は右側の詳細パネル(図を消さない・押し出さない)。12 節の固定順。
 // - ドリルダウン中も親の目的・境界・現在位置を保ち、戻りで配置と選択を復元する。
 import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, reachabilityVerdicts, checkNoRuntimeFetch } from "./gates.mjs";
 import { loadModels, MAX_OPS, STATUS_DISPLAY_ORDER } from "../gold-model/spec.mjs";
 import { verdict, reportPathFrom, writeReport, formatRecord, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+// 入力は引数で受ける。環境変数を生成物へ焼き込むと、同じ原資から違う物が commit
+// されうる(以前は NO_STAGGER と SYSTEMMAP_WITH_OVERLAY がそうだった)。
+const argv = process.argv.slice(2);
+const argFlag = (n) => argv.includes(n);
+const argOne = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
+const outPath = argOne("--out") ? resolve(argOne("--out")) : join(here, "index.html");
+const noStagger = argFlag("--no-stagger");
+// 退避を切った変種は**負の例**であり、出荷される物ではない。commit 済みの置き場へは書かせない。
+if (noStagger && outPath === join(here, "index.html")) {
+  console.error("--no-stagger は負の例を作る。--out で別の置き場を指すこと(出荷物を書き換えない)。");
+  process.exit(2);
+}
+
 // 対象の一覧と並びは registry.json が正本。並びが画面の並びになる。
 const models = loadModels("build");
-const reportPath = reportPathFrom(process.argv.slice(2));
-const today = todayFrom(process.argv.slice(2));
+const reportPath = reportPathFrom(argv);
+const today = todayFrom(argv);
 const records = [];
 
 // ---- M-14 の機械判定(build 時) ----
@@ -46,9 +60,10 @@ const m14max = reachableAll.length ? Math.max(...reachableAll.map((r) => r.ops))
 // 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を混ぜない —
 // レビュー指摘 2026-08-04 §5)。SYSTEMMAP_WITH_OVERLAY=1 の明示オプション付き build だけが読む。
 let overlay = null;
-if (process.env.SYSTEMMAP_WITH_OVERLAY) {
-  overlay = JSON.parse(readFileSync(join(here, "..", "overlay", "overlay-doctrine-and-lens.json"), "utf8"));
-  console.log("Phase 2 build: overlay を同梱する(明示オプション)");
+const overlayDir = argOne("--overlay-dir");
+if (overlayDir) {
+  overlay = JSON.parse(readFileSync(join(resolve(overlayDir), "overlay-doctrine-and-lens.json"), "utf8"));
+  console.log("Phase 2 build: overlay を同梱する(明示の指定)");
 }
 
 const DATA = JSON.stringify(models);
@@ -119,7 +134,7 @@ const html = `<!DOCTYPE html>
 const MODELS = ${DATA};
 const M14 = ${M14};
 const OVERLAY = ${JSON.stringify(overlay)};
-const SYSTEMMAP_NO_STAGGER = ${process.env.SYSTEMMAP_NO_STAGGER ? "true" : "false"}; // 試験専用(重なり検出の負例)
+const NO_STAGGER = ${noStagger ? "true" : "false"}; // 試験専用(重なり検出の負例)
 let ti = 0, view = "system", focusEl = null, drill = null;
 const drillStack = [];
 let ops = 0;
@@ -300,7 +315,7 @@ function diagram(tops, flows) {
   // NO_STAGGER は退避を切る試験専用の旗 — 重なり検出試験(test-labels-browser)の負例が
   // 「検出器が本当に検出する」ことを確かめるために使う。本番 build では使わない。
   const laneLabelYs = [];
-  const staggerOff = typeof SYSTEMMAP_NO_STAGGER !== "undefined" && SYSTEMMAP_NO_STAGGER;
+  const staggerOff = typeof NO_STAGGER !== "undefined" && NO_STAGGER;
   const placeLaneLabel = (ly) => {
     if (!staggerOff) {
       while (laneLabelYs.some((y) => Math.abs(y - ly) < 36)) ly -= 36;
@@ -489,5 +504,5 @@ if (code !== 0) {
   process.exit(code);
 }
 
-writeFileSync(join(here, "index.html"), html);
-console.log("index.html を生成した。M-14 最大操作数:", m14max ?? "(到達可能な要素なし)", "/ M-13: 外部読み取りなし");
+writeFileSync(outPath, html);
+console.log(`${outPath} を生成した。M-14 最大操作数:`, m14max ?? "(到達可能な要素なし)", "/ M-13: 外部読み取りなし");
