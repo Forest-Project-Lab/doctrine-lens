@@ -1,0 +1,25 @@
+
+> doctrine-lens@0.10.0 docs:check
+> python3 "$(node tools/doctrine-path.mjs)/scripts/docs-audit.py" --root-from . --fail-on error
+
+# docs-audit
+root: /workspaces/doctrine_lens/doctrine_docs  today: 2026-08-09  generated_at: 2026-08-09T00:00:00Z
+totals: error=0 warn=0 advisory=17
+counts_by_check: stray_document=14, trace_marker_suspect=3
+[advisory] stray_document   (Reference_material/spec_jaxa_jerg2_610c_ja/output.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (Reference_material/techbook_cast_handbook_ja/output.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (Reference_material/techbook_stpa_handbook_ja/output.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/README.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/decisions/design-001-map-adopted.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/decisions/ledger-v3.2.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/decisions/phase-0-record.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/decisions/phase-1-record.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/gold-model/INVARIANTS.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/gold-model/vocabulary-map.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/prototype/shots/README.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/usability-tests/ab-summary.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/usability-tests/h-layer-protocol.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] stray_document   (research/system-map/usability-tests/record-form.md): 統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する
+[advisory] trace_marker_suspect   (research/system-map/prototype/index.html): 印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(63 行目)
+[advisory] trace_marker_suspect   (research/system-map/gold-model/target-1-doctrine-and-lens.json): 印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(718 行目)
+[advisory] trace_marker_suspect   (research/system-map/gold-model/target-1-doctrine-and-lens.json): 印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(755 行目)

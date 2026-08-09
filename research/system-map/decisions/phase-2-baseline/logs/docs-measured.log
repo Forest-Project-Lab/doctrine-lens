@@ -1,0 +1,11 @@
+
+> doctrine-lens@0.10.0 docs:measured
+> node tools/check-measured-claims.mjs
+
+ok   doctrine_docs/lens/decisions/ADR-014-count-do-not-claim.md: REQ-002 → 主張 21 行 / 実測 21 行（61a3775 の木）
+ok   doctrine_docs/lens/decisions/CHANGE-005-honest-numbers-and-status.md: REQ-002 → 主張 21 行 / 実測 21 行（61a3775 の木）
+ok   doctrine_docs/lens/decisions/CHANGE-020-decisions-with-no-edges.md: ADR-008 → 主張 0 行 / 実測 0 行（40dd24f の木）
+ok   doctrine_docs/lens/decisions/CHANGE-028-the-layers-tests-never-reached.md: ADR-008 → 主張 0 行 / 実測 0 行（40dd24f の木）
+ok   doctrine_docs/lens/spec/SPEC-006-consequence-list.md: REQ-002 → 主張 21 行 / 実測 21 行（61a3775 の木）
+
+実測の主張 5 件（うち刻印つき 5 件）は、それぞれの木と合う。
