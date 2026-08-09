@@ -1,0 +1,1 @@
+docs-linter --batch: 123 文書を点検し、ERROR なし。

@@ -1,0 +1,34 @@
+点検した文書: 123
+所見を持つ文書: 93
+
+重さ・検査ごとの件数:
+  WARN     UNDEFINED_TERM         153
+  WARN     CALQUE_WORDTRAP        25
+  合計 178
+
+UNDEFINED_TERM の上位 25 語:
+   32  PR
+   13  L0
+   13  L3
+   10  README
+    9  L2
+    9  CSS
+    5  L1
+    5  SVG
+    5  KB
+    4  ERROR
+    3  DDD
+    3  sha256
+    3  SKIP
+    3  SHA
+    3  CHANGELOG
+    2  VS
+    2  SIGINT
+    2  SIGTERM
+    2  SIGKILL
+    2  PAUSED
+    2  CSP
+    1  D3
+    1  STYLE
+    1  TTY
+    1  TAP
