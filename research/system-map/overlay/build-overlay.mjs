@@ -22,9 +22,11 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadModels } from "../gold-model/spec.mjs";
+import { loadModels, targetIds, OVERLAY_SCHEMA_ID, OVERLAY_EMPTY_STATUS } from "../gold-model/spec.mjs";
 import { parseAnchorTarget } from "../lib/anchor-target.mjs";
+import { overlayCandidates } from "../lib/overlay-candidates.mjs";
 import { stringifyStable } from "../lib/stable-json.mjs";
+import { slugOf, assertUniqueSlugs } from "../lib/target-slug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -59,11 +61,14 @@ const pluginRoot = one("--doctrine")
   : execFileSync("node", [join(repos.get("doctrine-lens"), "tools", "doctrine-path.mjs"), "--require-pin"], { encoding: "utf8" }).trim();
 
 if (flag("--print-plan")) {
+  // **何を測るつもりかを言う。** 束ねた木と置き場だけでは、対象を増やしたときに
+  // 「増えた対象を測るつもりが在るのか」を外から確かめられない。
   console.log(stringifyStable({
     repos: Object.fromEntries(repos),
     docs_roots: Object.fromEntries(docsRoots),
     out_dir: outDir,
     doctrine: pluginRoot,
+    targets: targetIds("overlay"),
   }));
   process.exit(0);
 }
@@ -122,7 +127,7 @@ function gitOf(prefix) {
 
 const overlays = [];
 for (const model of loadModels("overlay")) {
-  const candidates = (model.anchors ?? []).filter((a) => a.authority === "doctrine" && a.target_kind === "code_range");
+  const candidates = overlayCandidates(model);
   const entries = [];
   for (const a of candidates) {
     const parsed = parseAnchorTarget(a.target);
@@ -172,15 +177,25 @@ for (const model of loadModels("overlay")) {
 
   const selfPrefix = "doctrine-lens";
   const g = gitOf(selfPrefix);
-  const worst = entries.some((e) => ["unverifiable", "unbound-repo", "unparsed"].includes(e.status))
-    ? "unverifiable"
-    : entries.some((e) => e.status === "degraded") || g.dirty || g.shallow
-      ? "degraded"
-      : "measured";
+  // **測る対象が一つも無かったことを、測って何も無かったことと同じ形にしない。**
+  // 以前は候補 0 件の対象が `measured` + 記録 0 件で出ていた —— どの `.some()` も
+  // 空配列では偽なので、何も測っていない走行が最良の状態を名乗っていた。
+  const worst = candidates.length === 0
+    ? OVERLAY_EMPTY_STATUS
+    : entries.some((e) => ["unverifiable", "unbound-repo", "unparsed"].includes(e.status))
+      ? "unverifiable"
+      : entries.some((e) => e.status === "degraded") || g.dirty || g.shallow
+        ? "degraded"
+        : "measured";
   overlays.push({
-    schema: "system-map/overlay/0.1",
+    schema: OVERLAY_SCHEMA_ID,
     target: model.target,
     status: worst,
+    // 空でないときは鍵ごと置かない。**既に在る記録の byte を動かさない**ため
+    // (stringifyStable は与えた鍵だけを並べる)。
+    ...(candidates.length === 0
+      ? { reason: "この模型に、宣言済み CLI で測れるアンカーが一つも無い(実測の候補が 0 件)。測って何も無かったのではなく、測る対象が無い。" }
+      : {}),
     source: "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した返す値",
     source_limits:
       "上流の走査は、印が意味の上で正しい場所に打たれているかを判定しない。改名・移動も追わない。" +
@@ -208,10 +223,23 @@ if (!flag("--check") && !flag("--allow-dirty")) {
   }
 }
 
+// 名前は人のためのものであり、索く鍵ではない(読み側は各ファイルの target で索く)。
+// それでも潰れ合うと、二つの対象が一つのファイルを奪い合って片方が黙って消える。
+assertUniqueSlugs(overlays.map((o) => o.target));
+
 mkdirSync(outDir, { recursive: true });
 let changed = 0;
 for (const o of overlays) {
-  const path = join(outDir, `overlay-${o.target}.json`);
+  // **書き出す前に、記録の数と名乗る状態が一致していることを確かめる。**
+  // 読み側でも同じことを検める(片側だけでは、もう片側の欠陥に気付けない)。
+  if ((o.entries.length === 0) !== (o.status === OVERLAY_EMPTY_STATUS)) {
+    die(
+      `overlay の状態と記録の数が食い違う: ${o.target} は状態 ${o.status} で記録 ${o.entries.length} 件。` +
+        `記録 0 件と ${OVERLAY_EMPTY_STATUS} は一対一で対応しなければならない`,
+      2,
+    );
+  }
+  const path = join(outDir, `overlay-${slugOf(o.target)}.json`);
   const body = stringifyStable(o) + "\n";
   if (flag("--check")) {
     // **これは鮮度の問いであって、決定論の問いではない。**

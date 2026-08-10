@@ -37,6 +37,19 @@ const expectThrow = (fn, name) => {
   return msg;
 };
 
+/**
+ * 指定の id を持つ模型を、**位置ではなく中身で**引く。
+ *
+ * 以前は `broken[0]` と書いていた —— registry の並びの先頭が特定の対象である、という
+ * 暗黙の前提である。並べ替えると別の模型を壊しにいき、`undefined` を触って
+ * 「壊れた参照で落ちた」ではない理由で落ちる(負の試験が別の物を測る)。
+ */
+const pick = (ms, kind, id) => {
+  const m = ms.find((x) => (x[kind] ?? []).some((y) => y.id === id));
+  if (!m) throw new Error(`${kind} に ${id} を持つ模型が無い(模型を直したなら試験も直す)`);
+  return m;
+};
+
 // ---- 正: 現物 ----
 t("正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選ぶ+開く=3)で全て到達・NA・超過なし", () => {
   const rows = computeOpsRows(realModels);
@@ -44,7 +57,7 @@ t("正: 現物の四対象は実操作(親=選ぶ+開く=2、子=降りる+選�
   if (max > 3) throw new Error("max=" + max);
   const child = rows.find((r) => r.element === "lens.model");
   if (child.ops !== 3) throw new Error("子要素の実操作が 3 でない: " + child.ops);
-  const top = rows.find((r) => r.element === "lens" && r.target === "doctrine-and-lens");
+  const top = rows.find((r) => r.element === "lens" && r.target === pick(realModels, "elements", "lens.model").target);
   if (top.ops !== 2) throw new Error("親要素の実操作が 2 でない: " + top.ops);
   if (reachable === 0) throw new Error("到達可能な要素が零(配線が死んでいる)");
   if (na === 0) throw new Error("明示 NA が零(人・外部系の NA が消えた)");
@@ -69,33 +82,33 @@ t("負: 境界 — 親のみの最小モデルで展開 1 段(計 3)は通り、
 // ---- 負: モデルを実際に壊す(同じ計算経路) ----
 t("負: realized_by が実在しない anchor を指すと「壊れた参照」で落ちる", () => {
   const broken = clone(realModels);
-  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["no-such-anchor"];
+  pick(broken, "elements", "lens.model").elements.find((e) => e.id === "lens.model").realized_by = ["no-such-anchor"];
   const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "リンク切れ");
   if (!/壊れた参照/.test(msg)) throw new Error("落ちた理由が壊れた参照でない: " + msg);
 });
 
 t("負: anchor から URL を消すと「壊れた参照」で落ちる", () => {
   const broken = clone(realModels);
-  delete broken[0].anchors.find((a) => a.id === "a-consequence-code").url;
+  delete pick(broken, "anchors", "a-consequence-code").anchors.find((a) => a.id === "a-consequence-code").url;
   expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "URL 無し");
 });
 
 t("負: document アンカーを実現先に渡すと種別で落ちる(文書は Code/Test/Evidence でない)", () => {
   const broken = clone(realModels);
-  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-req000"]; // document
+  pick(broken, "elements", "lens.model").elements.find((e) => e.id === "lens.model").realized_by = ["a-req000"]; // document
   const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "document 種別");
   if (!/実現先にならない/.test(msg)) throw new Error("落ちた理由が種別でない: " + msg);
 });
 
 t("負: artifact アンカー(リポジトリ tree)を実現先に渡すと種別で落ちる", () => {
   const broken = clone(realModels);
-  broken[0].elements.find((e) => e.id === "lens.model").realized_by = ["a-lens-repo"]; // artifact
+  pick(broken, "elements", "lens.model").elements.find((e) => e.id === "lens.model").realized_by = ["a-lens-repo"]; // artifact
   expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "artifact 種別");
 });
 
 t("負: 必須属性の欠けた証拠は「壊れ」で落ちる(NA でない要素の契約で検証)", () => {
   const broken = clone(realModels);
-  const c = broken[0].contracts.find((c) => c.id === "c-lens-honest"); // subject=lens(到達可能要素)
+  const c = pick(broken, "contracts", "c-lens-honest").contracts.find((c) => c.id === "c-lens-honest"); // subject=lens(到達可能要素)
   delete c.evidence[0].environment; // 証跡最小形を欠く
   const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "証拠属性");
   if (!/必須属性/.test(msg)) throw new Error("落ちた理由が証拠属性でない: " + msg);
@@ -103,7 +116,7 @@ t("負: 必須属性の欠けた証拠は「壊れ」で落ちる(NA でない�
 
 t("負: 実現も明示 NA も無い要素(provenance だけ)は「未登録」で落ちる", () => {
   const broken = clone(realModels);
-  const e = broken[0].elements.find((e) => e.id === "maintainer");
+  const e = pick(broken, "elements", "maintainer").elements.find((e) => e.id === "maintainer");
   delete e.realization; // provenance は残る — 代用にならないことの証明
   const msg = expectThrow(() => assertM14(computeOpsRows(broken), MAX_OPS), "未登録");
   if (!/未登録/.test(msg)) throw new Error("落ちた理由が未登録でない: " + msg);

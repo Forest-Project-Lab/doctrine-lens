@@ -35,6 +35,28 @@
       ],
       "source": "保証画面は重い順に並べる(Phase 1)",
       "$comment": "schema.json の VerificationStatus.enum の並べ替えであること(spec.mjs が検める)。語彙そのものは持たない。"
+    },
+    "overlay_schema": {
+      "value": "system-map/overlay/0.1",
+      "source": "PR5(複数対象 overlay と配線)",
+      "$comment": "実測 overlay の形の名。読み側はこの値でない物を硬く落とす —— 知らない形を「たぶん大丈夫」で読むと、画面が知らない値を実測として印字する。"
+    },
+    "overlay_statuses": {
+      "value": [
+        "measured",
+        "degraded",
+        "unverifiable",
+        "no-candidates"
+      ],
+      "empty_status": "no-candidates",
+      "source": "PR5。語彙の由来は overlay/build-overlay.mjs の総括",
+      "$comment": "overlay 一件(対象ごと)の総括の状態。`empty_status` は「測る対象が一つも無かった」であり、**記録 0 件と一対一で対応する**。記録が空なのに measured を名乗る物は、何も検めていない合格である(ADR-031 決定5)。"
+    },
+    "overlay_candidate": {
+      "authority": "doctrine",
+      "target_kind": "code_range",
+      "source": "台帳 v3.2-10(doctrine 対象の鮮度判定は doctrine の機構だけを使う)",
+      "$comment": "実測の候補にするアンカーの条件。緩めると第二の鮮度権威を作ることになる。条件を使うのは lib/overlay-candidates.mjs だけである。"
     }
   },
   "targets": [
@@ -54,7 +76,8 @@
         "model",
         "build",
         "gates",
-        "labels"
+        "labels",
+        "overlay"
       ]
     },
     {
@@ -63,7 +86,8 @@
         "model",
         "build",
         "gates",
-        "labels"
+        "labels",
+        "overlay"
       ]
     },
     {
@@ -72,7 +96,8 @@
         "model",
         "build",
         "gates",
-        "labels"
+        "labels",
+        "overlay"
       ],
       "fictional": true,
       "$comment": "架空。H 層 T6(希少状態の読み分け)専用。実在の成果物を指さない。"
