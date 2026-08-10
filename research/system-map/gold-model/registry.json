@@ -536,6 +536,23 @@
       "checkers": [
         "meta:overlay-indexing"
       ]
+    },
+    {
+      "id": "M-19",
+      "statement": "生成器が出しうる状態は、画面でそれぞれ別の文になる。表に無い状態を既知の語へ黙って読み替えない",
+      "source": "PR6(UI)・所有者指示 2026-08-04 §4",
+      "checkers": [
+        "build:display-vocabulary",
+        "browser:display-total"
+      ]
+    },
+    {
+      "id": "M-20",
+      "statement": "区別を色や線だけに載せない(境界の内外・候補と確認済・架空の対象・門が認めなかった実現先を語で言う)",
+      "source": "PR6(UI)・所有者指示 2026-08-04 §4",
+      "checkers": [
+        "browser:distinction-in-words"
+      ]
     }
   ],
   "checkers": [
@@ -712,6 +729,24 @@
       "invariant": "M-W2",
       "gate": "targets-wired",
       "module": "prototype/test-targets-wired.mjs"
+    },
+    {
+      "id": "build:display-vocabulary",
+      "invariant": "M-19",
+      "gate": "display-static",
+      "module": "prototype/test-display-static.mjs"
+    },
+    {
+      "id": "browser:display-total",
+      "invariant": "M-19",
+      "gate": "browser-display",
+      "module": "prototype/test-display-browser.mjs"
+    },
+    {
+      "id": "browser:distinction-in-words",
+      "invariant": "M-20",
+      "gate": "browser-display",
+      "module": "prototype/test-display-browser.mjs"
     }
   ],
   "acknowledgements": [
@@ -925,6 +960,15 @@
       ]
     },
     {
+      "id": "display-static",
+      "label": "表示の語が生成器の語を覆う(字面・ブラウザ不要)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-display-static.mjs"
+      ]
+    },
+    {
       "id": "unit",
       "label": "M-14 計算経路の正負(test-gates)",
       "cwd": "prototype",
@@ -985,6 +1029,15 @@
       "cmd": [
         "node",
         "test-labels-browser.mjs"
+      ]
+    },
+    {
+      "id": "browser-display",
+      "label": "実ブラウザの表示(状態の掃引・語での区別)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-display-browser.mjs"
       ]
     }
   ]
