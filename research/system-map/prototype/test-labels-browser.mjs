@@ -13,12 +13,20 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 // 掃引する対象と、画面での指し方は registry.json / spec.mjs が正本。ここでは持たない。
-import { targetIds, targetIndex } from "../gold-model/spec.mjs";
+import { targetIds, loadModels } from "../gold-model/spec.mjs";
 import { verdict, reportPathFrom, writeReport, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** ドリルの重なりを見る対象。`lens` を内部に持つのはこの対象だけである。 */
-const DRILL_TARGET = "doctrine-and-lens";
+/** ドリルの重なりを見る対象と要素。**模型から導く** —— 直書きすると、模型を
+ *  直したときに試験だけが古い名前を守り、掃引の穴が落ちない形で開く。 */
+const DRILL = (() => {
+  for (const m of loadModels("labels")) {
+    const parents = new Set((m.elements ?? []).map((e) => e.parent ?? null).filter(Boolean));
+    const top = (m.elements ?? []).find((e) => (e.parent ?? null) === null && parents.has(e.id));
+    if (top) return { target: m.target, element: top.id };
+  }
+  return null;
+})();
 let failures = 0;
 const failed = [];
 const report = (ok, name, detail = "") => {
@@ -56,14 +64,16 @@ async function sweep(htmlPath) {
   const found = [];
   // 掃引する対象は registry.json が正本。増やせばここも自動で増える。
   for (const id of targetIds("labels")) {
-    await p.selectOption("#target", targetIndex(id));
+    await p.selectOption("#target", id);
     const ov = await collectOverlaps(p);
     if (ov.length) found.push(`対象 ${id}: ${ov[0]}(計 ${ov.length} 組)`);
   }
-  await p.selectOption("#target", targetIndex(DRILL_TARGET));
-  await p.locator('[data-drill="lens"]').click();
-  const ovd = await collectOverlaps(p);
-  if (ovd.length) found.push(`対象 ${DRILL_TARGET} のドリル: ${ovd[0]}(計 ${ovd.length} 組)`);
+  if (DRILL) {
+    await p.selectOption("#target", DRILL.target);
+    await p.locator(`[data-drill="${DRILL.element}"]`).click();
+    const ovd = await collectOverlaps(p);
+    if (ovd.length) found.push(`対象 ${DRILL.target} のドリル: ${ovd[0]}(計 ${ovd.length} 組)`);
+  }
   await p.close();
   return found;
 }

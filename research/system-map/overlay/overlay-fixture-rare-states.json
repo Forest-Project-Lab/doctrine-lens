@@ -1,0 +1,19 @@
+{
+  "doctrine": {
+    "root_basename": "0.11.0"
+  },
+  "entries": [],
+  "generated_at": "2026-08-10",
+  "generated_at_source": "測った rev の commit 日",
+  "generated_from_rev": "7ea09b82a94d8dd0ae8f6ac893e44ddfd34bb9fc",
+  "reason": "この模型に、宣言済み CLI で測れるアンカーが一つも無い(実測の候補が 0 件)。測って何も無かったのではなく、測る対象が無い。",
+  "schema": "system-map/overlay/0.1",
+  "source": "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した返す値",
+  "source_limits": "上流の走査は、印が意味の上で正しい場所に打たれているかを判定しない。改名・移動も追わない。ここで言えるのは「この rev で、この経路に、この指紋の範囲が在った」までである。",
+  "status": "no-candidates",
+  "target": "fixture-rare-states(架空)",
+  "worktree": {
+    "dirty": false,
+    "shallow": false
+  }
+}

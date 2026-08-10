@@ -72,6 +72,24 @@ const MUTATIONS = [
     run: ["prototype/test-negatives.mjs"],
     expect: "落ちる",
   },
+  {
+    label: "対象を id で指す規則を潰す(画面の値を位置へ戻す)",
+    file: "prototype/build.mjs",
+    from: '<option value="${escHtml(m.target)}">',
+    to: '<option value="${models.indexOf(m)}">',
+    // 潰すと、合成の対象を差した写しで「対象を id で名指す」が落ちる。
+    run: ["prototype/test-targets-wired.mjs"],
+    expect: "落ちる",
+  },
+  {
+    label: "空の実測を拒む規則を潰す(記録 0 件でも実測を名乗れるようにする)",
+    file: "prototype/build.mjs",
+    from: "    if ((n === 0) !== (o.status === OVERLAY_EMPTY_STATUS)) {",
+    to: "    if (false) {",
+    // 潰すと、記録 0 件で measured を名乗る入力が通ってしまい、負例が落ちなくなる。
+    run: ["prototype/test-targets-wired.mjs"],
+    expect: "落ちる",
+  },
 ];
 
 const work = mkdtempSync(join(tmpdir(), "system-map-mutation-"));

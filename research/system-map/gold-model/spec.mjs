@@ -73,6 +73,17 @@ export const UI_STRUCTURE = Object.freeze({
 });
 /** 保証画面の並び順(重い順)。語彙そのものは STATES が正本。 */
 export const STATUS_DISPLAY_ORDER = Object.freeze([...pol("status_display_order").value]);
+/** 実測 overlay の形の名。読み側はこれ以外を硬く落とす。 */
+export const OVERLAY_SCHEMA_ID = pol("overlay_schema").value;
+/** overlay 一件(対象ごと)の総括の状態。 */
+export const OVERLAY_STATUSES = Object.freeze([...pol("overlay_statuses").value]);
+/** 「測る対象が一つも無かった」を表す状態。記録 0 件と一対一で対応する。 */
+export const OVERLAY_EMPTY_STATUS = pol("overlay_statuses").empty_status;
+/** 実測の候補にするアンカーの条件。使うのは lib/overlay-candidates.mjs だけ。 */
+export const OVERLAY_CANDIDATE = Object.freeze({
+  authority: pol("overlay_candidate").authority,
+  target_kind: pol("overlay_candidate").target_kind,
+});
 
 // ---- 突き合わせ(読み込みの時点で止める) ----
 if (typeof MAX_OPS !== "number" || !Number.isInteger(MAX_OPS) || MAX_OPS < 1) {
@@ -93,6 +104,19 @@ if (REALIZATION_KINDS.length >= TARGET_KINDS.length) {
 }
 for (const k of ["drillOps", "selectOps", "extraExpands", "linkClickOps"]) {
   if (typeof UI_STRUCTURE[k] !== "number") die(`policy.ui_structure.${k} が数でない`);
+}
+// 「測る対象が無い」を表す状態が語彙の外に在ると、生成側が書いた物を読み側が
+// 知らない語として落とす。**同じ表から採ることを、読み込みの時点で確かめる。**
+if (!OVERLAY_STATUSES.includes(OVERLAY_EMPTY_STATUS)) {
+  die(`policy.overlay_statuses.empty_status が語彙に無い: ${OVERLAY_EMPTY_STATUS}`);
+}
+// 候補の条件は schema.json の語彙から採る。綴りが外れると、条件が誰にも当たらず
+// 「候補 0 件」が静かに全対象へ広がる —— 被覆の穴は落ちない形で開く。
+if (!AUTHORITIES.includes(OVERLAY_CANDIDATE.authority)) {
+  die(`policy.overlay_candidate.authority が schema.json の authority に無い: ${OVERLAY_CANDIDATE.authority}`);
+}
+if (!TARGET_KINDS.includes(OVERLAY_CANDIDATE.target_kind)) {
+  die(`policy.overlay_candidate.target_kind が schema.json の target_kind に無い: ${OVERLAY_CANDIDATE.target_kind}`);
 }
 
 // ---- 対象(registry.json が並びを持ち、id は模型自身が持つ) ----
@@ -143,17 +167,15 @@ export const targetIds = (role) => targetsWithRole(role).map((t) => t.id);
 /** 役割で絞った模型(読み直す。呼び手が壊しても他へ波及させない)。 */
 export const loadModels = (role) => targetsWithRole(role).map((t) => readJson(t.path));
 
-/**
- * 画面の `<select>` に渡す値。いまは build の並びの添字である。
- * **id を渡すこと。** 知らない id は例外で止まる —— 対象の名を変えたときに、
- * 別の対象を黙って撮る/掃くのを防ぐ。
- */
-export function targetIndex(id) {
-  const list = targetsWithRole("build");
-  const i = list.findIndex((t) => t.id === id);
-  if (i < 0) die(`対象 ${id} が build の一覧に無い(名を変えたなら registry の指す模型を直す)`);
-  return String(i);
-}
+// 画面が対象を指す値は **id そのもの**である。翻訳する口は置かない。
+//
+// 以前はここに、id を受けて build の並びの添字を返す口が在った。呼ぶ側は
+// 既に全て id を渡していたのに、返す値だけが位置だった —— 並べ替えれば静止画が
+// 別の対象を撮り、掃引は別の対象を掃く。どちらも落ちないので気付けない。
+//
+// 翻訳をやめたので、呼ぶ側は模型から採った id をそのまま渡す。字面を書く場所が
+// 無くなったので、「知らない id を弾く」守りも要らなくなった(渡す物が正本から
+// 来る以上、古くなりようがない)。
 
 /** verify.mjs が回す段。args_from は対象の一覧から解く。 */
 export const GATES = Object.freeze(

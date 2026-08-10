@@ -12,11 +12,14 @@
 // - proposed などの管理情報は上部に一度だけ。
 // - 選択時は右側の詳細パネル(図を消さない・押し出さない)。12 節の固定順。
 // - ドリルダウン中も親の目的・境界・現在位置を保ち、戻りで配置と選択を復元する。
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, reachabilityVerdicts, checkNoRuntimeFetch } from "./gates.mjs";
-import { loadModels, MAX_OPS, STATUS_DISPLAY_ORDER } from "../gold-model/spec.mjs";
+import {
+  loadModels, targetIds, MAX_OPS, STATUS_DISPLAY_ORDER,
+  OVERLAY_SCHEMA_ID, OVERLAY_STATUSES, OVERLAY_EMPTY_STATUS,
+} from "../gold-model/spec.mjs";
 import { verdict, reportPathFrom, writeReport, formatRecord, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -27,10 +30,22 @@ const argv = process.argv.slice(2);
 const argFlag = (n) => argv.includes(n);
 const argOne = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
 const outPath = argOne("--out") ? resolve(argOne("--out")) : join(here, "index.html");
+const shipped = join(here, "index.html");
 const noStagger = argFlag("--no-stagger");
+const overlayDir = argOne("--overlay-dir");
 // 退避を切った変種は**負の例**であり、出荷される物ではない。commit 済みの置き場へは書かせない。
-if (noStagger && outPath === join(here, "index.html")) {
+if (noStagger && outPath === shipped) {
   console.error("--no-stagger は負の例を作る。--out で別の置き場を指すこと(出荷物を書き換えない)。");
+  process.exit(2);
+}
+// overlay 付きの build も同じである。既定の Phase 1 成果物と Phase 2 の予習データの
+// 境界を混ぜない(レビュー指摘 2026-08-04 §5)。**守りが無いと、手元で一度回しただけで
+// 出荷物が別物になり、CI の差分検査が後から気付くだけになる。**
+if (overlayDir && outPath === shipped) {
+  console.error(
+    "overlay-would-overwrite-shipped: --overlay-dir を付けた build は Phase 2 の予習データを含む。" +
+      "--out で別の置き場を指すこと(出荷物を書き換えない)。",
+  );
   process.exit(2);
 }
 
@@ -57,14 +72,62 @@ const reachableAll = m14.filter((r) => r.status === "reachable");
 const m14max = reachableAll.length ? Math.max(...reachableAll.map((r) => r.ops)) : null;
 
 // ---- 実データ overlay(Phase 2 予習) ----
-// 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を混ぜない —
-// レビュー指摘 2026-08-04 §5)。SYSTEMMAP_WITH_OVERLAY=1 の明示オプション付き build だけが読む。
-let overlay = null;
-const overlayDir = argOne("--overlay-dir");
-if (overlayDir) {
-  overlay = JSON.parse(readFileSync(join(resolve(overlayDir), "overlay-doctrine-and-lens.json"), "utf8"));
-  console.log("Phase 2 build: overlay を同梱する(明示の指定)");
+// 既定の Phase 1 build は overlay を読まない(Phase 1 成果物と Phase 2 予習データの境界を
+// 混ぜない — レビュー指摘 2026-08-04 §5)。`--overlay-dir` を明示した build だけが読む。
+//
+// **索く鍵は各ファイルが自分で宣言した `target` である。** 以前は生成側の付けた名前を
+// 決め打ちで開いていたので、対象を増やしても読まれない overlay が黙って出た。
+// 壊れた入力は**硬く落とす**。「飛ばして続行」にすると、画面は「実測が無い」と
+// 「実測を読めなかった」を同じ空白で出すことになる。
+const overlayFail = (code, msg) => { console.error(`${code}: ${msg}`); process.exit(2); };
+
+function loadOverlays(dir) {
+  const abs = resolve(dir);
+  if (!existsSync(abs) || !statSync(abs).isDirectory()) {
+    overlayFail("overlay-dir-missing", `--overlay-dir が指す置き場が無い: ${abs}`);
+  }
+  const known = new Set(targetIds("build"));
+  const seen = new Map();
+  // 並びを固定する(同じ入力から同じ byte を出すため)。
+  for (const name of readdirSync(abs).filter((n) => n.endsWith(".json")).sort()) {
+    const p = join(abs, name);
+    let o;
+    try {
+      o = JSON.parse(readFileSync(p, "utf8"));
+    } catch (e) {
+      overlayFail("overlay-corrupt", `${name} を JSON として読めない — ${e.message}`);
+    }
+    if (o?.schema !== OVERLAY_SCHEMA_ID) {
+      overlayFail("overlay-schema-unknown", `${name} の形が ${OVERLAY_SCHEMA_ID} でない: ${o?.schema}`);
+    }
+    if (!o.target || !known.has(o.target)) {
+      overlayFail("overlay-unknown-target", `${name} が名乗る対象 ${o.target} は画面に載る対象の一覧に無い`);
+    }
+    if (seen.has(o.target)) {
+      overlayFail("overlay-duplicate-target", `対象 ${o.target} を ${seen.get(o.target).file} と ${name} の二つが名乗っている`);
+    }
+    if (!OVERLAY_STATUSES.includes(o.status)) {
+      overlayFail("overlay-status-unknown", `${name} の状態 ${o.status} が語彙(${OVERLAY_STATUSES.join("/")})に無い`);
+    }
+    // 生成側でも同じことを検めている。**片側だけでは、もう片側の欠陥に気付けない。**
+    const n = (o.entries ?? []).length;
+    if ((n === 0) !== (o.status === OVERLAY_EMPTY_STATUS)) {
+      overlayFail("overlay-vacuous", `${name} は状態 ${o.status} で記録 ${n} 件。記録 0 件と ${OVERLAY_EMPTY_STATUS} は一対一で対応する`);
+    }
+    seen.set(o.target, { file: name, data: o });
+  }
+  if (!seen.size) overlayFail("overlay-empty-dir", `--overlay-dir に overlay が一つも無い: ${abs}`);
+  return Object.fromEntries([...seen].map(([k, v]) => [k, v.data]));
 }
+
+const overlays = overlayDir ? loadOverlays(overlayDir) : {};
+if (overlayDir) {
+  console.log(`Phase 2 build: overlay を同梱する(明示の指定) — 対象 ${Object.keys(overlays).join(", ")}`);
+}
+
+/** 生成時に埋める字。実行時に一覧を組み立てない(組み立てると外から数えられない)。 */
+const escHtml = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const OPTIONS = models.map((m) => `<option value="${escHtml(m.target)}">${escHtml(m.target)}</option>`).join("");
 
 const DATA = JSON.stringify(models);
 const M14 = JSON.stringify({ rows: m14, max: m14max });
@@ -104,6 +167,10 @@ const html = `<!DOCTYPE html>
   .st-not_applicable { background: #f0f0f0; color: #666; }
   .small { font-size: 13px; color: #555; }
   .neg { color: #8a6d3b; }
+  /* 実測の有無は**語**が言う。罫線は同じことを形でも示す補助にすぎない
+     (色だけに頼ると単色印刷・色覚・静止画で消える)。 */
+  .ov { border-left: 3px solid #999; padding-left: .4rem; margin: .25rem 0; }
+  .ov-absent, .ov-none { border-left-style: dotted; }
   .legend { font-size: 14px; color: #555; margin-top: .3rem; }
   .opcount { position: fixed; right: .8rem; bottom: .8rem; background: #f4f4f4; border: 1px solid #ccc; padding: .25rem .6rem; font-size: 13px; }
   footer { padding: .6rem 1rem; border-top: 1px solid #ccc; font-size: 13px; color: #666; }
@@ -113,7 +180,7 @@ const html = `<!DOCTYPE html>
 <body>
 <div class="banner">全値は候補(<b>proposed</b>)であり正本表示ではない — この注記が全項に適用される(各項では繰り返さない)。正本は issue 204 の合意台帳と各値の出所。</div>
 <header>
-  <label>対象: <select id="target"></select></label>
+  <label>対象: <select id="target">${OPTIONS}</select></label>
   <nav>
     <button data-v="system" aria-pressed="true">システム</button>
     <button data-v="scenario" aria-pressed="false">シナリオ</button>
@@ -133,17 +200,20 @@ const html = `<!DOCTYPE html>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
-const OVERLAY = ${JSON.stringify(overlay)};
+const OVERLAYS = ${JSON.stringify(overlays)};
+const OVERLAY_READ = ${overlayDir ? "true" : "false"}; // この build が overlay を読んだか
+const OVERLAY_EMPTY = ${JSON.stringify(OVERLAY_EMPTY_STATUS)};
 const NO_STAGGER = ${noStagger ? "true" : "false"}; // 試験専用(重なり検出の負例)
-let ti = 0, view = "system", focusEl = null, drill = null;
+let view = "system", focusEl = null, drill = null;
 const drillStack = [];
 let ops = 0;
 const bump = () => { ops++; document.getElementById("ops").textContent = ops; };
 document.getElementById("opreset").onclick = () => { ops = 0; document.getElementById("ops").textContent = 0; };
 
+// 対象は **id で指す。** 一覧は生成時に埋まっている(実行時に組み立てない)。
 const tsel = document.getElementById("target");
-MODELS.forEach((m, i) => tsel.add(new Option(m.target, i)));
-tsel.onchange = () => { ti = +tsel.value; focusEl = null; drill = null; drillStack.length = 0; bump(); render(); };
+let tid = tsel.value;
+tsel.onchange = () => { tid = tsel.value; focusEl = null; drill = null; drillStack.length = 0; bump(); render(); };
 document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
   view = b.dataset.v; focusEl = null; drill = null; drillStack.length = 0; bump();
   document.querySelectorAll("nav button").forEach((x) => x.setAttribute("aria-pressed", x === b));
@@ -151,7 +221,13 @@ document.querySelectorAll("nav button").forEach((b) => b.onclick = () => {
 });
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const M = () => MODELS[ti];
+// 知らない id で黙って別の対象を描かない。落ちるなら大きな音で落ちる
+// (ブラウザ試験は pageerror を失敗として拾う)。
+const M = () => {
+  const m = MODELS.find((x) => x.target === tid);
+  if (!m) throw new Error("知らない対象: " + tid);
+  return m;
+};
 const el = (id) => M().elements.find((e) => e.id === id);
 const anchor = (id) => (M().anchors ?? []).find((a) => a.id === id);
 const stBadge = (s) => '<span class="st st-' + s + '">' + s + "</span>";
@@ -174,19 +250,40 @@ function evRows(evs) {
   }).join("");
 }
 
-// 実測 overlay(Phase 2 予習)— 宣言済み CLI が build 時に返した事実。proposed のモデル値と混ぜず出所を明記。
+// 実測 overlay(Phase 2 予習)— 宣言済み CLI が build 時に返した値。proposed のモデル値と混ぜず出所を明記。
+//
+// **無いことを空白で言わない。** 以前は三つの別々の事実が、どれも空文字列になっていた:
+//   (1) この build は overlay を読んでいない
+//   (2) 読んだが、この対象の overlay が無い
+//   (3) 在るが、この要素に該当する注釈対が 0 件だった
+// 空白は「問題が無い」と読まれる。三つを別々の文で言う。
+const shortRev = (s) => (s ? String(s).slice(0, 7) : "記録なし");
+
 function overlayRows(e) {
-  if (!OVERLAY || M().target !== OVERLAY.target) return "";
+  if (!OVERLAY_READ) return ""; // この build は overlay を読んでいない(既定の出荷物)
+  const o = OVERLAYS[M().target];
+  if (!o) {
+    return "<div class='small ov ov-absent'>実測 overlay: <b>この対象は未生成である</b>" +
+      "(測って何も無かったのではなく、測っていない)。</div>";
+  }
+  if (o.status === OVERLAY_EMPTY) {
+    return "<div class='small ov ov-none'>実測 overlay: <b>測る対象が 0 件である</b>" +
+      (o.reason ? " — " + esc(o.reason) : "") + "</div>";
+  }
+  const head = "<div class='small ov' style='margin-top:.3rem'><b>実測 overlay</b>(総括 " + esc(o.status) +
+    ")— 出所: " + esc(o.source) + "(" + esc(o.generated_at ?? "生成日の記録なし") + ")</div>";
   const rows = (e.realized_by ?? [])
-    .map((aid) => OVERLAY.entries.find((x) => x.anchor_id === aid))
+    .map((aid) => (o.entries ?? []).find((x) => x.anchor_id === aid))
     .filter(Boolean)
-    .flatMap((x) => x.ranges_now.map((r) =>
-      "<div class='small'>実測(build 時・rev " + esc(OVERLAY.generated_from_rev.slice(0, 7)) + "): 注釈対 " +
+    .flatMap((x) => (x.ranges_now ?? []).map((r) =>
+      "<div class='small'>実測(build 時・rev " + esc(shortRev(o.generated_from_rev)) + "): 注釈対 " +
       esc(r.id) + " が " + esc(x.path) + " L" + r.begin_line + "–L" + r.end_line +
-      "・指紋 " + esc(r.fingerprint.slice(0, 19)) + "…" +
+      "・指紋 " + esc(String(r.fingerprint).slice(0, 19)) + "…" +
       (x.rev_state === "advanced" ? "(記録時 rev から前進)" : "(記録時 rev と同一)") + "</div>"));
-  if (!rows.length) return "";
-  return "<div class='small' style='margin-top:.3rem'><b>実測 overlay</b> — 出所: " + esc(OVERLAY.source) + "(" + esc(OVERLAY.generated_at) + ")</div>" + rows.join("");
+  if (!rows.length) {
+    return head + "<div class='small ov ov-none'>この要素に該当する注釈対は <b>0 件</b>だった(走査そのものは行われている)。</div>";
+  }
+  return head + rows.join("");
 }
 
 // 詳細パネル — 12 節の固定順(所有者指示 §4)

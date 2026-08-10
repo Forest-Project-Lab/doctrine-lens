@@ -17,13 +17,30 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
-import { loadModels, targetIndex } from "../gold-model/spec.mjs";
+import { loadModels } from "../gold-model/spec.mjs";
 import { verdict, reportPathFrom, writeReport, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexPath = join(here, "index.html");
 // 対象の一覧は registry.json が正本。ここでは持たない。
 const models = loadModels("gates");
+
+// ドリルの掃引に使う対象と要素を**模型から導く**。以前は要素名も子の id も直書きで、
+// 模型を直すと試験だけが古い名前を守り続けた(掃引の穴は落ちない形で開く)。
+const drill = (() => {
+  for (const m of models) {
+    const parents = new Set((m.elements ?? []).map((e) => e.parent ?? null).filter(Boolean));
+    const top = (m.elements ?? []).find((e) => (e.parent ?? null) === null && parents.has(e.id));
+    if (!top) continue;
+    return {
+      model: m,
+      top,
+      children: m.elements.filter((e) => (e.parent ?? null) === top.id),
+      other: m.elements.find((e) => (e.parent ?? null) === null && e.id !== top.id),
+    };
+  }
+  return null;
+})();
 
 let failures = 0, checks = 0;
 const failed = [];
@@ -78,7 +95,7 @@ async function sweep(url, { offline = false } = {}) {
   for (let i = 0; i < models.length; i++) {
     const m = models[i];
     await step(`対象切替 ${m.target}`, async () => {
-      await p.selectOption("#target", targetIndex(m.target));
+      await p.selectOption("#target", m.target);
       const purposeHead = m.system.purpose.slice(0, 12);
       await expectText("#left", purposeHead, `対象 ${m.target} の目的`);
       const boxes = await p.locator("svg g[data-el]").count();
@@ -87,33 +104,37 @@ async function sweep(url, { offline = false } = {}) {
     });
   }
 
-  // 対象1で: 要素選択 → パネル一致、ドリル → 親・現在位置・子、復帰
-  await step("対象1へ戻す", async () => {
-    await p.selectOption("#target", targetIndex(models[0].target));
-    await expectText("#left", models[0].system.purpose.slice(0, 12), "対象1の目的");
-  });
-  await step("要素選択(lens)", async () => {
-    await p.locator('svg g[data-el="lens"]').click();
-    await expectText("#detail h2", "doctrine-lens(帰結の画面)", "詳細パネルの見出し");
-    const sections = await p.locator("#detail h3").count();
-    if (sections !== 12) throw new Error(`12 節でない: ${sections}`);
-  });
-  await step("ドリルダウン(lens 内部)", async () => {
-    await p.locator('[data-drill="lens"]').click();
-    await expectText(".crumb", "doctrine-lens(帰結の画面) の内部", "現在位置(パンくず)");
-    await expectText(".parentline", "親の目的", "親の目的の常示");
-    for (const cid of ["lens.bridge", "lens.model", "lens.view"]) {
-      if ((await p.locator(`svg g[data-el="${cid}"]`).count()) !== 1) throw new Error(`子要素 ${cid} が見えない`);
-    }
-  });
-  await step("子要素選択(lens.model)", async () => {
-    await p.locator('svg g[data-el="lens.model"]').click();
-    await expectText("#detail h2", "帰結の模型", "子要素の詳細パネル");
-  });
-  await step("復帰(up)", async () => {
-    await p.locator("#up").click();
-    if ((await p.locator('svg g[data-el="maintainer"]').count()) !== 1) throw new Error("最上位へ戻っていない");
-  });
+  // ドリルを持つ対象が目録に無いなら、5 つの assert を黙って落とさず**穴として報告する**。
+  if (drill) {
+    // **目録がドリルを持つ対象を宣言しているときだけ走らせる。**
+    await step(`ドリルの対象へ(${drill.model.target})`, async () => {
+      await p.selectOption("#target", drill.model.target);
+      await expectText("#left", drill.model.system.purpose.slice(0, 12), `対象 ${drill.model.target} の目的`);
+    });
+    await step(`要素選択(${drill.top.id})`, async () => {
+      await p.locator(`svg g[data-el="${drill.top.id}"]`).click();
+      await expectText("#detail h2", drill.top.name, "詳細パネルの見出し");
+      const sections = await p.locator("#detail h3").count();
+      if (sections !== 12) throw new Error(`12 節でない: ${sections}`);
+    });
+    await step(`ドリルダウン(${drill.top.id} 内部)`, async () => {
+      await p.locator(`[data-drill="${drill.top.id}"]`).click();
+      await expectText(".crumb", drill.top.name + " の内部", "現在位置(パンくず)");
+      await expectText(".parentline", "親の目的", "親の目的の常示");
+      for (const c of drill.children) {
+        if ((await p.locator(`svg g[data-el="${c.id}"]`).count()) !== 1) throw new Error(`子要素 ${c.id} が見えない`);
+      }
+    });
+    await step(`子要素選択(${drill.children[0].id})`, async () => {
+      await p.locator(`svg g[data-el="${drill.children[0].id}"]`).click();
+      await expectText("#detail h2", drill.children[0].name, "子要素の詳細パネル");
+    });
+    await step("復帰(up)", async () => {
+      await p.locator("#up").click();
+      if ((await p.locator(`svg g[data-el="${drill.other.id}"]`).count()) !== 1) throw new Error("最上位へ戻っていない");
+    });
+
+  }
 
   // 各画面への切替: 画面固有の一問が出る
   for (const v of ["scenario", "assurance", "impact", "inspect"]) {
@@ -130,6 +151,12 @@ async function sweep(url, { offline = false } = {}) {
   await ctx.close();
   return externalByStep;
 }
+
+// ---- 掃引の穴を、穴として言う ----
+// ドリルの 5 操作は「子を持つ要素が在る対象」でしか走らない。目録がそういう対象を
+// 一つも宣言していないなら、**assert が静かに 5 つ減る**。減ったことを判定に出す。
+report(drill !== null, "掃引: ドリルを持つ対象が目録に在る",
+  drill ? "" : "どの対象も子要素を持たない(ドリルの 5 操作が走らない)");
 
 // ---- 正: オンライン(全操作成立+外部 0 件/操作単位) ----
 try {
