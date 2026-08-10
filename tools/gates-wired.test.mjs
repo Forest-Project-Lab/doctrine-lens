@@ -38,6 +38,18 @@ test("#12. 手元の check が全件のリンタを含む七段を通す", () =>
   }
 });
 
+test("M 層の一括判定は、CI と手元で同じ一つの命令である", () => {
+  // 一括判定は長らく CI の一行にしか無く、手元から回す決まった名前が無かった ——
+  // 「文脈が切れた後に、同じ判定をどう再現するか」に答えが無い状態である。
+  // 名前を置き、CI と同じ物を指していることを凍結する。
+  const script = manifest.scripts?.["systemmap:verify"] ?? "";
+  assert.ok(script.includes("research/system-map/prototype/verify.mjs"),
+    "systemmap:verify が一括判定を指していない");
+  const smYml = readFileSync(join(PROJECT, ".github/workflows/system-map.yml"), "utf8");
+  assert.ok(smYml.includes("research/system-map/prototype/verify.mjs"),
+    "CI が一括判定を回していない");
+});
+
 test("#12. CI が同じ七段に加えてホスト試験・画面・配布物を回す", () => {
   for (const s of IN_CI) {
     const called = new RegExp(`run:.*npm (run )?${s.replace(":", ":")}\\b`).test(checkYml);

@@ -7,8 +7,8 @@
 //
 // SKIP も同じである。「この版では判定不能」は不合格であって合格ではない。
 // 以前は終了コードに影響しなかった(validate.mjs が FAIL だけを数えていた)。
-import { writeFileSync } from "node:fs";
 import { REGISTRY } from "./spec.mjs";
+import { writeAtomic } from "../lib/atomic-write.mjs";
 
 const VERDICT_RULES = REGISTRY.verdicts ?? (() => { throw new Error("registry.json に verdicts が無い"); })();
 
@@ -62,7 +62,9 @@ export function reportPathFrom(argv) {
 
 /** 判定の記録を書き出す。段が黙って終わらないための唯一の証拠になる。 */
 export function writeReport(path, gateId, records) {
-  writeFileSync(path, JSON.stringify({ schema: "system-map/verdicts/1", gate: gateId, records }, null, 2) + "\n", "utf8");
+  // 途中で殺されても、切れた記録を残さない —— 読めない記録は「判定を出さなかった」
+  // と見分けがつかない。
+  writeAtomic(path, JSON.stringify({ schema: "system-map/verdicts/1", gate: gateId, records }, null, 2) + "\n");
 }
 
 /**
@@ -88,6 +90,13 @@ export function todayFrom(argv) {
   if (i >= 0) {
     const d = argv[i + 1];
     if (!/^\d{4}-\d{2}-\d{2}$/.test(d ?? "")) throw new Error("--today は YYYY-MM-DD で渡す");
+    // 形だけでは足りない。2026-02-30 は形に合うが在り得ない日付であり、期限の比較は
+    // 字の順序で行うので**そのまま通ってしまう**。実在する日であることまで見る。
+    const [y, m, dd] = d.split("-").map(Number);
+    const real = new Date(Date.UTC(y, m - 1, dd));
+    if (real.getUTCFullYear() !== y || real.getUTCMonth() !== m - 1 || real.getUTCDate() !== dd) {
+      throw new Error(`--today に在り得ない日付が渡された: ${d}`);
+    }
     return { date: d, source: "--today" };
   }
   return { date: new Date().toISOString().slice(0, 10), source: "壁時計" };

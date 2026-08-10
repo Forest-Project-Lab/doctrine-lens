@@ -37,9 +37,22 @@ const got = resolvePlugin({
   pin,
 });
 
+// 固定との照合は三段ある。
+//   matched                版も commit も固定と一致する
+//   matched-version-only   版は一致するが、引いた実体が commit を持たない(複製など)
+//   commit-mismatch / mismatch   食い違う
+//
+// `--require-pin` は従来どおり「版が合っていればよい」で止めない(CI と手元の門は
+// これで回っている)。**commit まで要る段は `--require-commit` を付ける** ——
+// 版だけの一致を完全な一致と呼ばないための口である。
+const PIN_OK_VERSION = new Set(["matched", "matched-version-only"]);
+const pinFails = () =>
+  (flag("--require-commit") && got.pin_state !== "matched") ||
+  (flag("--require-pin") && !PIN_OK_VERSION.has(got.pin_state));
+
 if (flag("--json")) {
   process.stdout.write(JSON.stringify({ schema: "doctrine-lens/plugin-resolution/1", ...got, pin }, null, 2) + "\n");
-  process.exit(got.root ? (flag("--require-pin") && got.pin_state !== "matched" ? 3 : 0) : 1);
+  process.exit(got.root ? (pinFails() ? 3 : 0) : 1);
 }
 
 if (!got.root) {
@@ -59,12 +72,18 @@ if (!got.root) {
 // 何を引いたかを必ず言う。黙って引かない。
 const shortCommit = got.commit ? got.commit.slice(0, 7) : "commit 不明";
 console.error(`doctrine: 版 ${got.version ?? "不明"} / ${shortCommit} / ${got.resolved_via} から引いた`);
-if (pin && got.pin_state !== "matched") {
+if (pin && got.pin_state === "matched-version-only") {
+  console.error(
+    `doctrine: 版は固定(${pin.version})と一致するが、**引いた実体は commit を持たない。** ` +
+      `固定 ${pin.commit.slice(0, 7)} と同じ木かどうかは、この照合では言えない(版だけの一致)。` +
+      (flag("--require-commit") ? "" : " commit まで要る段は --require-commit を付けて止めること。"),
+  );
+} else if (pin && got.pin_state !== "matched") {
   console.error(
     `doctrine: **固定(${pin.version} / ${pin.commit.slice(0, 7)})と食い違う。** 引いたのは ${got.version ?? "不明"} である。` +
       (flag("--require-pin") ? "" : " 再現性の要る段は --require-pin を付けて止めること。"),
   );
-  if (flag("--require-pin")) process.exit(3);
 }
+if (pinFails()) process.exit(3);
 
 process.stdout.write(got.root);

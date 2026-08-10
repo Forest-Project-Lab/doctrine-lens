@@ -151,10 +151,23 @@ export function resolvePlugin({
 
 function decorate(found, via, trace, pin) {
   const version = versionOf(found.root);
+  // 固定との照合は**三段**である。版だけ合っているのを「一致」と呼ぶと、
+  // **同じ版を名乗る別の木**が固定を満たしてしまう(複製から引いた実体は commit を
+  // 持たないので、これは例外ではなく通例である)。
   let pinState = "no-pin";
   if (pin) {
-    pinState = version && pin.version && version === pin.version ? "matched" : "mismatch";
-    if (pinState === "mismatch") trace.push(`固定(${pin.version})と引いた版(${version ?? "不明"})が違う`);
+    if (!version || !pin.version || version !== pin.version) {
+      pinState = "mismatch";
+      trace.push(`固定(${pin.version})と引いた版(${version ?? "不明"})が違う`);
+    } else if (!found.commit) {
+      pinState = "matched-version-only";
+      trace.push(`版は固定(${pin.version})と一致するが、引いた実体は commit を持たない(版だけの一致)`);
+    } else if (pin.commit && found.commit !== pin.commit) {
+      pinState = "commit-mismatch";
+      trace.push(`版は一致するが commit が違う(固定 ${String(pin.commit).slice(0, 7)} / 引いた ${found.commit.slice(0, 7)})`);
+    } else {
+      pinState = "matched";
+    }
   }
   return {
     root: found.root,
