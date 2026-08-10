@@ -1,0 +1,35 @@
+ok   先頭: 写しの正本が合成の対象を読み込む
+ok   先頭: 役割で絞った一覧が全ての役割で拾う
+ok   先頭: 段の引数(args_from)が合成の模型を渡す
+ok   先頭: 合成の対象を含んだまま build が通る
+NG   先頭: 生成物が対象を id で名指す — 生成物に <option> が一つも無い(対象の一覧が実行時にしか存在しない)
+ok   先頭: 生成物の模型に合成の対象が載る
+ok   先頭: 到達の表が合成の対象の行を持つ
+ok   先頭: build の判定の記録が合成の対象を名指す
+NG   先頭: overlay の生成計画が合成の対象を挙げる — 計画が targets を挙げていない(何を測るつもりかを言っていない)
+NG   先頭: 撮影の計画が合成の対象を含む — --print-plan が通らない(終了コード 1) — fatal: not a git repository (or any of the parent directories): .git node:internal/errors:983 const err = new Error(message); ^ Error: Command failed: git status --porcelain -- . ':!shots' fatal: not 
+ok   末尾: 写しの正本が合成の対象を読み込む
+ok   末尾: 役割で絞った一覧が全ての役割で拾う
+ok   末尾: 段の引数(args_from)が合成の模型を渡す
+ok   末尾: 合成の対象を含んだまま build が通る
+NG   末尾: 生成物が対象を id で名指す — 生成物に <option> が一つも無い(対象の一覧が実行時にしか存在しない)
+ok   末尾: 生成物の模型に合成の対象が載る
+ok   末尾: 到達の表が合成の対象の行を持つ
+ok   末尾: build の判定の記録が合成の対象を名指す
+NG   末尾: overlay の生成計画が合成の対象を挙げる — 計画が targets を挙げていない(何を測るつもりかを言っていない)
+NG   末尾: 撮影の計画が合成の対象を含む — --print-plan が通らない(終了コード 1) — fatal: not a git repository (or any of the parent directories): .git node:internal/errors:983 const err = new Error(message); ^ Error: Command failed: git status --porcelain -- . ':!shots' fatal: not 
+ok   実測の候補を持つ対象は overlay の役割を持つ
+ok   掃引する役割は画面に載る役割の部分集合である
+NG   生成側の命名に依らず、宣言した対象で索く — 中立な名前の overlay を読めない(終了コード 1) — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/neutral/overlay-doctrine-and-lens.js
+NG   壊れた JSON を硬く落とす — 終了コード 1 だが理由が overlay-corrupt と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/corrupt/overlay-doctrine-and-lens.js
+NG   未知の形を硬く落とす — 終了コード 1 だが理由が overlay-schema-unknown と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/schema/overlay-doctrine-and-lens.jso
+NG   未知の対象を硬く落とす — 終了コード 1 だが理由が overlay-unknown-target と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/unknown-target/overlay-doctrine-and-
+NG   同じ対象を名乗る二つを硬く落とす — 終了コード 1 だが理由が overlay-duplicate-target と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/duplicate/overlay-doctrine-and-lens.
+NG   空の実測を硬く落とす — 終了コード 1 だが理由が overlay-vacuous と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/vacuous/overlay-doctrine-and-lens.js
+NG   測る対象が無いのに実測を名乗る記録を落とす — 終了コード 1 だが理由が overlay-vacuous と名指されていない — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/mislabeled/overlay-doctrine-and-lens
+NG   指した置き場が無いことを黙って無視しない — 終了コード 1 だが理由が overlay-dir-missing と名指されていない
+NG   overlay 付きの build が出荷物を書き換えない — 終了コード 1 だが、出荷物を守って落ちたのか別の理由で落ちたのか判らない
+NG   測る対象が 0 件の対象を、実測と区別して出す — 正しい形の no-candidates を読めない(終了コード 1) — node:fs:442 return binding.readFileUtf8(path, stringToFlags(options.flag)); ^ Error: ENOENT: no such file or directory, open '/tmp/system-map-wired-T5sZne/ov-cases/no-candidates/overlay-doctrine-and-l
+NG   生成側が空の実測を書かない — 空の実測を書いている: overlay-lens-shipping.json が状態 measured で記録 0 件
+
+17 件の所見(列挙の場所 22 箇所・overlay の入力例 11 件)

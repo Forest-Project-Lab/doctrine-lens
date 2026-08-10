@@ -303,6 +303,22 @@
       "checkers": [
         "meta:rules-load-bearing"
       ]
+    },
+    {
+      "id": "M-W1",
+      "statement": "対象を一つ増やすと、対象を列挙する全ての場所がそれを拾う(位置ではなく id で指す)",
+      "source": "ADR-031 決定8・PR5(複数対象 overlay と配線)",
+      "checkers": [
+        "meta:targets-wired"
+      ]
+    },
+    {
+      "id": "M-W2",
+      "statement": "実測 overlay は自分が宣言した対象で索かれ、壊れ・未知の形・未知の対象・重複・空の実測を黙って通さない",
+      "source": "ADR-031 決定5(何も検めていない合格を合格と呼ばない)・PR5",
+      "checkers": [
+        "meta:overlay-indexing"
+      ]
     }
   ],
   "checkers": [
@@ -467,6 +483,18 @@
       "invariant": "M-N3",
       "gate": "mutation",
       "module": "prototype/test-mutation.mjs"
+    },
+    {
+      "id": "meta:targets-wired",
+      "invariant": "M-W1",
+      "gate": "targets-wired",
+      "module": "prototype/test-targets-wired.mjs"
+    },
+    {
+      "id": "meta:overlay-indexing",
+      "invariant": "M-W2",
+      "gate": "targets-wired",
+      "module": "prototype/test-targets-wired.mjs"
     }
   ],
   "acknowledgements": [
@@ -704,6 +732,15 @@
       "cmd": [
         "node",
         "test-mutation.mjs"
+      ]
+    },
+    {
+      "id": "targets-wired",
+      "label": "配線(合成の対象を全ての列挙が拾う・overlay を宣言した対象で索く)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-targets-wired.mjs"
       ]
     },
     {
