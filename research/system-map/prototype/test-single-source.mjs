@@ -40,6 +40,16 @@ const RULES = [
     re: /\[\s*"0"\s*,\s*"1"\s*,\s*"2"\s*,\s*"3"\s*\]/g,
   },
   {
+    id: "対象を添字で指す口",
+    why: "位置で指す口が在る限り誰かが使う。名を変えても添字は動かないので、別の対象を黙って撮る/掃く",
+    re: /\btargetIndex\b/g,
+  },
+  {
+    id: "overlay のファイル名",
+    why: "読み側が生成側の命名に依ると、対象を増やしても読まれない overlay が黙って出る。overlay は自分が宣言した target で索く",
+    re: /overlay-[\w-]+\.json/g,
+  },
+  {
     id: "実現先として認める種別",
     why: "validate 側と build 側で食い違ったまま気付けない(上流 #212 ギャップ7 の形)",
     re: /\[\s*"code_range"\s*,\s*"test"\s*\]/g,

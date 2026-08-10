@@ -46,7 +46,7 @@
 | M-18 | 模型が `schema.json` に適合する(形と語彙の全体) | `model:schema-shape` | `gold-model/schema.json` |
 | M-17 | 実現先になりうるアンカーの指す先は、URL かリポジトリ接頭つきの相対経路である | `model:anchor-target-grammar` | `schema.json` の `TraceAnchor.target`(S4) |
 | M-L1 | SVG のラベル同士が視覚的に重ならない | `browser:label-no-overlap` | レビュー指摘 2026-08-04 §4 |
-| M-S1 | M 層の事実が正本の外に手書きされていない | `meta:single-source` | ADR-031 決定8・実行原則5 |
+| M-S1 | M 層の事実が正本の外に手書きされておらず、正本を迂回して対象を握る口も残っていない | `meta:single-source` | ADR-031 決定8・実行原則5 |
 | M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |
 | M-R1 | 不変条件と検査器が一対一で対応する | `meta:registry-consistent` | ADR-031 決定8 |
 | M-N2 | 負例の表の各行で、名指した検査器が名指した判定と符丁を出す | `meta:negatives-fire` | ADR-031 決定8・ADR-017 |

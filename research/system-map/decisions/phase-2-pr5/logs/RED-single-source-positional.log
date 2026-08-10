@@ -1,0 +1,27 @@
+ok   模型のファイル名 — 正本の外に綴りが無い
+ok   対象を位置で指す — 正本の外に綴りが無い
+ok   対象の添字の一覧 — 正本の外に綴りが無い
+NG   対象を添字で指す口 — 15 箇所に手書きされている(位置で指す口が在る限り誰かが使う。名を変えても添字は動かないので、別の対象を黙って撮る/掃く)
+       gold-model/spec.mjs:151  export function targetIndex(id) {
+       prototype/shoot.mjs:12  // 対象を位置で指さない。名を変えたら targetIndex が例外で止まる(別の対象を黙って撮らない)。
+       prototype/shoot.mjs:13  import { targetIndex } from "../gold-model/spec.mjs";
+       prototype/shoot.mjs:63  await p.selectOption("#target", targetIndex("lens-shipping"));
+       prototype/shoot.mjs:68  await p.selectOption("#target", targetIndex("celery"));
+       prototype/shoot.mjs:78  await p.selectOption("#target", targetIndex("fixture-rare-states(架空)"));
+       prototype/test-labels-browser.mjs:16  import { targetIds, targetIndex } from "../gold-model/spec.mjs";
+       prototype/test-labels-browser.mjs:59  await p.selectOption("#target", targetIndex(id));
+       prototype/test-labels-browser.mjs:63  await p.selectOption("#target", targetIndex(DRILL_TARGET));
+       prototype/test-m13-browser.mjs:20  import { loadModels, targetIndex } from "../gold-model/spec.mjs";
+       prototype/test-m13-browser.mjs:81  await p.selectOption("#target", targetIndex(m.target));
+       prototype/test-m13-browser.mjs:92  await p.selectOption("#target", targetIndex(models[0].target));
+       prototype/test-m14-browser.mjs:12  import { loadModels, targetIndex } from "../gold-model/spec.mjs";
+       prototype/test-m14-browser.mjs:56  await p.selectOption("#target", targetIndex(r.target));
+       prototype/test-m14-browser.mjs:106  await p.selectOption("#target", targetIndex(r.target));
+NG   overlay のファイル名 — 1 箇所に手書きされている(読み側が生成側の命名に依ると、対象を増やしても読まれない overlay が黙って出る。overlay は自分が宣言した target で索く)
+       prototype/build.mjs:65  overlay = JSON.parse(readFileSync(join(resolve(overlayDir), "overlay-doctrine-and-lens.json"), "
+ok   実現先として認める種別 — 正本の外に綴りが無い
+ok   証跡の必須属性 — 正本の外に綴りが無い
+ok   七状態 — 正本の外に綴りが無い
+ok   操作数の上限 — 正本の外に綴りが無い
+
+16 箇所が正本の外に事実を持っている
