@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "mutation",
+  "records": [
+    {
+      "invariant": "M-N3",
+      "checker": "meta:rules-load-bearing",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 12,
+      "examined_unit": "潰し",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

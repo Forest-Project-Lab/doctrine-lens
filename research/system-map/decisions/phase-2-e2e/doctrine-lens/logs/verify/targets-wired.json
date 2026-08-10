@@ -1,0 +1,26 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "targets-wired",
+  "records": [
+    {
+      "invariant": "M-W1",
+      "checker": "meta:targets-wired",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 22,
+      "examined_unit": "列挙の場所",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-W2",
+      "checker": "meta:overlay-indexing",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 11,
+      "examined_unit": "overlay の入力例",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

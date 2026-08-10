@@ -1,0 +1,12 @@
+{
+  "findings": [],
+  "model": "draft-doctrine.json",
+  "schema": "map-draft-check/1",
+  "totals": {
+    "by_code": {},
+    "findings": 0,
+    "sources": 38,
+    "unverifiable": 0
+  },
+  "unverifiable": []
+}

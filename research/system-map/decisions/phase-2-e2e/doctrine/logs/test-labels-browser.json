@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "browser-labels",
+  "records": [
+    {
+      "invariant": "M-L1",
+      "checker": "browser:label-no-overlap",
+      "target": "index.html",
+      "verdict": "PASS",
+      "examined": 6,
+      "examined_unit": "掃引した画面",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

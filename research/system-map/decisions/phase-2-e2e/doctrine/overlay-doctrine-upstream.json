@@ -1,0 +1,114 @@
+{
+  "doctrine": {
+    "root_basename": "0.11.0"
+  },
+  "entries": [
+    {
+      "anchor_id": "a-docs-audit",
+      "current_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "path": "plugin/scripts/docs-audit.py",
+      "ranges_now": [
+        {
+          "begin_line": 52,
+          "end_line": 69,
+          "fingerprint": "sha256:4bba036067a227a2ef0f0bc73f436c23e0cad28ab86ecbd6ac04320fafa697a1",
+          "id": "SPEC-011"
+        }
+      ],
+      "raw_target": "doctrine: plugin/scripts/docs-audit.py",
+      "reason": null,
+      "recorded_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "repo": "doctrine",
+      "rev_state": "same",
+      "status": "measured"
+    },
+    {
+      "anchor_id": "a-dep-graph",
+      "current_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "path": "plugin/scripts/dep-graph.py",
+      "ranges_now": [
+        {
+          "begin_line": 31,
+          "end_line": 34,
+          "fingerprint": "sha256:4a5d5e37bd48bbce9bb63e21496f55f598e20713b4370465323303d84630d6a1",
+          "id": "IMPL-006"
+        }
+      ],
+      "raw_target": "doctrine: plugin/scripts/dep-graph.py",
+      "reason": null,
+      "recorded_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "repo": "doctrine",
+      "rev_state": "same",
+      "status": "measured"
+    },
+    {
+      "anchor_id": "a-trace-index",
+      "current_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "path": "plugin/scripts/trace-index.py",
+      "ranges_now": [
+        {
+          "begin_line": 33,
+          "end_line": 37,
+          "fingerprint": "sha256:fbaad0db88469a98dfa490ce1d97bf0a5f980617f9163d88aa7983d98137e08e",
+          "id": "SPEC-026"
+        }
+      ],
+      "raw_target": "doctrine: plugin/scripts/trace-index.py",
+      "reason": null,
+      "recorded_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "repo": "doctrine",
+      "rev_state": "same",
+      "status": "measured"
+    },
+    {
+      "anchor_id": "a-policy-guard",
+      "current_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "path": "plugin/scripts/policy-guard.py",
+      "ranges_now": [
+        {
+          "begin_line": 182,
+          "end_line": 190,
+          "fingerprint": "sha256:734cc0bb328183c4b8a99e351bf58eb9c6a43c704b718f1aff4adfb425504293",
+          "id": "SPEC-003"
+        }
+      ],
+      "raw_target": "doctrine: plugin/scripts/policy-guard.py",
+      "reason": null,
+      "recorded_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "repo": "doctrine",
+      "rev_state": "same",
+      "status": "measured"
+    },
+    {
+      "anchor_id": "a-hookio",
+      "current_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "path": "plugin/scripts/_hookio.py",
+      "ranges_now": [
+        {
+          "begin_line": 28,
+          "end_line": 148,
+          "fingerprint": "sha256:2cde36ea62fbb0b0d2b5888464f14922ce876057327ba00a9696f2ab71cd0a1f",
+          "id": "SPEC-019"
+        }
+      ],
+      "raw_target": "doctrine: plugin/scripts/_hookio.py",
+      "reason": null,
+      "recorded_rev": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "repo": "doctrine",
+      "rev_state": "same",
+      "status": "measured"
+    }
+  ],
+  "generated_at": null,
+  "generated_at_source": null,
+  "generated_from_rev": null,
+  "schema": "system-map/overlay/0.1",
+  "source": "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した返す値",
+  "source_limits": "上流の走査は、印が意味の上で正しい場所に打たれているかを判定しない。改名・移動も追わない。ここで言えるのは「この rev で、この経路に、この指紋の範囲が在った」までである。",
+  "status": "measured",
+  "target": "doctrine-upstream",
+  "worktree": {
+    "dirty": null,
+    "shallow": null
+  }
+}

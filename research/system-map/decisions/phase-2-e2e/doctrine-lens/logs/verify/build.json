@@ -1,0 +1,56 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "build",
+  "records": [
+    {
+      "invariant": "M-14",
+      "checker": "build:reachability",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 8,
+      "examined_unit": "到達可能な要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-14",
+      "checker": "build:reachability",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "到達可能な要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-14",
+      "checker": "build:reachability",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "到達可能な要素",
+      "code": "meta.vacuous",
+      "message": "到達可能な要素 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-14",
+      "checker": "build:reachability",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "到達可能な要素",
+      "code": "meta.vacuous",
+      "message": "到達可能な要素 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-13",
+      "checker": "build:no-runtime-fetch",
+      "target": "index.html",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "生成物",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

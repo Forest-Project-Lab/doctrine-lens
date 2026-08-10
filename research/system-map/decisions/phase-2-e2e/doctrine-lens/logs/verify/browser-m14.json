@@ -1,0 +1,46 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "browser-m14",
+  "records": [
+    {
+      "invariant": "M-14",
+      "checker": "browser:ops-count",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 8,
+      "examined_unit": "実クリックで測った要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-14",
+      "checker": "browser:ops-count",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "実クリックで測った要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-14",
+      "checker": "browser:ops-count",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "実クリックで測った要素",
+      "code": "meta.vacuous",
+      "message": "実クリックで測った要素 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-14",
+      "checker": "browser:ops-count",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "実クリックで測った要素",
+      "code": "meta.vacuous",
+      "message": "実クリックで測った要素 が 0 件。何も検めていない"
+    }
+  ]
+}

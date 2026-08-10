@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "display-static",
+  "records": [
+    {
+      "invariant": "M-19",
+      "checker": "build:display-vocabulary",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "語彙の突き合わせ",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

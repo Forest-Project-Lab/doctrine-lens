@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "chaos",
+  "records": [
+    {
+      "invariant": "M-C1",
+      "checker": "meta:chaos-tolerated",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 20,
+      "examined_unit": "注入した壊れ方",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

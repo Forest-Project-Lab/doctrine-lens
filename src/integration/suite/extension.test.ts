@@ -239,4 +239,50 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
       `印の無いファイルで取り直したら、別の文書へ跳んだ: ${after}`,
     );
   });
+
+  it("System Map(実験)が編集器の中で開き、出荷した生成物をそのまま映す", async () => {
+    // **VSIX が出荷するのと同じ束ねを、実際の拡張機能ホストで開く。**
+    // 組み上がったことと、編集器が読み込めたことは別である。
+    //
+    // webview は別の描画文脈なので、その DOM をここから問う手段は無い。
+    // 見られるのは「作られたこと」と「渡された HTML」までである ——
+    // **画面の中で人が押したことは、ここでは確かめられない。**
+    const created: { html: string }[] = [];
+    const original = vscode.window.createWebviewPanel;
+    (vscode.window as unknown as { createWebviewPanel: unknown }).createWebviewPanel = (
+      ...args: Parameters<typeof vscode.window.createWebviewPanel>
+    ) => {
+      const panel = original.apply(vscode.window, args);
+      const record = { html: "" };
+      created.push(record);
+      const webview = panel.webview;
+      Object.defineProperty(panel, "webview", {
+        get: () => new Proxy(webview, {
+          set(target, prop, value) {
+            if (prop === "html") record.html = String(value);
+            return Reflect.set(target, prop, value);
+          },
+        }),
+      });
+      return panel;
+    };
+    try {
+      await vscode.commands.executeCommand("doctrineLens.openSystemMapExperiment");
+    } finally {
+      (vscode.window as unknown as { createWebviewPanel: unknown }).createWebviewPanel = original;
+    }
+
+    assert.equal(created.length, 1, "System Map の画面が作られていない");
+    const html = created[0]?.html ?? "";
+    assert.ok(html.length > 10000, `渡された HTML が短すぎる: ${html.length} 文字`);
+    // 外部への経路を残さない(M-13 の規律)。
+    assert.ok(html.includes("Content-Security-Policy"), "CSP が課されていない");
+    assert.ok(html.includes("default-src 'none'"), "既定で全ての取得を禁じていない");
+    // 射程を偽らない画面が、そのまま出荷されている。
+    for (const phrase of ["この実測が言っていないこと", "この対象は【架空】である"]) {
+      assert.ok(html.includes(phrase), `出荷した画面に「${phrase}」が無い`);
+    }
+    // 対象は id で指す(添字ではない)。
+    assert.ok(/<option value="doctrine-and-lens"/.test(html), "対象を id で指していない");
+  });
 });

@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "browser-m13",
+  "records": [
+    {
+      "invariant": "M-13",
+      "checker": "browser:no-external-request",
+      "target": "index.html",
+      "verdict": "PASS",
+      "examined": 8,
+      "examined_unit": "実ブラウザの assert",
+      "code": null,
+      "message": ""
+    }
+  ]
+}
