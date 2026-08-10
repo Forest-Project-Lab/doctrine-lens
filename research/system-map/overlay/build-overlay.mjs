@@ -1,7 +1,8 @@
 // build 時の実測 overlay。
 //
 //   node build-overlay.mjs [--repo <prefix>=<path>]... [--docs-root <prefix>=<path>]...
-//                          [--doctrine <path>] [--out-dir <path>] [--check] [--print-plan]
+//                          [--doctrine <path>] [--out-dir <path>] [--python <実行体>]
+//                          [--timeout-ms <n>] [--check] [--print-plan] [--allow-dirty]
 //
 // --check は **鮮度**を見る(いまの rev で生成した物と一致するか)。決定論は、同じ rev で
 // 二度生成して比べることで確かめる —— TZ と LC_ALL を変えても byte 一致することを実測した。
@@ -26,6 +27,7 @@ import { loadModels, targetIds, OVERLAY_SCHEMA_ID, OVERLAY_EMPTY_STATUS } from "
 import { parseAnchorTarget } from "../lib/anchor-target.mjs";
 import { overlayCandidates } from "../lib/overlay-candidates.mjs";
 import { stringifyStable } from "../lib/stable-json.mjs";
+import { writeAtomic, sweepStale } from "../lib/atomic-write.mjs";
 import { slugOf, assertUniqueSlugs } from "../lib/target-slug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -35,6 +37,7 @@ const one = (n) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : un
 const many = (n) => argv.reduce((acc, a, i) => (a === n && argv[i + 1] ? [...acc, argv[i + 1]] : acc), []);
 
 const die = (msg, code = 2) => { console.error(msg); process.exit(code); };
+const brief = (s, n = 400) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
 /** `<prefix>=<path>` を解く。空白だけ・相対は使い方の誤りであって「未指定」ではない。 */
 function binding(spec, what) {
@@ -52,13 +55,38 @@ const repos = new Map(many("--repo").map((s) => binding(s, "repo")));
 const docsRoots = new Map(many("--docs-root").map((s) => binding(s, "docs-root")));
 const outDir = one("--out-dir") ? resolve(one("--out-dir")) : here;
 
+// 呼ぶ道具を差し替えられるようにする。**壊れた道具の振る舞いは、壊れた道具でしか
+// 確かめられない**(test-chaos.mjs が偽の実行体を差す)。
+// 区切りを含む相対は受けない —— 測る対象のリポジトリが同梱した実行体が走ってしまう
+// (src/doctrine/cli.ts の resolvePython と同じ規律。ADR-010)。
+const python = one("--python") ?? "python3";
+if (/[\\/]/.test(python) && !python.startsWith("/") && !python.startsWith("~/") && !/^[A-Za-z]:[\\/]/.test(python)) {
+  die(`--python は区切りの無い名前・絶対経路・~/ のいずれかで渡す: ${python}`);
+}
+
+// 答えない道具にぶら下がらない。**時間切れが無いと、CI は落ちるのではなく止まる。**
+const timeoutMs = Number(one("--timeout-ms") ?? 120000);
+if (!Number.isInteger(timeoutMs) || timeoutMs < 1000) die(`--timeout-ms は 1000 以上の整数で渡す: ${one("--timeout-ms")}`);
+// 既定の受け皿(1 MiB)は大きな木で溢れる。溢れたことを「測れなかった」とだけ言うと
+// 原因が読めない。広げたうえで、溢れたときは溢れたと言う。
+const RUN = { encoding: "utf8", timeout: timeoutMs, maxBuffer: 64 * 1024 * 1024 };
+
 // 既定は「この木を doctrine-lens として束ねる」だけ。**明示が在ればそれが勝つ。**
 if (!repos.has("doctrine-lens")) repos.set("doctrine-lens", resolve(here, "..", "..", ".."));
 if (!docsRoots.has("doctrine-lens")) docsRoots.set("doctrine-lens", join(repos.get("doctrine-lens"), "doctrine_docs"));
 
+// 固定とずれた実体で測ると、記録は「測った」と名乗るのに中身は別の版の話になる。
+// **止める。** ただし生の例外で止めない —— この木では、使い方と環境の誤りは
+// 終了コード 2 と日本語の一行である。
 const pluginRoot = one("--doctrine")
   ? resolve(one("--doctrine"))
-  : execFileSync("node", [join(repos.get("doctrine-lens"), "tools", "doctrine-path.mjs"), "--require-pin"], { encoding: "utf8" }).trim();
+  : (() => {
+    try {
+      return execFileSync("node", [join(repos.get("doctrine-lens"), "tools", "doctrine-path.mjs"), "--require-pin"], RUN).trim();
+    } catch (e) {
+      die(`上流の実体が固定と食い違う、または見つからない。測らずに止める。\n  ${brief(e.stderr ?? e.stdout ?? e.message)}`, 2);
+    }
+  })();
 
 if (flag("--print-plan")) {
   // **何を測るつもりかを言う。** 束ねた木と置き場だけでは、対象を増やしたときに
@@ -84,7 +112,7 @@ function traceOf(prefix) {
   else if (!docs) result = { status: "unbound-repo", reason: `接頭 ${prefix} の統治木が --docs-root で束ねられていない`, ranges: [], findings: [] };
   else {
     try {
-      const out = execFileSync("python3", [join(pluginRoot, "scripts", "trace-index.py"), "--root", root, "--docs-root", docs, "--format", "json"], { encoding: "utf8" });
+      const out = execFileSync(python, [join(pluginRoot, "scripts", "trace-index.py"), "--root", root, "--docs-root", docs, "--format", "json"], RUN);
       if (!out.trim()) result = { status: "unverifiable", reason: "終了コードは 0 だが返す値が空である", ranges: [], findings: [] };
       else {
         let t;
@@ -100,7 +128,13 @@ function traceOf(prefix) {
         }
       }
     } catch (e) {
-      result = { status: "unverifiable", reason: `CLI が失敗した — ${(e.stderr ?? e.message ?? "").toString().slice(0, 200)}`, ranges: [], findings: [] };
+      // 落ち方を言い分ける。「測れなかった」だけでは、直しようが無い。
+      const why = e?.killed || e?.signal
+        ? `時間切れ(${timeoutMs} ms を超えても答えない)`
+        : e?.code === "ENOBUFS"
+          ? `返す値が受け皿(${RUN.maxBuffer} バイト)を超えた`
+          : `CLI が失敗した — ${brief(e.stderr ?? e.message, 200)}`;
+      result = { status: "unverifiable", reason: why, ranges: [], findings: [] };
     }
   }
   traceCache.set(prefix, result);
@@ -111,15 +145,20 @@ const revCache = new Map();
 function gitOf(prefix) {
   if (revCache.has(prefix)) return revCache.get(prefix);
   const root = repos.get(prefix);
-  const run = (args) => { try { return execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim(); } catch { return null; } };
+  const run = (args) => { try { return execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: timeoutMs }).trim(); } catch { return null; } };
   const head = root ? run(["rev-parse", "HEAD"]) : null;
+  // **git でない木は「汚れていない」ではなく「分からない」である。**
+  // 以前は `(null || "") !== ""` が偽になり、由来ゼロの木が清らかな木として
+  // 記録されていた —— 分からないことを、問題が無いことに変換していた。
+  const dirtyRaw = root ? run(["status", "--porcelain"]) : null;
+  const shallowRaw = root ? run(["rev-parse", "--is-shallow-repository"]) : null;
   const info = {
     head,
     // 壁時計を読まない。記録する日付は **測った rev についての事実**にする。
     // 解決できなければ日付を合成せず null で言う。
     committed_on: head ? run(["show", "-s", "--format=%cs", head]) : null,
-    dirty: root ? (run(["status", "--porcelain"]) || "") !== "" : null,
-    shallow: root ? run(["rev-parse", "--is-shallow-repository"]) === "true" : null,
+    dirty: dirtyRaw === null ? null : dirtyRaw !== "",
+    shallow: shallowRaw === null ? null : shallowRaw === "true",
   };
   revCache.set(prefix, info);
   return info;
@@ -213,7 +252,8 @@ for (const model of loadModels("overlay")) {
 // 書き出しを拒む。手順: コードを commit → 生成 → overlay を commit。
 // 開発中は --allow-dirty と --out-dir で一時の置き場へ出す。
 if (!flag("--check") && !flag("--allow-dirty")) {
-  const dirtyPrefix = [...repos.keys()].filter((p) => gitOf(p).dirty);
+  // 「分からない」を汚れと数えない(数えると、git でない木で常に止まる)。
+  const dirtyPrefix = [...repos.keys()].filter((p) => gitOf(p).dirty === true);
   if (dirtyPrefix.length) {
     die(
       `作業木が汚れている(${dirtyPrefix.join(", ")})。記録する rev と、実際に測った物が食い違う。\n` +
@@ -255,7 +295,8 @@ for (const o of overlays) {
     }
     continue;
   }
-  writeFileSync(path, body, "utf8");
+  sweepStale(path);
+  writeAtomic(path, body);
 }
 if (flag("--check")) {
   console.log(changed === 0 ? "overlay はいまの rev で生成した物と byte 一致" : `${changed} 件の overlay がいまの rev の物でない`);

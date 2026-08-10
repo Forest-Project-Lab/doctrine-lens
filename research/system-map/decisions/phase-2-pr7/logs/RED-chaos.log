@@ -1,0 +1,21 @@
+NG   固定とずれた実体を掴んだとき、家風の失敗で止まる(生のスタックを吐かない) — 生の Node のスタックを吐いている: doctrine プラグインが見つかりません。 台帳に doctrine の登録が無い 版の形でないので候補にしない: 0.0.1-合わない版 複製に生きている版が無い 次を実行して導入してください: claude plugin marketplace add https://github.com/Forest-Project-Lab/doctrine.git claude plugin install doctrine@forest-
+NG   版が合っても commit を確かめられないことを、確かめられると言わない — commit を知らないのに pin_state が matched である(matched)。版だけの一致を、完全な一致と呼んでいる
+ok   CLI が答えない(empty)とき、測れなかったと言う
+NG   CLI が答えない(notjson)とき、測れなかったと言う — 理由が何も言っていない: 終了コードは 0 だが返す値が空である
+NG   CLI が答えない(badschema)とき、測れなかったと言う — 理由が何も言っていない: 終了コードは 0 だが返す値が空である
+ok   CLI が答えない(fail)とき、測れなかったと言う
+ok   道具そのものが無いとき、測れなかったと言う(黙って空にしない)
+NG   答えない CLI にぶら下がらない(時間切れで止まる) — 理由が時間切れだと言っていない: 終了コードは 0 だが返す値が空である
+NG   返す値が大きくても、黙って測れなかったことにしない — 大きな返す値を受け取れていない: 終了コードは 0 だが返す値が空である
+NG   git でない木を、清らかな木と言わない — 由来を辿れない木を dirty=false / shallow=false と断じている(「分からない」を「問題なし」に変換している)
+NG   書き込みは原子的である(途中で止まっても切れた成果物を残さない) — 検めが例外で止まった: Cannot find module '/workspaces/doctrine_lens/research/system-map/lib/atomic-write.mjs' imported from /workspaces/doctrine_lens/research/system-map/prototype/test-chaos.mjs
+NG   裸の書き込みが道具の側に残っていない — 原子的でない書き込みが残っている: gold-model/report.mjs: writeFileSync(path / overlay/build-overlay.mjs: writeFileSync(path / prototype/build.mjs: writeFileSync(outPath / prototype/test-mutation.mjs: writeFileSync(path / prototype/test-mutation.mjs: writeFileSync(path
+ok   別の置き場へ並行に生成しても互いを汚さない
+NG   同じ木で走行が二つ重ならない(錠が効く・死んだ持ち主は継げる) — 検めが例外で止まった: Cannot find module '/workspaces/doctrine_lens/research/system-map/lib/run-lock.mjs' imported from /workspaces/doctrine_lens/research/system-map/prototype/test-chaos.mjs
+NG   一括判定が自分の証拠を消さない — 一括判定が通らない(1) — ===== 正本の単一性(事実の二重定義が無い) ===== ok 模型のファイル名 — 正本の外に綴りが無い ok 対象を位置で指す — 正本の外に綴りが無い ok 対象の添字の一覧 — 正本の外に綴りが無い ok 対象を添字で指す口 — 正本の外に綴りが無い ok overlay のファイル名 — 正本の外に綴りが無い ok 実現先として認める種別 — 正本の外に綴りが無い ok 証跡の必須属性 — 正本の外に綴りが無い ok 七状
+ok   空白と日本語を含む置き場でも生成できる
+ok   了解の期限の境界で判定が変わる
+NG   在り得ない日付を日付として受け取らない — 2026-02-30 を日付として受け取り、そのまま判定した
+NG   出荷する実装に通信の原始要素が無い — 通信の原始要素が在る: src/doctrine/graph.ts: fetch(
+
+13 件の所見(注入した壊れ方 19 通り)

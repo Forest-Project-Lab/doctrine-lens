@@ -116,6 +116,18 @@ const MUTATIONS = [
     expect: "落ちる",
   },
   {
+    label: "伝送不成立の扱いを潰す(開けなかったことを「別の場所へ開いた」と数える)",
+    file: "prototype/test-m14-browser.mjs",
+    // 伝送そのものが成立しなかったのか、別の場所へ開いたのかを分けているのがここ。
+    // `&& !openedFailed` を落とすと、通信の途絶が**リンクの破損**として報告される。
+    from: "(!okOpen && !openedFailed)",
+    to: "(!okOpen)",
+    // 潰すと、伝送が成立しない環境で SKIP でなく FAIL が出る。
+    // 写しの中では製品の木(src/)へ届かないので、この一件だけを回す。
+    run: ["prototype/test-chaos.mjs", "--only", "伝送が成立しない環境"],
+    expect: "落ちる",
+  },
+  {
     label: "12 節へ畳んだ中身を作る(実装・証拠へ行くのに操作が増える)",
     file: "prototype/build.mjs",
     from: "    <h3>12. Code / Test / Evidence(実現と証拠)</h3>",

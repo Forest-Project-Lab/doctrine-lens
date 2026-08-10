@@ -12,10 +12,12 @@
 // - proposed などの管理情報は上部に一度だけ。
 // - 選択時は右側の詳細パネル(図を消さない・押し出さない)。12 節の固定順。
 // - ドリルダウン中も親の目的・境界・現在位置を保ち、戻りで配置と選択を復元する。
-import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, reachabilityVerdicts, checkNoRuntimeFetch } from "./gates.mjs";
+// 生成の途中で殺されても、切れた出荷物を残さない。
+import { writeAtomic, sweepStale } from "../lib/atomic-write.mjs";
 import {
   loadModels, targetIds, TARGETS, MAX_OPS, STATUS_DISPLAY_ORDER,
   OVERLAY_SCHEMA_ID, OVERLAY_STATUSES, OVERLAY_EMPTY_STATUS, OVERLAY_CANDIDATE, DISPLAY,
@@ -764,5 +766,6 @@ if (code !== 0) {
   process.exit(code);
 }
 
-writeFileSync(outPath, html);
+sweepStale(outPath);
+writeAtomic(outPath, html);
 console.log(`${outPath} を生成した。M-14 最大操作数:`, m14max ?? "(到達可能な要素なし)", "/ M-13: 外部読み取りなし");

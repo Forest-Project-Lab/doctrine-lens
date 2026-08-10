@@ -220,6 +220,10 @@ export const GATES = Object.freeze(
       args.push(...targetFiles(m[1]));
     }
     if (!g.cwd || !["gold-model", "prototype", "overlay"].includes(g.cwd)) die(`gates[${g.id}].cwd が想定外: ${g.cwd}`);
-    return Object.freeze({ id: g.id, label: g.label, bin: g.cmd[0], args: Object.freeze(args), cwd: join(here, "..", g.cwd) });
+    // 段ごとの時間切れ。無いと、ぶら下がった段で走行は落ちずに**止まる**
+    // (止まった走行は、遅い走行と見分けがつかない)。
+    const timeoutMs = g.timeout_ms ?? 600000;
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1000) die(`gates[${g.id}].timeout_ms が 1000 以上の整数でない: ${g.timeout_ms}`);
+    return Object.freeze({ id: g.id, label: g.label, bin: g.cmd[0], args: Object.freeze(args), cwd: join(here, "..", g.cwd), timeoutMs });
   }),
 );

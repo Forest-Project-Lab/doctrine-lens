@@ -553,6 +553,14 @@
       "checkers": [
         "browser:distinction-in-words"
       ]
+    },
+    {
+      "id": "M-C1",
+      "statement": "壊れた環境・落ちた道具・競合する走行のもとで、道具は黙って誤らない —— 必ず判定を出すか、明示の非合格で止まる",
+      "source": "所有者のカオス一覧(引き継ぎ 2026-08-10)・PR7",
+      "checkers": [
+        "meta:chaos-tolerated"
+      ]
     }
   ],
   "checkers": [
@@ -747,6 +755,12 @@
       "invariant": "M-20",
       "gate": "browser-display",
       "module": "prototype/test-display-browser.mjs"
+    },
+    {
+      "id": "meta:chaos-tolerated",
+      "invariant": "M-C1",
+      "gate": "chaos",
+      "module": "prototype/test-chaos.mjs"
     }
   ],
   "acknowledgements": [
@@ -993,6 +1007,15 @@
       "cmd": [
         "node",
         "test-mutation.mjs"
+      ]
+    },
+    {
+      "id": "chaos",
+      "label": "壊れた環境での振る舞い(注入した継ぎ目)",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-chaos.mjs"
       ]
     },
     {
