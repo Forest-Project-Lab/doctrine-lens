@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "single-source",
+  "records": [
+    {
+      "invariant": "M-S1",
+      "checker": "meta:single-source",
+      "target": "research/system-map",
+      "verdict": "PASS",
+      "examined": 29,
+      "examined_unit": "走査した .mjs",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

@@ -1,0 +1,789 @@
+{
+  "schema": "system-map/gold-model/0.1",
+  "target": "doctrine-upstream",
+  "$comment": "起草: 技能 system-map-draft(固定した 0.11.0)の手順による下書き。全値は候補(review_status=proposed)であり、所有者の確認まで正本ではない。対象は上流 doctrine を commit 03fb4bf で固定した木。",
+  "elements": [
+    {
+      "id": "implementer",
+      "name": "実装者",
+      "kind": "person",
+      "parent": null,
+      "purpose": "仕様を読み、自分のプロジェクトに合う形で情報統治を実装する。実装形態はプロジェクトが選ぶ。",
+      "responsibilities": [
+        "仕様を読む",
+        "実装形態を選ぶ",
+        "LLM の提案を確かめて調整する"
+      ],
+      "not_responsible_for": [
+        "仕様そのものの保守"
+      ],
+      "owner": "各利用者",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「使い方」節・方法A の手順1〜3",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "人にコード実現は適用されない。"
+      }
+    },
+    {
+      "id": "llm",
+      "name": "LLM(主に Claude)",
+      "kind": "external_system",
+      "parent": null,
+      "purpose": "仕様を渡され、そのリポジトリに合う実装形態を提案し、実装する。",
+      "responsibilities": [
+        "仕様の読解",
+        "実装方針の提案"
+      ],
+      "owner": "外部(モデル提供者)",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「使い方」節・コピー用プロンプト",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム。実現は本模型の対象外。"
+      }
+    },
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "kind": "external_system",
+      "parent": null,
+      "purpose": "参照実装プラグインの実行環境。技能を起動し、フックの事象を渡し、判定を受け取る。",
+      "responsibilities": [
+        "プラグインの導入と起動",
+        "フック事象の発火"
+      ],
+      "owner": "外部(Anthropic)",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「導入」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/hooks/hooks.json",
+          "locator": "7 つのイベント名",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "外部システム。実現は本模型の対象外。"
+      }
+    },
+    {
+      "id": "spec",
+      "name": "単一仕様(DOCTRINE-001)",
+      "kind": "component",
+      "parent": null,
+      "purpose": "文書の位置づけ・出所・依存・現行性を構造に書き込む方法を、番号付き要求として定義する正本。",
+      "responsibilities": [
+        "情報統治の要求の正本を一箇所で持つ",
+        "文書型のテンプレートを付録で配る"
+      ],
+      "not_responsible_for": [
+        "実装形態の強制"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「これは何か」節(spec/doctrine.ja.md が正本・DOCTRINE-001)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: README.md",
+          "locator": "「なぜ仕様（Markdown）を正本にするのか」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "仕様そのものが成果物であり、コード範囲としての実現先を持たない。指す先は 11 節の出所から辿れる。"
+      }
+    },
+    {
+      "id": "plugin",
+      "name": "参照実装プラグイン",
+      "kind": "subsystem",
+      "parent": null,
+      "purpose": "仕様の一つの実装形態を、技能・護り・スクリプト・雛形の組として配る。",
+      "responsibilities": [
+        "宣言済み CLI の提供",
+        "執筆と整理の技能",
+        "書き込み前の護り"
+      ],
+      "not_responsible_for": [
+        "仕様の正本であること(正本は spec)"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「リポジトリ構成」節(plugin/ は Skill 8・Hook 7イベント)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「Skill（8つ）」「Hook（7つのイベント）」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realized_by": [
+        "a-docs-audit"
+      ]
+    },
+    {
+      "id": "plugin.scripts",
+      "name": "宣言済み CLI 群",
+      "kind": "component",
+      "parent": "plugin",
+      "purpose": "統治木の事実(所見・依存・注釈対の範囲)を、宣言した形で返す。",
+      "responsibilities": [
+        "全件監査(docs-audit)",
+        "依存グラフ(dep-graph)",
+        "追跡索引(trace-index)"
+      ],
+      "not_responsible_for": [
+        "印が意味の上で正しい場所に在るかの判定"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「スクリプト」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/scripts/trace-index.py",
+          "locator": "冒頭の保証限界(委ねる: 印が意味の上で正しい場所に打たれているかは判定しない)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realized_by": [
+        "a-docs-audit",
+        "a-dep-graph",
+        "a-trace-index"
+      ]
+    },
+    {
+      "id": "plugin.skills",
+      "name": "執筆と整理の技能",
+      "kind": "component",
+      "parent": "plugin",
+      "purpose": "文書の作成・整理・影響調査を、LLM が実行する指示として持つ。",
+      "responsibilities": [
+        "doc-author ほか 8 つの技能の定義"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「Skill（8つ）」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/skills/system-map-draft/SKILL.md",
+          "locator": "「役割」「委ねる先」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "技能の定義は LLM が読む Markdown の指示であり、注釈対の印が打たれていない。コード範囲としての実現先を持たない —— 指す先は 11 節の出所から辿れる。"
+      }
+    },
+    {
+      "id": "plugin.hooks",
+      "name": "書き込みの護り",
+      "kind": "component",
+      "parent": "plugin",
+      "purpose": "一部の違反を実行前に拒否する。7 つの事象で介入する。",
+      "responsibilities": [
+        "ドメイン外依存・不変物の改変・依存が残る削除の拒否"
+      ],
+      "not_responsible_for": [
+        "100% の予防(構造上できない)"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/hooks/hooks.json",
+          "locator": "7 つのイベント(SessionStart ほか)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「保証限界」節・「予防（ガードが実行前に拒否する）」",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realized_by": [
+        "a-policy-guard",
+        "a-hookio"
+      ]
+    },
+    {
+      "id": "corpus",
+      "name": "自分自身の統治木(dogfood)",
+      "kind": "component",
+      "parent": null,
+      "purpose": "プラグイン自身の設計を、同じ体系で統治した設計コーパス。体系が自分に効くことの実地の場になる。",
+      "responsibilities": [
+        "設計文書の正本を持つ",
+        "体系の実運用の場になる"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「リポジトリ構成」節(doctrine_docs/ はプラグイン自身の設計を統治した設計コーパス)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realization": {
+        "status": "not_applicable",
+        "reason": "統治木そのものが成果物であり、コード範囲としての実現先を持たない。"
+      }
+    },
+    {
+      "id": "assurance",
+      "name": "保証の台帳と試験",
+      "kind": "component",
+      "parent": null,
+      "purpose": "外部仕様・要求の固定・回帰の試験を置き、体系の主張と証跡を結ぶ。",
+      "responsibilities": [
+        "外部仕様の記録",
+        "要求の固定",
+        "回帰の試験"
+      ],
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: assurance/README.md",
+          "locator": "「保証キャンペーンの開発専用レーン」",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "realized_by": [
+        "a-tests"
+      ]
+    }
+  ],
+  "flows": [
+    {
+      "id": "f-request",
+      "from": "implementer",
+      "to": "llm",
+      "kind": "human_action",
+      "label": "仕様を貼って実装を依頼する",
+      "payload_or_action": "spec/doctrine.ja.md の全文とコピー用プロンプト",
+      "condition": "方法A を選んだとき",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「方法A: 仕様を LLM に渡して実装させる」手順1〜3",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-propose",
+      "from": "llm",
+      "to": "implementer",
+      "kind": "data",
+      "label": "実装方針を返す",
+      "payload_or_action": "そのリポジトリに合う実装形態の提案",
+      "condition": "着手前に必ず",
+      "feedback_for": "f-request",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "コピー用プロンプト(まず実装方針を提案し、私の承認を得てから着手)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-install",
+      "from": "implementer",
+      "to": "claude-code",
+      "kind": "human_action",
+      "label": "参照実装を導入する",
+      "payload_or_action": "/plugin marketplace add と /plugin install",
+      "condition": "方法B を選んだとき",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「方法B: 参照実装プラグインを導入する」",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-invoke",
+      "from": "claude-code",
+      "to": "plugin",
+      "kind": "command",
+      "label": "技能を起動し、フック事象を渡す",
+      "payload_or_action": "技能の起動と 7 事象の通知",
+      "condition": "導入済みのとき",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/hooks/hooks.json",
+          "locator": "イベントの登録",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「Hook（7つのイベント）」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-guard",
+      "from": "claude-code",
+      "to": "plugin.hooks",
+      "kind": "command",
+      "label": "書き込み前の事象を渡す",
+      "payload_or_action": "PreToolUse の入力",
+      "condition": "書き込みを伴う道具のとき",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/hooks/hooks.json",
+          "locator": "PreToolUse の登録",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-findings",
+      "from": "plugin",
+      "to": "claude-code",
+      "kind": "data",
+      "label": "所見と判定を返す",
+      "payload_or_action": "監査の所見・護りの許否",
+      "condition": "起動または事象のたび",
+      "feedback_for": "f-invoke",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「保証限界」節(予防・検出・委ねるの三分)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-scan",
+      "from": "corpus",
+      "to": "plugin.scripts",
+      "kind": "data",
+      "label": "統治木の文書を読み取らせる",
+      "payload_or_action": "doctrine_docs 配下の文書",
+      "condition": "監査・依存グラフ・追跡索引の実行時",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/scripts/docs-audit.py",
+          "locator": "--root / --root-from で統治木を受ける口",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-read-corpus",
+      "from": "corpus",
+      "to": "plugin",
+      "kind": "data",
+      "label": "統治木を走査の対象として渡す",
+      "payload_or_action": "統治木の位置",
+      "condition": "同上",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「スクリプト」節(統治木を対象に走る)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-run-tests",
+      "from": "assurance",
+      "to": "plugin",
+      "kind": "command",
+      "label": "回帰の試験を回す",
+      "payload_or_action": "試験の実行",
+      "condition": "変更のたび",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/run_tests.py",
+          "locator": "試験の実行の入口",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "f-test-result",
+      "from": "plugin",
+      "to": "assurance",
+      "kind": "data",
+      "label": "試験の結果を返す",
+      "payload_or_action": "合否",
+      "condition": "実行のたび",
+      "feedback_for": "f-run-tests",
+      "provenance": [
+        {
+          "source": "doctrine: assurance/README.md",
+          "locator": "「境界」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+  "contracts": [
+    {
+      "id": "c-audit-detects",
+      "subject": "plugin.scripts",
+      "assumptions": [
+        "統治木が doctrine_docs 配下に在る",
+        "文書が frontmatter を持つ"
+      ],
+      "guarantee": "必須メタデータの欠落・語彙の逸脱・ID とファイル名の不一致・無効な参照を、全件監査で検出する。",
+      "response_measure": "docs-audit の error 件数が 0 でないこと(逸脱が在るとき)。",
+      "verification_status": "claimed",
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "failure_effect": "逸脱が黙って残り、後から読む者が現行と誤認する。",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「検出・早期発見できるもの（構造で対処）」",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ]
+    },
+    {
+      "id": "c-prevent-limited",
+      "subject": "plugin.hooks",
+      "assumptions": [
+        "フックが登録されている",
+        "書き込みが道具経由である"
+      ],
+      "guarantee": "ドメイン外依存・不変物の改変・依存が残る削除を、実行前に拒否する。",
+      "response_measure": "該当する操作に対する拒否の返り。",
+      "verification_status": "claimed",
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "failure_effect": "違反が実行され、統治木が壊れた状態で残る。",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「予防（ガードが実行前に拒否する）」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: README.md",
+          "locator": "「保証できること、できないこと」節(100% の予防は構造上できない)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ]
+    },
+    {
+      "id": "c-marker-semantics",
+      "subject": "plugin.scripts",
+      "assumptions": [
+        "注釈の印が打たれている"
+      ],
+      "guarantee": "印が意味の上で正しい場所に打たれているかは判定しない。",
+      "response_measure": "適用しない(この保証は明示的に委ねられている)。",
+      "verification_status": "not_applicable",
+      "na_reason": "上流が自ら「委ねる」と宣言している範囲である。改名・移動も追わない。言えるのは「この rev で、この経路に、この指紋の範囲が在った」までである。",
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/scripts/trace-index.py",
+          "locator": "冒頭の保証限界(委ねる)",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ]
+    },
+    {
+      "id": "c-spec-is-canon",
+      "subject": "spec",
+      "assumptions": [
+        "仕様が公開されている"
+      ],
+      "guarantee": "情報統治の正本は仕様一つであり、プラグインはその任意の参照実装である。",
+      "response_measure": "実装形態を選べること(方法A と方法B が並立すること)。",
+      "verification_status": "claimed",
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "failure_effect": "固定した実装だけが配られ、プロジェクトが形を選べなくなる。",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「なぜ仕様（Markdown）を正本にするのか」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ]
+    },
+    {
+      "id": "c-corpus-freshness",
+      "subject": "corpus",
+      "assumptions": [
+        "現行文書がレビュー期限を持つ"
+      ],
+      "guarantee": "統治木の現行文書は、レビュー期限を過ぎたまま放置されない。",
+      "response_measure": "期限超過の所見が 0 件であること。",
+      "verification_status": "unknown",
+      "owner": "doctrine-maintainers",
+      "review_status": "proposed",
+      "failure_effect": "陳腐化した文書が現行として読まれる。",
+      "provenance": [
+        {
+          "source": "doctrine: doctrine_docs/_system/decided-facts.md",
+          "locator": "確定した事実を通読したが、現行文書のレビュー期限の運用を定めた記載が無かった",
+          "checked_at": "2026-08-10",
+          "verdict": "silent"
+        }
+      ]
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "s-adopt-spec",
+      "goal": "仕様だけを受け取ったプロジェクトが、自分に合う形で情報統治を始める",
+      "trigger": "実装者が仕様を LLM に貼る",
+      "kind": "normal",
+      "preconditions": [
+        "spec/doctrine.ja.md を入手している"
+      ],
+      "steps": [
+        {
+          "actor": "implementer",
+          "action": "仕様を貼って実装を依頼する",
+          "receiver": "llm",
+          "expected": "実装方針が返る",
+          "flow": "f-request"
+        },
+        {
+          "actor": "llm",
+          "action": "実装方針を返す",
+          "receiver": "implementer",
+          "expected": "実装者が承認または調整する",
+          "flow": "f-propose"
+        }
+      ],
+      "outcome": "プロジェクトに合う実装形態が選ばれ、着手できる。",
+      "provenance": [
+        {
+          "source": "doctrine: README.md",
+          "locator": "「方法A」手順1〜3",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    },
+    {
+      "id": "s-guard-refuses",
+      "goal": "違反する書き込みが、実行される前に止まる",
+      "trigger": "書き込みを伴う道具が呼ばれる",
+      "kind": "exception",
+      "exception_of": "s-adopt-spec",
+      "preconditions": [
+        "参照実装を導入している",
+        "フックが登録されている"
+      ],
+      "loss_or_failure": "違反が実行され、統治木が壊れた状態で残る",
+      "steps": [
+        {
+          "actor": "claude-code",
+          "action": "書き込み前の事象を渡す",
+          "receiver": "plugin.hooks",
+          "expected": "護りが許否を返す",
+          "flow": "f-guard"
+        },
+        {
+          "actor": "plugin",
+          "action": "所見と判定を返す",
+          "receiver": "claude-code",
+          "expected": "拒否なら書き込みが起きない",
+          "flow": "f-findings"
+        }
+      ],
+      "outcome": "一部の違反は実行前に止まる。**止まらない違反も在る(100% の予防は構造上できない)。**",
+      "provenance": [
+        {
+          "source": "doctrine: plugin/README.md",
+          "locator": "「保証限界」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        },
+        {
+          "source": "doctrine: README.md",
+          "locator": "「保証できること、できないこと」節",
+          "checked_at": "2026-08-10",
+          "verdict": "present"
+        }
+      ],
+      "review_status": "proposed"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "a-docs-audit",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/docs-audit.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/scripts/docs-audit.py"
+    },
+    {
+      "id": "a-dep-graph",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/dep-graph.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/scripts/dep-graph.py"
+    },
+    {
+      "id": "a-trace-index",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/trace-index.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/scripts/trace-index.py"
+    },
+    {
+      "id": "a-policy-guard",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/policy-guard.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/scripts/policy-guard.py"
+    },
+    {
+      "id": "a-hookio",
+      "target_kind": "code_range",
+      "target": "doctrine: plugin/scripts/_hookio.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/scripts/_hookio.py"
+    },
+    {
+      "id": "a-doc-author-skill",
+      "target_kind": "document",
+      "target": "doctrine: plugin/skills/doc-author/SKILL.md",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/skills/doc-author/SKILL.md"
+    },
+    {
+      "id": "a-tests",
+      "target_kind": "test",
+      "target": "doctrine: plugin/tests/test_tracescan.py",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/plugin/tests/test_tracescan.py"
+    },
+    {
+      "id": "a-spec",
+      "target_kind": "document",
+      "target": "doctrine: spec/doctrine.ja.md",
+      "source_revision": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+      "observed_at": "2026-08-10",
+      "authority": "doctrine",
+      "url": "https://github.com/Forest-Project-Lab/doctrine/blob/03fb4bfc8be46e23b42cb94622609b9aa5fcabcd/spec/doctrine.ja.md"
+    }
+  ],
+  "system": {
+    "purpose": "LLM 支援開発で生成される文書に、位置づけ・出所・依存・現行性を与えて追跡可能にする。正本は単一仕様であり、参照実装はその一つの形である。",
+    "boundary": "境界の内側は仕様・参照実装プラグイン・自分自身の統治木・保証の台帳。実装者は利用者として、LLM と Claude Code は実行環境として、境界の外に居る。",
+    "provenance": [
+      {
+        "source": "doctrine: README.md",
+        "locator": "冒頭(情報統治体系の定義)",
+        "checked_at": "2026-08-10",
+        "verdict": "present"
+      },
+      {
+        "source": "doctrine: README.md",
+        "locator": "「リポジトリ構成」節",
+        "checked_at": "2026-08-10",
+        "verdict": "present"
+      }
+    ],
+    "review_status": "proposed"
+  }
+}

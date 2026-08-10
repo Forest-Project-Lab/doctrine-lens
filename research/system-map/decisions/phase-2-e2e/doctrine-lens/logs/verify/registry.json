@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "registry",
+  "records": [
+    {
+      "invariant": "M-R1",
+      "checker": "meta:registry-consistent",
+      "target": "gold-model/registry.json",
+      "verdict": "PASS",
+      "examined": 9,
+      "examined_unit": "対応の検査",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

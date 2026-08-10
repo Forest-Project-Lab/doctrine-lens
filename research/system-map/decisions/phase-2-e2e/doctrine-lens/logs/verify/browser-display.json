@@ -1,0 +1,26 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "browser-display",
+  "records": [
+    {
+      "invariant": "M-19",
+      "checker": "browser:display-total",
+      "target": "index.html",
+      "verdict": "PASS",
+      "examined": 13,
+      "examined_unit": "状態の掃引",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-20",
+      "checker": "browser:distinction-in-words",
+      "target": "index.html",
+      "verdict": "PASS",
+      "examined": 6,
+      "examined_unit": "語での区別",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

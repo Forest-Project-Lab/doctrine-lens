@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "unit",
+  "records": [
+    {
+      "invariant": "M-N1",
+      "checker": "meta:gate-fires",
+      "target": "M-13/M-14 の計算経路",
+      "verdict": "PASS",
+      "examined": 19,
+      "examined_unit": "正負の試験",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

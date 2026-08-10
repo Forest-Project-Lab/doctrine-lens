@@ -1,0 +1,9 @@
+{
+  "schema": "doctrine-lens/vsix-install-check/1",
+  "vsix": "/workspaces/doctrine_lens/doctrine-lens.vsix",
+  "installed_ok": true,
+  "listed": [
+    "forest-project-lab.doctrine-lens@0.10.0"
+  ],
+  "limit": "導入と登録までを見る。画面の描画と人の操作は含まない。"
+}

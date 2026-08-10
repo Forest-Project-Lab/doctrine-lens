@@ -1,0 +1,16 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "negatives",
+  "records": [
+    {
+      "invariant": "M-N2",
+      "checker": "meta:negatives-fire",
+      "target": "gold-model/negatives.json",
+      "verdict": "PASS",
+      "examined": 15,
+      "examined_unit": "負例",
+      "code": null,
+      "message": ""
+    }
+  ]
+}

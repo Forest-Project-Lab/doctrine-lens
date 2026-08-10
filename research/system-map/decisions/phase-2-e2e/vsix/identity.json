@@ -1,0 +1,35 @@
+{
+  "vsix_bytes": 115815,
+  "bundle_in_vsix_sha256": "882ac04b5b56fedd630e8001a24a0cdb364e7ed30eb3c23654f188cf410138fd",
+  "bundle_local_sha256": "882ac04b5b56fedd630e8001a24a0cdb364e7ed30eb3c23654f188cf410138fd",
+  "bundle_identical": true,
+  "committed_index_html": {
+    "sha256": "506ac268aa910d1e39768fe346424af7013070a6263b2b8c1f2c97cc5d3161a7",
+    "bytes": 118554
+  },
+  "carried_phrases": [
+    {
+      "phrase": "この実測が言っていないこと",
+      "in_artifact": true,
+      "in_shipped_bundle": true
+    },
+    {
+      "phrase": "測って何も無かったのではなく",
+      "in_artifact": true,
+      "in_shipped_bundle": true
+    },
+    {
+      "phrase": "この対象は【架空】である",
+      "in_artifact": true,
+      "in_shipped_bundle": true
+    },
+    {
+      "phrase": "確認済だけを写した正本表示",
+      "in_artifact": true,
+      "in_shipped_bundle": true
+    }
+  ],
+  "all_carried": true,
+  "how": "VSIX の extension/dist/extension.js を取り出して手元の dist/extension.js と byte 比較し、束ねの \\uXXXX を復号したうえで、生成物の特徴的な一文が在ることを見た。",
+  "limit": "**同じ byte を出荷していることまでしか言えない。** 編集器の中で人が押したことは、これでは確かめられない。"
+}

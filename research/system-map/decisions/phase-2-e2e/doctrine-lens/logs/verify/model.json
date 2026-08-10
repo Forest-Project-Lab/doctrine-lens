@@ -1,0 +1,703 @@
+{
+  "schema": "system-map/verdicts/1",
+  "gate": "model",
+  "records": [
+    {
+      "invariant": "M-18",
+      "checker": "model:schema-shape",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "模型",
+      "code": null,
+      "message": "",
+      "note": "schema.json をそのまま実行する。以前は一度も実行されておらず、required も enum も minItems も誰も検めていなかった"
+    },
+    {
+      "invariant": "M-01",
+      "checker": "model:id-unique",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 40,
+      "examined_unit": "id",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-02",
+      "checker": "model:parent-acyclic",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 10,
+      "examined_unit": "要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-03",
+      "checker": "model:flow-endpoints",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 11,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-04",
+      "checker": "model:child-crossing-aggregated",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 2,
+      "examined_unit": "子の越境 Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-05",
+      "checker": "model:contract-shape",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 4,
+      "examined_unit": "契約",
+      "code": null,
+      "message": "",
+      "note": "判定可能性そのものは機械で測れない(非空+七状態のみ検査)"
+    },
+    {
+      "invariant": "M-06",
+      "checker": "model:verified-has-evidence",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 2,
+      "examined_unit": "verified な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07a",
+      "checker": "model:review-status-present",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 27,
+      "examined_unit": "実体",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07b",
+      "checker": "model:no-proposed-in-canonical",
+      "target": "doctrine-and-lens",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "confirmed の実体",
+      "code": "meta.vacuous",
+      "message": "confirmed の実体 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-08",
+      "checker": "model:no-doc-edge-flows",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 11,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": "",
+      "note": "出所の字面検査のみ(過程の検査は人の規律)"
+    },
+    {
+      "invariant": "M-09",
+      "checker": "model:flow-labelled",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 11,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-10",
+      "checker": "model:single-freshness-authority",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 13,
+      "examined_unit": "アンカー",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-11",
+      "checker": "model:unknown-has-negative-source",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "unknown な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-12",
+      "checker": "model:no-ghost-in-scenarios",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "シナリオの段",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-15",
+      "checker": "model:na-has-reason",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "not_applicable な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-17",
+      "checker": "model:anchor-target-grammar",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "実現先になりうるアンカー",
+      "code": null,
+      "message": "",
+      "note": "接頭は照合の鍵であって飾りではない。剥がすと跨リポジトリの偽陽性が『実測』として出る"
+    },
+    {
+      "invariant": "M-16",
+      "checker": "model:evidence-fingerprinted",
+      "target": "doctrine-and-lens",
+      "verdict": "PASS",
+      "examined": 2,
+      "examined_unit": "verified な契約の証跡",
+      "code": null,
+      "message": "",
+      "note": "等価規則: version の commit SHA は内容の指紋を兼ねる"
+    },
+    {
+      "invariant": "M-18",
+      "checker": "model:schema-shape",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "模型",
+      "code": null,
+      "message": "",
+      "note": "schema.json をそのまま実行する。以前は一度も実行されておらず、required も enum も minItems も誰も検めていなかった"
+    },
+    {
+      "invariant": "M-01",
+      "checker": "model:id-unique",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 22,
+      "examined_unit": "id",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-02",
+      "checker": "model:parent-acyclic",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 6,
+      "examined_unit": "要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-03",
+      "checker": "model:flow-endpoints",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-04",
+      "checker": "model:child-crossing-aggregated",
+      "target": "lens-shipping",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "子の越境 Flow",
+      "code": "meta.vacuous",
+      "message": "子の越境 Flow が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-05",
+      "checker": "model:contract-shape",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "契約",
+      "code": null,
+      "message": "",
+      "note": "判定可能性そのものは機械で測れない(非空+七状態のみ検査)"
+    },
+    {
+      "invariant": "M-06",
+      "checker": "model:verified-has-evidence",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "verified な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07a",
+      "checker": "model:review-status-present",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 18,
+      "examined_unit": "実体",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07b",
+      "checker": "model:no-proposed-in-canonical",
+      "target": "lens-shipping",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "confirmed の実体",
+      "code": "meta.vacuous",
+      "message": "confirmed の実体 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-08",
+      "checker": "model:no-doc-edge-flows",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": "",
+      "note": "出所の字面検査のみ(過程の検査は人の規律)"
+    },
+    {
+      "invariant": "M-09",
+      "checker": "model:flow-labelled",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-10",
+      "checker": "model:single-freshness-authority",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 4,
+      "examined_unit": "アンカー",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-11",
+      "checker": "model:unknown-has-negative-source",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "unknown な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-12",
+      "checker": "model:no-ghost-in-scenarios",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 8,
+      "examined_unit": "シナリオの段",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-15",
+      "checker": "model:na-has-reason",
+      "target": "lens-shipping",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "not_applicable な契約",
+      "code": "meta.vacuous",
+      "message": "not_applicable な契約 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-17",
+      "checker": "model:anchor-target-grammar",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "実現先になりうるアンカー",
+      "code": null,
+      "message": "",
+      "note": "接頭は照合の鍵であって飾りではない。剥がすと跨リポジトリの偽陽性が『実測』として出る"
+    },
+    {
+      "invariant": "M-16",
+      "checker": "model:evidence-fingerprinted",
+      "target": "lens-shipping",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "verified な契約の証跡",
+      "code": null,
+      "message": "",
+      "note": "等価規則: version の commit SHA は内容の指紋を兼ねる"
+    },
+    {
+      "invariant": "M-18",
+      "checker": "model:schema-shape",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "模型",
+      "code": null,
+      "message": "",
+      "note": "schema.json をそのまま実行する。以前は一度も実行されておらず、required も enum も minItems も誰も検めていなかった"
+    },
+    {
+      "invariant": "M-01",
+      "checker": "model:id-unique",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 21,
+      "examined_unit": "id",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-02",
+      "checker": "model:parent-acyclic",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 5,
+      "examined_unit": "要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-03",
+      "checker": "model:flow-endpoints",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-04",
+      "checker": "model:child-crossing-aggregated",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "子の越境 Flow",
+      "code": "meta.vacuous",
+      "message": "子の越境 Flow が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-05",
+      "checker": "model:contract-shape",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 4,
+      "examined_unit": "契約",
+      "code": null,
+      "message": "",
+      "note": "判定可能性そのものは機械で測れない(非空+七状態のみ検査)"
+    },
+    {
+      "invariant": "M-06",
+      "checker": "model:verified-has-evidence",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "verified な契約",
+      "code": "meta.vacuous",
+      "message": "verified な契約 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-07a",
+      "checker": "model:review-status-present",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 18,
+      "examined_unit": "実体",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07b",
+      "checker": "model:no-proposed-in-canonical",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "confirmed の実体",
+      "code": "meta.vacuous",
+      "message": "confirmed の実体 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-08",
+      "checker": "model:no-doc-edge-flows",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": "",
+      "note": "出所の字面検査のみ(過程の検査は人の規律)"
+    },
+    {
+      "invariant": "M-09",
+      "checker": "model:flow-labelled",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 7,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-10",
+      "checker": "model:single-freshness-authority",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "アンカー",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-11",
+      "checker": "model:unknown-has-negative-source",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "unknown な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-12",
+      "checker": "model:no-ghost-in-scenarios",
+      "target": "celery",
+      "verdict": "PASS",
+      "examined": 8,
+      "examined_unit": "シナリオの段",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-15",
+      "checker": "model:na-has-reason",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "not_applicable な契約",
+      "code": "meta.vacuous",
+      "message": "not_applicable な契約 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-17",
+      "checker": "model:anchor-target-grammar",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "実現先になりうるアンカー",
+      "code": "meta.vacuous",
+      "message": "実現先になりうるアンカー が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-16",
+      "checker": "model:evidence-fingerprinted",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "verified な契約の証跡",
+      "code": "meta.vacuous",
+      "message": "verified な契約の証跡 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-18",
+      "checker": "model:schema-shape",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "模型",
+      "code": null,
+      "message": "",
+      "note": "schema.json をそのまま実行する。以前は一度も実行されておらず、required も enum も minItems も誰も検めていなかった"
+    },
+    {
+      "invariant": "M-01",
+      "checker": "model:id-unique",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 15,
+      "examined_unit": "id",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-02",
+      "checker": "model:parent-acyclic",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "要素",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-03",
+      "checker": "model:flow-endpoints",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-04",
+      "checker": "model:child-crossing-aggregated",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "子の越境 Flow",
+      "code": "meta.vacuous",
+      "message": "子の越境 Flow が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-05",
+      "checker": "model:contract-shape",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 6,
+      "examined_unit": "契約",
+      "code": null,
+      "message": "",
+      "note": "判定可能性そのものは機械で測れない(非空+七状態のみ検査)"
+    },
+    {
+      "invariant": "M-06",
+      "checker": "model:verified-has-evidence",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "verified な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07a",
+      "checker": "model:review-status-present",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 14,
+      "examined_unit": "実体",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-07b",
+      "checker": "model:no-proposed-in-canonical",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "confirmed の実体",
+      "code": "meta.vacuous",
+      "message": "confirmed の実体 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-08",
+      "checker": "model:no-doc-edge-flows",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": "",
+      "note": "出所の字面検査のみ(過程の検査は人の規律)"
+    },
+    {
+      "invariant": "M-09",
+      "checker": "model:flow-labelled",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 3,
+      "examined_unit": "Flow",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-10",
+      "checker": "model:single-freshness-authority",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "アンカー",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-11",
+      "checker": "model:unknown-has-negative-source",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "unknown な契約",
+      "code": "meta.vacuous",
+      "message": "unknown な契約 が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-12",
+      "checker": "model:no-ghost-in-scenarios",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 4,
+      "examined_unit": "シナリオの段",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-15",
+      "checker": "model:na-has-reason",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "not_applicable な契約",
+      "code": null,
+      "message": ""
+    },
+    {
+      "invariant": "M-17",
+      "checker": "model:anchor-target-grammar",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "examined": 0,
+      "examined_unit": "実現先になりうるアンカー",
+      "code": "meta.vacuous",
+      "message": "実現先になりうるアンカー が 0 件。何も検めていない"
+    },
+    {
+      "invariant": "M-16",
+      "checker": "model:evidence-fingerprinted",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "PASS",
+      "examined": 1,
+      "examined_unit": "verified な契約の証跡",
+      "code": null,
+      "message": "",
+      "note": "等価規則: version の commit SHA は内容の指紋を兼ねる"
+    }
+  ]
+}

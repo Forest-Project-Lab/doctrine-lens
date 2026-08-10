@@ -1,0 +1,63 @@
+{
+  "findings": [],
+  "model": "target-1-doctrine-and-lens.json",
+  "schema": "map-draft-check/1",
+  "totals": {
+    "by_code": {},
+    "findings": 0,
+    "sources": 34,
+    "unverifiable": 10
+  },
+  "unverifiable": [
+    {
+      "reason": "URL は取得しない。機械検証不能として列挙する",
+      "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+      "where": "system.provenance[1]"
+    },
+    {
+      "reason": "URL は取得しない。機械検証不能として列挙する",
+      "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+      "where": "elements[doctrine].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
+      "where": "elements[doctrine].provenance[1]"
+    },
+    {
+      "reason": "URL は取得しない。機械検証不能として列挙する",
+      "source": "https://github.com/Forest-Project-Lab/doctrine/issues/204",
+      "where": "elements[doctrine.governance].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+      "where": "elements[doctrine.graph].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+      "where": "flows[f-facts].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+      "where": "flows[cf-graph-facts].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/graph/ICD.md@8cd29bd",
+      "where": "flows[cf-graph-resolve].provenance[0]"
+    },
+    {
+      "reason": "URL は取得しない。機械検証不能として列挙する",
+      "source": "https://github.com/Forest-Project-Lab/doctrine/pull/206",
+      "where": "contracts[c-doctrine-audit].provenance[0]"
+    },
+    {
+      "reason": "接頭 doctrine は --repo-prefix(doctrine-lens)と異なり --repo の対象外",
+      "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
+      "where": "contracts[c-safety-na].provenance[0]"
+    }
+  ]
+}
