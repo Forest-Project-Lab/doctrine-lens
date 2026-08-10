@@ -77,31 +77,39 @@ compare("到達の状態が表と一致する", tokensOf(gatesSrc, "status"), DI
   else ng("「実測」と名乗れる状態がちょうど二つ", `${spend.length} 件: ${spend.join(", ")}`);
 }
 
-// 表の語が生成物へ実際に届いているか。**表を作っただけで画面が使っていない**なら、
-// 表は飾りである。
+// 表を画面が実際に読んでいるか。**読まれない表は飾りである。**
+//
+// 「印が生成物の字面に在るか」では答えにならない —— 表そのものを JSON として
+// 埋め込んでいるので、誰も読まなくても字面には在る。**問うべきは読み手の有無**である。
 {
-  const html = src("prototype/index.html");
-  const tables = ["review_status", "verification_status", "reachability_status", "anchor_verdict", "overlay_status_entry", "rev_state", "element_kind", "anchor_kind"];
-  const absent = [];
-  for (const name of tables) {
-    for (const [k, v] of marks(DISPLAY[name])) {
-      if (!html.includes(v.mark)) absent.push(`${name}.${k}(${v.mark})`);
-    }
-  }
-  if (!html.includes(DISPLAY.unknown_token.mark)) absent.push(`unknown_token(${DISPLAY.unknown_token.mark})`);
-  if (absent.length) ng("表の語が生成物に届いている", `生成物に現れない語: ${absent.join(", ")}`);
-  else ok("表の語が生成物に届いている");
+  const build = src("prototype/build.mjs");
+  const tables = Object.keys(DISPLAY).filter((k) => !k.startsWith("$") && k !== "source" && k !== "unknown_token");
+  const unread = tables.filter((name) => !build.includes(`look("${name}"`));
+  if (unread.length) ng("表を画面が読んでいる", `読み手の無い表: ${unread.join(", ")}`);
+  else ok(`表を画面が読んでいる(${tables.length} 表)`);
 }
 
-// 生の英語字句を画面へ落とすだけの経路が残っていないか。
+// 未知の語の落とし所が在るか。**無ければ、表に無い状態は黙って消えるか、既知の語になる。**
+{
+  const build = src("prototype/build.mjs");
+  const has = build.includes("D.unknown_token") && /return\s*\{\s*\.\.\.D\.unknown_token/.test(build);
+  if (has) ok("表に無い語の落とし所が在る");
+  else ng("表に無い語の落とし所が在る", "未知の語を受けたときに unknown_token へ落とす経路が見つからない");
+}
+
+// 生の英語字句を、**表示の内容として**落とすだけの経路が残っていないか。
+//
+// 機械が読む属性(`data-reach` など)に字句が在るのは構わない —— 掃引の手掛かりであり、
+// 人へ向けた説明ではない。ここが見るのは「語の代わりに字句が出る」経路だけである。
+// **この検めは字面であり、届く範囲は狭い。** 実際に語が出ることは browser-display が見る。
 {
   const build = src("prototype/build.mjs");
   const raw = [
-    ['esc(r.status)', "到達の状態を生の字句で出す経路"],
+    ["esc(r.status)}</td>", "到達の状態を、語ではなく生の字句のまま升へ出す経路"],
     ["'<span class=\"st st-' + s + '\">' + s + \"</span>\"", "保証の状態を生の字句だけで出す経路"],
   ].filter(([needle]) => build.includes(needle));
-  if (raw.length) ng("生の字句へ落ちる経路が無い", raw.map(([, why]) => why).join(" / "));
-  else ok("生の字句へ落ちる経路が無い");
+  if (raw.length) ng("生の字句を内容として出す経路が無い", raw.map(([, why]) => why).join(" / "));
+  else ok("生の字句を内容として出す経路が無い");
 }
 
 console.log(violations.length === 0 && errors.length === 0

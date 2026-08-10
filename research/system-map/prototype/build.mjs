@@ -17,9 +17,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { computeOpsRows, reachabilityVerdicts, checkNoRuntimeFetch } from "./gates.mjs";
 import {
-  loadModels, targetIds, MAX_OPS, STATUS_DISPLAY_ORDER,
-  OVERLAY_SCHEMA_ID, OVERLAY_STATUSES, OVERLAY_EMPTY_STATUS,
+  loadModels, targetIds, TARGETS, MAX_OPS, STATUS_DISPLAY_ORDER,
+  OVERLAY_SCHEMA_ID, OVERLAY_STATUSES, OVERLAY_EMPTY_STATUS, OVERLAY_CANDIDATE, DISPLAY,
 } from "../gold-model/spec.mjs";
+import { ACKNOWLEDGEMENTS } from "../gold-model/report.mjs";
 import { verdict, reportPathFrom, writeReport, formatRecord, ackFor, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -129,6 +130,17 @@ if (overlayDir) {
 const escHtml = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const OPTIONS = models.map((m) => `<option value="${escHtml(m.target)}">${escHtml(m.target)}</option>`).join("");
 
+/** 架空の対象は、画面が架空と言う。registry の `fictional` を初めて荷重にする。 */
+const FICTIONAL = Object.fromEntries(
+  TARGETS.filter((t) => t.fictional).map((t) => [t.id, "この対象は【架空】である。実在の成果物・実在の契約・実在の証拠を一つも指さない。希少な状態(検証予定・不合格・証拠が古い)の読み分けを練習するためだけに置いてある。**ここに出る保証・証拠・アンカーを、実在の何かの根拠として引かないこと。**"]),
+);
+
+/** 了解の記録 —— 「この緑は何を検めていないか」。画面にも出す。 */
+const ACKS = ACKNOWLEDGEMENTS.map((a) => ({
+  invariant: a.invariant, target: a.target, verdict: a.verdict,
+  reason: a.reason, checked_at: a.checked_at, expires_at: a.expires_at,
+}));
+
 const DATA = JSON.stringify(models);
 const M14 = JSON.stringify({ rows: m14, max: m14max });
 
@@ -166,9 +178,15 @@ const html = `<!DOCTYPE html>
   .st-verified { background: #dff2df; } .st-failed { background: #f8d7da; } .st-stale { background: #ffe8cc; }
   .st-not_applicable { background: #f0f0f0; color: #666; }
   .small { font-size: 13px; color: #555; }
-  .neg { color: #8a6d3b; }
-  /* 実測の有無は**語**が言う。罫線は同じことを形でも示す補助にすぎない
+  /* 区別は**語**が担う。罫線と色は同じことを形でも示す補助にすぎない
      (色だけに頼ると単色印刷・色覚・静止画で消える)。 */
+  .rv { font-size: 12px; border: 1px solid #222; padding: 0 .2rem; white-space: nowrap; }
+  .rv-missing { border-style: dashed; }
+  .tag { font-size: 12px; border: 1px solid #666; padding: 0 .25rem; display: inline-block; }
+  .limits { border-left: 4px solid #222; padding: .3rem .5rem; margin: .35rem 0; font-size: 13px; background: #fafafa; }
+  .bad { border-left: 3px solid #8a6d3b; padding-left: .4rem; }
+  .fict { background: #fff3cd; border: 2px solid #8a6d3b; padding: .4rem 1rem; font-size: 14px; }
+  .neg { color: #8a6d3b; }
   .ov { border-left: 3px solid #999; padding-left: .4rem; margin: .25rem 0; }
   .ov-absent, .ov-none { border-left-style: dotted; }
   .legend { font-size: 14px; color: #555; margin-top: .3rem; }
@@ -178,7 +196,8 @@ const html = `<!DOCTYPE html>
 </style>
 </head>
 <body>
-<div class="banner">全値は候補(<b>proposed</b>)であり正本表示ではない — この注記が全項に適用される(各項では繰り返さない)。正本は issue 204 の合意台帳と各値の出所。</div>
+<div class="banner" id="banner"></div>
+<div class="fict" id="fict" hidden></div>
 <header>
   <label>対象: <select id="target">${OPTIONS}</select></label>
   <nav>
@@ -200,6 +219,10 @@ const html = `<!DOCTYPE html>
 <script>
 const MODELS = ${DATA};
 const M14 = ${M14};
+const D = ${JSON.stringify(DISPLAY)};
+const CAND = ${JSON.stringify(OVERLAY_CANDIDATE)};
+const FICTIONAL = ${JSON.stringify(FICTIONAL)};
+const ACKS = ${JSON.stringify(ACKS)};
 const OVERLAYS = ${JSON.stringify(overlays)};
 const OVERLAY_READ = ${overlayDir ? "true" : "false"}; // この build が overlay を読んだか
 const OVERLAY_EMPTY = ${JSON.stringify(OVERLAY_EMPTY_STATUS)};
@@ -230,7 +253,27 @@ const M = () => {
 };
 const el = (id) => M().elements.find((e) => e.id === id);
 const anchor = (id) => (M().anchors ?? []).find((a) => a.id === id);
-const stBadge = (s) => '<span class="st st-' + s + '">' + s + "</span>";
+// ---- 表示の語(正本は registry.json の policy.display) ----
+// **引きは全て「表に無ければ未知」へ落とす。** 未知の語を既知の語へ黙って寄せると、
+// 画面は機械が確かめていないことを言い出す(実測: rev_state の三値目が「同一」として出ていた)。
+const look = (table, token) => {
+  const d = (D[table] ?? {})[token];
+  if (d) return d;
+  return { ...D.unknown_token, mark: D.unknown_token.mark + ": " + String(token), __unknown: true };
+};
+// 状態は**語**で言う。生の字句も残す(報告と追跡のため)が、意味を運ぶのは語である。
+const stBadge = (s) => {
+  const d = look("verification_status", s);
+  return '<span class="st st-' + esc(s) + '" title="' + esc(d.sentence ?? "") + '">［' + esc(d.mark) + "］" + esc(s) + "</span>";
+};
+// 候補と確認済も語で分ける。**記録が無いことも語で言う** —— 空白は「確認済」と読まれる。
+const rev = (x) => {
+  const s = x?.review_status;
+  if (!s) return '<span class="rv rv-missing">［確認状態の記録なし］</span>';
+  const d = look("review_status", s);
+  return '<span class="rv rv-' + esc(s) + '" data-review="' + esc(s) + '" title="' + esc(d.sentence ?? "") + '">［' + esc(d.mark) + "］</span>";
+};
+const shortRev = (s) => (s ? String(s).slice(0, 7) : "記録なし");
 const firstSentence = (s) => { const t = String(s ?? ""); const i = t.indexOf("。"); return i >= 0 ? t.slice(0, i + 1) : t; };
 
 function provRows(ps) {
@@ -257,33 +300,140 @@ function evRows(evs) {
 //   (2) 読んだが、この対象の overlay が無い
 //   (3) 在るが、この要素に該当する注釈対が 0 件だった
 // 空白は「問題が無い」と読まれる。三つを別々の文で言う。
-const shortRev = (s) => (s ? String(s).slice(0, 7) : "記録なし");
-
-function overlayRows(e) {
-  if (!OVERLAY_READ) return ""; // この build は overlay を読んでいない(既定の出荷物)
+/** この対象の実測 overlay。読んでいない/未生成/在る の三つを呼び手が分けられる形で返す。 */
+const overlayFor = () => {
+  if (!OVERLAY_READ) return { state: "not-read" };
   const o = OVERLAYS[M().target];
-  if (!o) {
-    return "<div class='small ov ov-absent'>実測 overlay: <b>この対象は未生成である</b>" +
+  return o ? { state: "present", o } : { state: "absent" };
+};
+
+/**
+ * 実測の頭書き。**言っていないことを、言っていることの隣に置く。**
+ *
+ * 以前は「実測」「事実」「指紋」だけが画面に出て、上流が自ら書いた射程の限界
+ * (source_limits)はどこからも読まれていなかった。総括と作業木の状態も同じである。
+ */
+function overlayHeader() {
+  const ov = overlayFor();
+  if (ov.state === "not-read") return "";
+  if (ov.state === "absent") {
+    return '<div class="limits" data-ov="__absent">実測 overlay: <b>この対象は未生成である</b>' +
       "(測って何も無かったのではなく、測っていない)。</div>";
   }
+  const o = ov.o;
   if (o.status === OVERLAY_EMPTY) {
-    return "<div class='small ov ov-none'>実測 overlay: <b>測る対象が 0 件である</b>" +
+    return '<div class="limits" data-ov="__empty">実測 overlay: <b>測る対象が 0 件である</b>' +
       (o.reason ? " — " + esc(o.reason) : "") + "</div>";
   }
-  const head = "<div class='small ov' style='margin-top:.3rem'><b>実測 overlay</b>(総括 " + esc(o.status) +
-    ")— 出所: " + esc(o.source) + "(" + esc(o.generated_at ?? "生成日の記録なし") + ")</div>";
-  const rows = (e.realized_by ?? [])
-    .map((aid) => (o.entries ?? []).find((x) => x.anchor_id === aid))
-    .filter(Boolean)
-    .flatMap((x) => (x.ranges_now ?? []).map((r) =>
-      "<div class='small'>実測(build 時・rev " + esc(shortRev(o.generated_from_rev)) + "): 注釈対 " +
-      esc(r.id) + " が " + esc(x.path) + " L" + r.begin_line + "–L" + r.end_line +
-      "・指紋 " + esc(String(r.fingerprint).slice(0, 19)) + "…" +
-      (x.rev_state === "advanced" ? "(記録時 rev から前進)" : "(記録時 rev と同一)") + "</div>"));
-  if (!rows.length) {
-    return head + "<div class='small ov ov-none'>この要素に該当する注釈対は <b>0 件</b>だった(走査そのものは行われている)。</div>";
+  // 総括の語彙はアンカーの状態の部分集合である(no-candidates は上で分岐済み)。
+  const roll = look("overlay_status_entry", o.status);
+  const wt = (v, yes, no) => (v === true ? yes : v === false ? no : "不明");
+  return '<div class="limits" data-ov-header="' + esc(o.status) + '">' +
+    "<b>実測 overlay の出所</b> " + esc(o.source) + "<br>" +
+    "生成した rev " + esc(shortRev(o.generated_from_rev)) +
+    " / 生成した日 " + esc(o.generated_at ?? "—") +
+    "(" + esc(o.generated_at_source ?? "日付の出所の記録なし") + ")<br>" +
+    "この overlay 全体の状態 <b>［" + esc(roll.mark) + "］" + esc(o.status) + "</b>" +
+    " / 作業木 " + esc(wt(o.worktree?.dirty, "汚れていた", "清かった")) +
+    "・" + esc(wt(o.worktree?.shallow, "浅い複製", "完全な複製")) + "<br>" +
+    "<b>この実測が言っていないこと</b> " +
+    esc(o.source_limits ?? "この overlay は自らの限界を記録していない。何を言っていないかが分からないので、ここに出せることも分からない。") +
+    "</div>";
+}
+
+/**
+ * アンカー一件についての実測の行。
+ *
+ * **六状態すべてに行を出す。** 出さないと「測って何も無かった」「測っていない」
+ * 「そもそも走査の射程外」が同じ空白になる。空白は「問題が無い」と読まれる。
+ */
+function overlayLineFor(anchorId) {
+  const ov = overlayFor();
+  if (ov.state !== "present") return "";
+  const o = ov.o;
+  if (o.status === OVERLAY_EMPTY) return "";
+  const x = (o.entries ?? []).find((y) => y.anchor_id === anchorId);
+  if (!x) {
+    return '<div class="small ov ov-none" data-ov="__out-of-scope">［実測の対象外］' +
+      "この実現先は overlay に記録が無い(上流の走査は権威 " + esc(CAND.authority) +
+      " の " + esc(look("anchor_kind", CAND.target_kind).mark) + "だけを見る)。測って何も無かったのではなく、<b>測っていない</b>。</div>";
   }
-  return head + rows.join("");
+  const d = look("overlay_status_entry", x.status);
+  const r = look("rev_state", x.rev_state);
+  const ranges = d.has_ranges === true
+    ? (x.ranges_now ?? []).map((g) =>
+      "<div class='small' data-range='" + esc(g.id) + "'>注釈対 " + esc(g.id) + " が " + esc(x.path) +
+      " L" + g.begin_line + "–L" + g.end_line +
+      "・指紋 " + esc(String(g.fingerprint).slice(0, 19)) + "…</div>").join("")
+    : "";
+  return '<div class="small ov ov-' + esc(x.status) + '" data-ov="' + esc(x.status) + '">' +
+    "<b>［" + esc(d.mark) + "］</b>" + esc(d.sentence ?? "") +
+    (x.reason ? " — " + esc(x.reason) : "") +
+    "<div class='small' data-rev='" + esc(x.rev_state) + "'>記録時 rev " + esc(shortRev(x.recorded_rev)) +
+    " / 観測した rev " + esc(shortRev(x.current_rev)) + " / " + esc(r.mark) + "</div>" +
+    ranges + "</div>";
+}
+
+/**
+ * 12 節の実現と証拠。**判定器が出した行を写す。画面は判定をやり直さない。**
+ *
+ * 以前はここが「アンカーが実在するか」しか見ておらず、門が実現先と認めない種別を、開けるリンク
+ * として出していた —— 画面の方が門より緩かった。門が認めなかった先は字では残すが、
+ * リンクにはしない(人が確かめに行けなくなるのは、別の不正直である)。
+ */
+function realizationBlock(e) {
+  const row = (M14.rows ?? []).find((x) => x.target === M().target && x.element === e.id);
+  if (!row) {
+    return '<p class="small">この要素についての到達判定が生成物に無い(画面の欠落であって「到達不能」ではない)。</p>';
+  }
+  const d = look("reachability_status", row.status);
+  const head = '<p><span class="tag" data-reach="' + esc(row.status) + '">［' + esc(d.mark) + "］</span> " +
+    esc(d.sentence ?? "") + (row.note ? " — " + esc(row.note) : "") + "</p>";
+  const list = (row.anchors ?? []).map(anchorLine).join("");
+  return overlayHeader() + head + (list ? "<ul>" + list + "</ul>" : "");
+}
+
+function anchorLine(a) {
+  const v = look("anchor_verdict", a.verdict);
+  // アンカーの中身は模型が正本。判定の行は id しか持たない(同じ事実を二箇所に置かない)。
+  const src = anchor(a.id);
+  const kind = src?.target_kind ? look("anchor_kind", src.target_kind) : null;
+  const tag = kind ? '<span class="tag">［' + esc(kind.mark) + "］</span> " : "";
+  const meta = src
+    ? '<div class="small">記録した rev ' + esc(shortRev(src.source_revision)) +
+      " / 記録した日 " + esc(src.observed_at ?? "記録なし") +
+      " / 鮮度の権威 " + esc(src.authority ?? "記録なし") +
+      (src.expires_at ? " / 期限 " + esc(src.expires_at) : "") + "</div>"
+    : '<div class="small">この id を持つアンカーが模型に無い(' + esc(a.id) + ")</div>";
+  if (v.links === true && src?.url) {
+    return '<li data-av="' + esc(a.verdict) + '">' + tag +
+      '<a href="' + esc(src.url) + '" target="_blank">' + esc(src.target) + "</a>" +
+      meta + overlayLineFor(a.id) + "</li>";
+  }
+  return '<li class="bad" data-av="' + esc(a.verdict) + '"><b>［' + esc(v.mark) + "］</b> " + esc(a.reason ?? "") +
+    (src?.url ? '<div class="small">参照(実現先ではない): ' + esc(src.url) + "</div>" : "") +
+    meta + overlayLineFor(a.id) + "</li>";
+}
+
+/**
+ * 帯は **データから作る。**
+ *
+ * 文字で書いておくと、一件が確認済になった日に帯だけが嘘になり、誰も気付かない。
+ * 混ざったときの文は、M-07b の検査器の文言と一致させる —— 画面と門が同じことを言う。
+ */
+function banner() {
+  const m = M();
+  const all = [m.system, ...(m.elements ?? []), ...(m.flows ?? []), ...(m.contracts ?? []), ...(m.scenarios ?? [])].filter(Boolean);
+  const n = {};
+  for (const x of all) { const k = x.review_status ?? "(記録なし)"; n[k] = (n[k] ?? 0) + 1; }
+  const kinds = Object.keys(n);
+  if (kinds.length === 1 && kinds[0] === "proposed") {
+    return "この対象の全 " + all.length + " 件は" + esc(look("review_status", "proposed").mark) +
+      "(proposed)であり正本表示ではない — この注記が全項に適用される。正本は issue 204 の合意台帳と各値の出所。";
+  }
+  return "この対象は " + kinds.map((k) => esc(look("review_status", k).mark ?? k) + " " + n[k] + " 件").join(" / ") +
+    " が混在する。<b>確認済だけを写した正本表示(canonical projection)は実装されていない</b> —— " +
+    "この画面は正本表示ではなく、混入の有無を機械で検めることもできていない(M-07b)。";
 }
 
 // 詳細パネル — 12 節の固定順(所有者指示 §4)
@@ -297,15 +447,9 @@ function detailPanel(id) {
   const failures = cs.filter((c) => c.failure_effect);
   const flowRow = (f, dir) => \`<tr><td>\${dir}\${f.feedback_for ? " ↩" : ""}</td><td>\${esc(el(dir === "IN" ? f.from : f.to).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td class="small">\${esc(f.condition)}</td></tr>\`;
   const none = '<p class="small">記録なし</p>';
-  const realizedLinks = (e.realized_by ?? []).map((aid) => {
-    const a = anchor(aid);
-    if (!a) return '<li class="neg">壊れた参照: ' + esc(aid) + "</li>";
-    const label = esc(a.target) + "(" + esc(a.source_revision).slice(0, 12) + ")";
-    return a.url ? '<li><a href="' + esc(a.url) + '" target="_blank">' + label + "</a></li>" : "<li>" + label + "(url なし)</li>";
-  }).join("");
   const evidenceLinks = cs.flatMap((c) => (c.evidence ?? []).map((ev) => ({ c, ev })));
   return \`<button id="close" title="閉じる">×</button>
-    <h2>\${esc(e.name)}</h2>
+    <h2>\${esc(e.name)} \${rev(e)}</h2>
     <div class="q">この要素の責務と契約は何で、その充足をどの根拠が支えているか(契約充足の評価)</div>
     <h3>1. 目的</h3><p>\${esc(e.purpose)}</p>
     <h3>2. 担うこと</h3><ul>\${e.responsibilities.map((r) => "<li>" + esc(r) + "</li>").join("")}</ul>
@@ -326,11 +470,8 @@ function detailPanel(id) {
     \${(e.requirements ?? []).length ? "<ul>" + e.requirements.map((r) => "<li>" + esc(r) + "</li>").join("") + "</ul>" : ""}
     \${provRows(e.provenance) || none}
     <h3>12. Code / Test / Evidence(実現と証拠)</h3>
-    \${e.realization ? '<p class="small">対象外: ' + esc(e.realization.reason) + "</p>" : ""}
-    \${realizedLinks ? "<ul>" + realizedLinks + "</ul>" : ""}
-    \${overlayRows(e)}
-    \${evidenceLinks.length ? evidenceLinks.map((x) => evRows([x.ev])).join("") : ""}
-    \${!e.realization && !realizedLinks && !evidenceLinks.length ? none : ""}\`;
+    \${realizationBlock(e)}
+    \${evidenceLinks.length ? evidenceLinks.map((x) => evRows([x.ev])).join("") : ""}\`;
 }
 
 // 構成図。層はフィードバックと宣言順循環切りを除いた Flow の最長距離。
@@ -392,11 +533,14 @@ function diagram(tops, flows) {
   const boxes = tops.map((e) => {
     const p = pos[e.id];
     const sel = focusEl === e.id;
+    // 種別と境界の内外は**語**で言う。線(破線枠)は同じことを形でも示す補助にすぎない。
+    const k = look("element_kind", e.kind);
     return \`<g data-el="\${e.id}" style="cursor:pointer">
-      <rect x="\${p.x}" y="\${p.y}" width="\${BW}" height="\${BH}" fill="\${sel ? "#eaf1ff" : "#fff"}" stroke="#222" stroke-width="\${sel ? 3 : 1.5}" \${e.kind === "external_system" ? 'stroke-dasharray="6 4"' : ""}/>
+      <rect x="\${p.x}" y="\${p.y}" width="\${BW}" height="\${BH}" fill="\${sel ? "#eaf1ff" : "#fff"}" stroke="#222" stroke-width="\${sel ? 3 : 1.5}" \${k.outside_boundary === true ? 'stroke-dasharray="6 4"' : ""}/>
       <foreignObject x="\${p.x + 8}" y="\${p.y + 6}" width="\${BW - 16}" height="\${BH - 12}">
         <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:14px; line-height:1.4; overflow:hidden; height:100%">
-          <div style="font-size:16px; font-weight:700">\${esc(e.name)}</div>
+          <div style="font-size:16px; font-weight:700">\${sel ? "▸選択中 " : ""}\${esc(e.name)}</div>
+          <div class="tag" data-kind="\${esc(e.kind)}">［\${esc(k.mark)}\${k.outside_boundary === true ? "・境界の外" : ""}］</div> \${rev(e)}
           <div>\${esc(firstSentence(e.purpose))}</div>
           <div style="color:#444">\${ioSummary(e.id)}</div>
           <div style="margin-top:2px">\${stChips(e.id)}
@@ -460,7 +604,7 @@ function diagram(tops, flows) {
     <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#444"/></marker></defs>
     \${edges}\${boxes}
   </svg>
-  <div class="legend">実線枠 = 内部 / 破線枠 = 外部システム / 破線辺 ↩ = フィードバック。辺は全て正本の Flow(名前+種類つき)。層は Flow の向きから導出。</div>\`;
+  <div class="legend">各箱の角括弧が種別と境界の内外を言う(［人・境界の外］など)。破線枠は同じことを線でも示す補助である。選択中の箱は名前の前に ▸選択中 と出る。破線辺 ↩ = フィードバック。辺は全て正本の Flow(名前+種類つき)。層は Flow の向きから導出。</div>\`;
 }
 
 function scopeTops() { return M().elements.filter((e) => (drill ? e.parent === drill : (e.parent ?? null) === null)); }
@@ -487,11 +631,12 @@ function viewSystem() {
       \${crossFlows.map((f) => \`<tr><td>\${esc(el(f.from).name)}</td><td>\${esc(f.label)}(\${esc(f.kind)})</td><td>\${esc(el(f.to).name)}</td><td class="small">\${esc(f.condition)}</td></tr>\`).join("")}</table>\`
     : "";
   const sys = M().system;
-  const externals = M().elements.filter((e) => (e.parent ?? null) === null && (e.kind === "external_system" || e.kind === "person"));
+  // 直書きの二種別しか見ておらず、organization と device は黙って**内側**に数えられていた。
+  const externals = M().elements.filter((e) => (e.parent ?? null) === null && look("element_kind", e.kind).outside_boundary === true);
   const sysHeader = drill ? "" : \`<div style="border:2px solid #222; padding:.5rem .8rem; margin-bottom:.6rem; background:#fafafa">
       <div><b>目的</b> \${esc(sys.purpose)}</div>
       <div><b>境界</b> \${esc(sys.boundary)}</div>
-      <div class="small">境界の外: \${externals.map((e) => esc(e.name) + "(" + (e.kind === "person" ? "人" : "外部システム") + ")").join("、") || "—"} / \${provRows(sys.provenance)}</div>
+      <div class="small">境界の外: \${externals.map((e) => esc(e.name) + "(" + esc(look("element_kind", e.kind).mark) + ")").join("、") || "—"} / \${provRows(sys.provenance)}</div>
     </div>\`;
   return \`<div class="q">この画面の一問: このシステムは何のために存在し、何から構成され、外部の誰と何をやり取りするか</div>
     \${crumb}
@@ -545,12 +690,30 @@ function viewInspect() {
     <p><b>M-13</b>(読み口): 実行時の外部読み取りは零 — build 終端の生成物走査に加え、実ブラウザで全操作の通信を記録する検査(test-m13-browser.mjs)がある。外部資源を仕込んだ負例が落ちることも同検査が確かめる。</p>
     <p><b>M-14</b>(要素→実在する Code/Test/Evidence へ 3 操作以内): 到達先は開ける URL を持つアンカーに限る(出所は代用にならない)。壊れた参照・未登録は build が落ちる。実現が適用されない要素は明示の対象外のみ。最大 = \${M14.max} 操作。負の試験(4 操作・リンク切れ・未登録)は本番と同じ計算経路で発火を確認済み。</p>
     <table><tr><th>対象</th><th>要素</th><th>判定</th><th>操作数 / 備考</th></tr>
-      \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td>\${r.status === "reachable" ? "到達可" : r.status === "not_applicable" ? "対象外" : esc(r.status)}</td><td class="small">\${r.ops ?? ""}\${r.status === "not_applicable" ? esc(r.note) : ""}</td></tr>\`).join("")}
+      \${M14.rows.map((r) => \`<tr><td>\${esc(r.target)}</td><td>\${esc(r.element)}</td><td data-reach="\${esc(r.status)}">［\${esc(look("reachability_status", r.status).mark)}］</td><td class="small">\${r.ops ?? ""}\${r.note ? (r.ops != null ? " / " : "") + esc(r.note) : ""}</td></tr>\`).join("")}
     </table>
-    <p class="small">操作数の定義は台帳 v3.2-16。右下の計数器は H 層試験(O 層観測)用。</p>\`;
+    <p class="small">操作数の定義は台帳 v3.2-16。右下の計数器は H 層試験(O 層観測)用。</p>
+    <h3>この緑が検めていないこと(了解の記録 \${ACKS.length} 件)</h3>
+    <p class="small"><b>合格の桶に入るのは PASS だけである。</b>下は「見た件数が 0」「この版では判定不能」を、
+      出所つきで個別に許した記録である。**この一覧の長さが、機械が何も言えていない量である。**
+      期限を過ぎた了解は了解ではない —— それ自体が所見になる。</p>
+    <table><tr><th>不変条件</th><th>対象</th><th>判定</th><th>何を検めていないか</th><th>再点検の期限</th></tr>
+      \${ACKS.map((a) => \`<tr data-ack="\${esc(a.invariant)}"><td>\${esc(a.invariant)}</td><td>\${esc(a.target)}</td><td>\${esc(a.verdict)}</td><td class="small">\${esc(a.reason)}</td><td class="small">\${esc(a.expires_at)}(記録 \${esc(a.checked_at)})</td></tr>\`).join("")}
+    </table>
+    <p class="small"><b>M-07b</b>(候補が正本表示に混ざらない)は、確認済の実体が一つも無く、
+      確認済だけを写した正本表示も実装されていないため、<b>まだ一度も検められていない</b>。
+      この画面は正本表示ではない。</p>\`;
 }
 
 function render() {
+  // 帯はデータから作る。字で書いておくと、一件が確認済になった日に帯だけが嘘になる。
+  document.getElementById("banner").innerHTML = banner();
+  // 架空の対象は、画面が架空と言う。**この帯が出ない架空の対象は、実在と見分けがつかない。**
+  const fx = document.getElementById("fict");
+  const note = FICTIONAL[M().target];
+  fx.hidden = !note;
+  if (note) { fx.textContent = note; fx.setAttribute("data-fictional", M().target); }
+  else fx.removeAttribute("data-fictional");
   const v = { system: viewSystem, scenario: viewScenario, assurance: viewAssurance, impact: viewImpact, inspect: viewInspect }[view];
   document.getElementById("left").innerHTML = v();
   const d = document.getElementById("detail");

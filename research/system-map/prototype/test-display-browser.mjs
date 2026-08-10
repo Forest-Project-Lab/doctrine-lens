@@ -261,15 +261,19 @@ await guard(words, "門が認めなかった実現先を、リンクとして出
   const e = (m.elements ?? []).find((x) => (x.parent ?? null) === null);
   await focus(m.target, e);
   // 判定器が出しうる状態を画面へ与える(**判定器へ結果を渡すのではない** —— 描き手の側だけを試す)。
+  // 模型にも合成のアンカーを置く。判定の行は id しか持たず、中身は模型が正本だからである。
   const injected = await page.evaluate(({ t, el }) => {
     const row = M14.rows.find((r) => r.target === t && r.element === el);
-    if (!row) return null;
+    const model = MODELS.find((x) => x.target === t);
+    if (!row || !model) return null;
+    (model.anchors ??= []).push({
+      id: "a-synthetic", target: "合成の成果物", target_kind: "artifact",
+      url: "https://example.invalid/tree/0000000", source_revision: "0".repeat(40),
+      observed_at: "2026-01-01", authority: "gold_model",
+    });
     row.status = "broken";
     row.note = "anchor a-synthetic の種別 artifact は実現先にならない";
-    row.anchors = [{
-      id: "a-synthetic", verdict: "wrong_kind", target_kind: "artifact",
-      target: "合成の成果物", url: "https://example.invalid/tree/0000000", reason: row.note,
-    }];
+    row.anchors = [{ id: "a-synthetic", verdict: "wrong_kind", reason: row.note }];
     render();
     return true;
   }, { t: m.target, el: e.id });
