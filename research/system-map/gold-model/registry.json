@@ -57,6 +57,198 @@
       "target_kind": "code_range",
       "source": "台帳 v3.2-10(doctrine 対象の鮮度判定は doctrine の機構だけを使う)",
       "$comment": "実測の候補にするアンカーの条件。緩めると第二の鮮度権威を作ることになる。条件を使うのは lib/overlay-candidates.mjs だけである。"
+    },
+    "display": {
+      "$comment": "画面が使う語。**語彙そのものは schema.json と生成器が正本であり、ここは対応表だけを持つ。** 対応は全単射でなければならない —— 覆えない語を黙って既知の語へ読み替えると、画面は機械が確かめていないことを言い出す。実際 rev_state は三値なのに画面の分岐が二値で、`unknown`(記録した rev が履歴に無い)が「記録時 rev と同一」という肯定として出ていた。",
+      "source": "PR6(UI)・所有者指示 2026-08-04 §4",
+      "review_status": {
+        "proposed": {
+          "mark": "候補",
+          "sentence": "起草した側の推定であり、所有者の確認を経ていない"
+        },
+        "confirmed": {
+          "mark": "確認済",
+          "sentence": "所有者が確認した"
+        }
+      },
+      "verification_status": {
+        "unknown": {
+          "mark": "不明",
+          "sentence": "出所が沈黙している。問題が無いという意味ではない"
+        },
+        "claimed": {
+          "mark": "主張のみ",
+          "sentence": "守ると言っているが、測り方も結果も記録が無い"
+        },
+        "planned": {
+          "mark": "検証予定",
+          "sentence": "測り方は決めてあるが、結果はまだ無い"
+        },
+        "verified": {
+          "mark": "証拠つき",
+          "sentence": "証跡最小形の揃った合格結果が在る"
+        },
+        "failed": {
+          "mark": "不合格",
+          "sentence": "測った結果が不合格である"
+        },
+        "stale": {
+          "mark": "証拠が古い",
+          "sentence": "証拠は在るが、前提(版・構成)が変わっている"
+        },
+        "not_applicable": {
+          "mark": "適用しない",
+          "sentence": "理由つきで対象外と決めてある"
+        }
+      },
+      "reachability_status": {
+        "reachable": {
+          "mark": "到達可",
+          "sentence": "コードまたは証拠へ開ける先が在る"
+        },
+        "not_applicable": {
+          "mark": "対象外",
+          "sentence": "実現が意味上あてはまらない、と理由つきで決めてある"
+        },
+        "broken": {
+          "mark": "壊れた参照",
+          "sentence": "実現先を名指しているが、開けない・種別が違う・実在しない"
+        },
+        "unregistered": {
+          "mark": "未登録",
+          "sentence": "実現も明示の対象外も記録が無い(出所は代用にならない)"
+        }
+      },
+      "anchor_verdict": {
+        "ok": {
+          "mark": "実現先",
+          "links": true,
+          "sentence": "開ける先が在り、種別も実現先として認められる"
+        },
+        "missing": {
+          "mark": "実在しないアンカー",
+          "links": false,
+          "sentence": "名指された id が模型のアンカーに無い"
+        },
+        "wrong_kind": {
+          "mark": "実現先にならない種別",
+          "links": false,
+          "sentence": "アンカーは在るが、その種別は Code/Test への到達ではない"
+        },
+        "no_url": {
+          "mark": "開ける URL が無い",
+          "links": false,
+          "sentence": "アンカーは在るが、開ける先を持たない"
+        }
+      },
+      "overlay_status_entry": {
+        "$comment": "アンカー一件ごとの状態。正本は overlay/build-overlay.mjs の綴りであり、対応が漏れていないことは display-static の段が数える。",
+        "measured": {
+          "mark": "実測",
+          "counts_as_measured": true,
+          "has_ranges": true,
+          "sentence": "この rev のこの経路に、この指紋の範囲が在った"
+        },
+        "degraded": {
+          "mark": "実測(上流の所見つき)",
+          "counts_as_measured": true,
+          "has_ranges": true,
+          "sentence": "範囲は返ったが、上流がこの経路に所見を挙げている"
+        },
+        "no-ranges": {
+          "mark": "記録なし(走査は成功)",
+          "counts_as_measured": false,
+          "has_ranges": false,
+          "sentence": "走査は通ったが、この経路に注釈対が無い"
+        },
+        "unparsed": {
+          "mark": "測っていない(指す先を読めない)",
+          "counts_as_measured": false,
+          "has_ranges": false,
+          "sentence": "アンカーの指す先を経路として読めない"
+        },
+        "unbound-repo": {
+          "mark": "測っていない(木が束ねられていない)",
+          "counts_as_measured": false,
+          "has_ranges": false,
+          "sentence": "この接頭の木が --repo で束ねられていない"
+        },
+        "unverifiable": {
+          "mark": "測れなかった(CLI が答えない)",
+          "counts_as_measured": false,
+          "has_ranges": false,
+          "sentence": "宣言済み CLI から返す値を得られなかった"
+        }
+      },
+      "rev_state": {
+        "same": {
+          "mark": "記録時 rev と同一(照合済)",
+          "sentence": "記録した rev が履歴に在り、いまの rev と同じである"
+        },
+        "advanced": {
+          "mark": "記録時 rev から前進",
+          "sentence": "記録した rev は履歴に在るが、いまの rev はその先にある(記録時の内容とは限らない)"
+        },
+        "unknown": {
+          "mark": "記録時 rev が履歴に無い",
+          "sentence": "同一とも前進とも言えない。この範囲について鮮度は判定していない"
+        }
+      },
+      "element_kind": {
+        "person": {
+          "mark": "人",
+          "outside_boundary": true
+        },
+        "organization": {
+          "mark": "組織",
+          "outside_boundary": true
+        },
+        "external_system": {
+          "mark": "外部システム",
+          "outside_boundary": true
+        },
+        "device": {
+          "mark": "機器",
+          "outside_boundary": true
+        },
+        "system": {
+          "mark": "系",
+          "outside_boundary": false
+        },
+        "subsystem": {
+          "mark": "下位系",
+          "outside_boundary": false
+        },
+        "component": {
+          "mark": "部品",
+          "outside_boundary": false
+        },
+        "operation": {
+          "mark": "運用",
+          "outside_boundary": false
+        }
+      },
+      "anchor_kind": {
+        "document": {
+          "mark": "文書"
+        },
+        "code_range": {
+          "mark": "コード範囲"
+        },
+        "test": {
+          "mark": "試験"
+        },
+        "external_doc": {
+          "mark": "外部文書"
+        },
+        "artifact": {
+          "mark": "成果物"
+        }
+      },
+      "unknown_token": {
+        "mark": "この状態を画面は説明できない",
+        "sentence": "生成器が出した語に対応する説明が表示の表に無い。既知の語へ黙って読み替えず、語をそのまま出す"
+      }
     }
   },
   "targets": [
