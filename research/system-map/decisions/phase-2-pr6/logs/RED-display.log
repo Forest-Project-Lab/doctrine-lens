@@ -1,0 +1,32 @@
+ok   overlay のアンカー状態が表と一致する(6 語)
+ok   rev_state が表と一致する(3 語)
+ok   到達の状態が表と一致する(4 語)
+ok   「実測」と名乗れる状態がちょうど二つ(measured, degraded)
+NG   表の語が生成物に届いている — 生成物に現れない語: verification_status.claimed(主張のみ), verification_status.planned(検証予定), verification_status.verified(証拠つき), verification_status.stale(証拠が古い), anchor_verdict.missing(実在しないアンカー), anchor_verdict.wrong_kind(実現先にならない種別), anchor_verdict.no_url(開ける URL が無い), overlay_status_entry.degraded(実測(上流の所見つき)), overlay_status_entry.no-ranges(記録なし(走査は成功)), overlay_status_entry.unparsed(測っていない(指す先を読めない)), overlay_status_entry.unbound-repo(測っていない(木が束ねられていない)), overlay_status_entry.unverifiable(測れなかった(CLI が答えない)), rev_state.same(記録時 rev と同一(照合済)), rev_state.unknown(記録時 rev が履歴に無い), element_kind.device(機器), element_kind.subsystem(下位系), anchor_kind.external_doc(外部文書), unknown_token(この状態を画面は説明できない)
+NG   生の字句へ落ちる経路が無い — 到達の状態を生の字句で出す経路 / 保証の状態を生の字句だけで出す経路
+
+2 件の所見 / 0 件の異常
+static EXIT=1
+==========
+NG   overlay の状態「measured」が固有の文で出る — #detail に data-ov="measured" の行が 1 件無い(0 件)
+NG   overlay の状態「degraded」が固有の文で出る — #detail に data-ov="degraded" の行が 1 件無い(0 件)
+NG   overlay の状態「no-ranges」が固有の文で出る — #detail に data-ov="no-ranges" の行が 1 件無い(0 件)
+NG   overlay の状態「unparsed」が固有の文で出る — #detail に data-ov="unparsed" の行が 1 件無い(0 件)
+NG   overlay の状態「unbound-repo」が固有の文で出る — #detail に data-ov="unbound-repo" の行が 1 件無い(0 件)
+NG   overlay の状態「unverifiable」が固有の文で出る — #detail に data-ov="unverifiable" の行が 1 件無い(0 件)
+NG   表に無い状態を、黙って既知の語へ読み替えない — 未知の状態の行が出ていない(黙って消えている)
+NG   rev_state「same」が固有の文で出る — data-rev="same" の行が出ていない
+NG   rev_state「advanced」が固有の文で出る — data-rev="advanced" の行が出ていない
+NG   rev_state「unknown」が固有の文で出る — data-rev="unknown" の行が出ていない
+NG   実測が言っていないことを、実測の隣に出す — source_limits が画面のどこにも無い(射程を偽っている)
+NG   走査の射程外のアンカーを、黙って落とさない — 射程外のアンカーについて画面が何も言っていない(測って無かったのと同じ空白になる)
+ok   詳細は 12 節のまま・畳んだ中身を作らない
+NG   境界の外を、線ではなく語で言う — doctrine-and-lens/maintainer: 種別の語「人」が箱に無い / doctrine-and-lens/maintainer: 境界の外だと語で言っていない(person) / doctrine-and-lens/doctrine: 種別の語「系」が箱に無い / doctrine-and-lens/lens: 種別の語「系」が箱に無い ほか 23 件
+NG   候補と確認済を、項目ごとに語で言う — 詳細の見出しに候補の印が無い
+NG   帯をデータから作る(混ざったら帯が変わる) — 一件が確認済になっても帯が変わらない(帯が字の飾りである)
+NG   架空の対象を、画面が架空と言う — fixture-rare-states(架空): 架空なのに帯が出ない
+NG   門が認めなかった実現先を、リンクとして出さない — 「実現先にならない種別」と言っていない
+NG   検査画面が「何を検めていないか」を出す — 了解の記録が画面のどこにも無い(緑の意味が読めない)
+
+18 件の所見(状態の掃引 13 件・語での区別 6 件)
+browser EXIT=1

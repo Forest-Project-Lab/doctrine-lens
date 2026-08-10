@@ -12,70 +12,13 @@ import { computeOpsRows, reachabilityVerdicts } from "./gates.mjs";
 import { MAX_OPS } from "../gold-model/spec.mjs";
 import { runModelCheckers } from "../gold-model/check-model.mjs";
 import { schemaViolations } from "../gold-model/validate-schema.mjs";
+// patch の当て方は lib/patch.mjs が一本で持つ(表示の負例も同じ物を使う)。
+import { applyPatch } from "../lib/patch.mjs";
 import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gold = join(here, "..", "gold-model");
 const TABLE = JSON.parse(readFileSync(join(gold, "negatives.json"), "utf8"));
-
-/**
- * 指す先を解く。`/elements/@id=lens/owner` のように、添字の代わりに
- * `@<欄>=<値>` で指せる。**添字で指すと、模型を並べ替えた日に別の物を潰す。**
- */
-function locate(root, path) {
-  const parts = path.split("/").filter(Boolean);
-  let node = root;
-  const trail = [];
-  for (let i = 0; i < parts.length - 1; i++) {
-    const key = resolveKey(node, parts[i], path);
-    trail.push([node, key]);
-    node = node[key];
-    if (node === undefined) throw new Error(`指す先が解けない: ${path}(${parts[i]} で止まった)`);
-  }
-  const last = parts[parts.length - 1];
-  return { parent: node, key: last === "-" ? "-" : resolveKey(node, last, path, true) };
-}
-
-function resolveKey(node, part, path, allowMissing = false) {
-  if (part.startsWith("@")) {
-    const eq = part.indexOf("=");
-    if (eq < 0) throw new Error(`指す先の形が違う: ${part}`);
-    const field = part.slice(1, eq);
-    const want = part.slice(eq + 1);
-    if (!Array.isArray(node)) throw new Error(`${part} は配列にしか使えない: ${path}`);
-    const i = node.findIndex((x) => String(x?.[field]) === want);
-    if (i < 0) throw new Error(`指す先が解けない: ${path}(${field}=${want} が無い)`);
-    return i;
-  }
-  if (Array.isArray(node)) {
-    const i = Number(part);
-    if (!Number.isInteger(i) || i < 0 || i >= node.length) throw new Error(`指す先が解けない: ${path}(添字 ${part})`);
-    return i;
-  }
-  if (!allowMissing && !(part in node)) throw new Error(`指す先が解けない: ${path}(${part} が無い)`);
-  return part;
-}
-
-function applyPatch(model, patch) {
-  const out = JSON.parse(JSON.stringify(model));
-  for (const op of patch) {
-    const { parent, key } = locate(out, op.path);
-    if (op.op === "remove") {
-      if (Array.isArray(parent)) parent.splice(key, 1);
-      else {
-        if (!(key in parent)) throw new Error(`消す先が無い: ${op.path}`);
-        delete parent[key];
-      }
-    } else if (op.op === "replace") {
-      if (!Array.isArray(parent) && !(key in parent)) throw new Error(`置く先が無い: ${op.path}`);
-      parent[key] = op.value;
-    } else if (op.op === "add") {
-      if (key === "-") { if (!Array.isArray(parent)) throw new Error(`足す先が配列でない: ${op.path}`); parent.push(op.value); }
-      else parent[key] = op.value;
-    } else throw new Error(`知らない操作: ${op.op}`);
-  }
-  return out;
-}
 
 /** 指定の検査器を一つ走らせ、判定の記録を返す。 */
 function runChecker(checker, model) {

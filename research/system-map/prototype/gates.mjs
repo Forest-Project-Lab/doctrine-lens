@@ -23,22 +23,46 @@ export { UI_STRUCTURE, REALIZATION_KINDS };
 
 const isUrl = (s) => /^https?:\/\/\S+$/.test(s ?? "");
 
-/** 要素の「実現・証拠」到達先を解決する。 */
+/**
+ * 要素の「実現・証拠」到達先を解決する。
+ *
+ * `anchors` は **表示のための明細**である。判定には一切使わない —— 足した理由は、
+ * 画面が同じ判定を弱く書き直していたからである(`if (!a)` しか見ていなかったので、
+ * 門が実現先と認めない `artifact` を、画面はただのリンクとして出していた)。
+ * 判定・文言・順序は一文字も変えていない。負例の `message_match` が動かないことが、
+ * 変えていないことの証拠になる。
+ */
 export function resolveDestinations(model, e) {
   if (e.realization && e.realization.status === "not_applicable") {
-    return { kind: "na", reason: e.realization.reason };
+    return { kind: "na", reason: e.realization.reason, anchors: [] };
   }
   const broken = [];
   const links = [];
+  // 明細は **id と判定と理由だけ**を持つ。アンカーの中身は模型が正本であり、
+  // 画面は id で引く —— 写すと同じ事実が二箇所になり、生成物も無駄に膨らむ。
+  const anchors = [];
   for (const aid of e.realized_by ?? []) {
     const a = (model.anchors ?? []).find((x) => x.id === aid);
-    if (!a) { broken.push(`anchor ${aid} が実在しない`); continue; }
-    if (!REALIZATION_KINDS.includes(a.target_kind)) {
-      broken.push(`anchor ${aid} の種別 ${a.target_kind} は実現先にならない(認めるのは ${REALIZATION_KINDS.join("/")})`);
+    if (!a) {
+      const why = `anchor ${aid} が実在しない`;
+      broken.push(why);
+      anchors.push({ id: aid, verdict: "missing", reason: why });
       continue;
     }
-    if (!isUrl(a.url)) { broken.push(`anchor ${aid} に開ける URL が無い`); continue; }
+    if (!REALIZATION_KINDS.includes(a.target_kind)) {
+      const why = `anchor ${aid} の種別 ${a.target_kind} は実現先にならない(認めるのは ${REALIZATION_KINDS.join("/")})`;
+      broken.push(why);
+      anchors.push({ id: a.id, verdict: "wrong_kind", reason: why });
+      continue;
+    }
+    if (!isUrl(a.url)) {
+      const why = `anchor ${aid} に開ける URL が無い`;
+      broken.push(why);
+      anchors.push({ id: a.id, verdict: "no_url", reason: why });
+      continue;
+    }
     links.push({ url: a.url, kind: a.target_kind });
+    anchors.push({ id: a.id, verdict: "ok", reason: null });
   }
   for (const c of model.contracts.filter((c) => c.subject === e.id)) {
     for (const ev of c.evidence ?? []) {
@@ -48,9 +72,9 @@ export function resolveDestinations(model, e) {
       links.push({ url: ev.ref, kind: "evidence" });
     }
   }
-  if (broken.length) return { kind: "broken", detail: broken.join(" / ") };
-  if (links.length) return { kind: "links", links };
-  return { kind: "unregistered" };
+  if (broken.length) return { kind: "broken", detail: broken.join(" / "), anchors };
+  if (links.length) return { kind: "links", links, anchors };
+  return { kind: "unregistered", anchors };
 }
 
 /** M-14: 各要素の到達判定と最短操作数。ui に画面遷移の構造を与える(負の試験は深い構造を与える)。 */
@@ -59,15 +83,15 @@ export function computeOpsRows(models, ui = UI_STRUCTURE) {
   for (const m of models) {
     for (const e of m.elements) {
       const d = resolveDestinations(m, e);
-      if (d.kind === "na") rows.push({ target: m.target, element: e.id, status: "not_applicable", ops: null, note: d.reason });
-      else if (d.kind === "broken") rows.push({ target: m.target, element: e.id, status: "broken", ops: null, note: d.detail });
-      else if (d.kind === "unregistered") rows.push({ target: m.target, element: e.id, status: "unregistered", ops: null, note: "実現・証拠が未登録(provenance は代用にならない)" });
+      if (d.kind === "na") rows.push({ target: m.target, element: e.id, status: "not_applicable", ops: null, note: d.reason, anchors: d.anchors });
+      else if (d.kind === "broken") rows.push({ target: m.target, element: e.id, status: "broken", ops: null, note: d.detail, anchors: d.anchors });
+      else if (d.kind === "unregistered") rows.push({ target: m.target, element: e.id, status: "unregistered", ops: null, note: "実現・証拠が未登録(provenance は代用にならない)", anchors: d.anchors });
       else {
         const drill = (e.parent ?? null) !== null ? ui.drillOps : 0; // 実操作: 子は先に内部へ降りる
         rows.push({
           target: m.target, element: e.id, status: "reachable",
           ops: drill + ui.selectOps + ui.extraExpands + ui.linkClickOps,
-          links: d.links, note: d.links.map((l) => l.kind).join("+"),
+          links: d.links, note: d.links.map((l) => l.kind).join("+"), anchors: d.anchors,
         });
       }
     }

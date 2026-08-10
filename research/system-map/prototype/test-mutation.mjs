@@ -90,6 +90,41 @@ const MUTATIONS = [
     run: ["prototype/test-targets-wired.mjs"],
     expect: "落ちる",
   },
+  {
+    label: "未知の語の落とし所を潰す(表に無い状態を実測へ黙って寄せる)",
+    file: "prototype/build.mjs",
+    from: "  return { ...D.unknown_token, mark: D.unknown_token.mark + \": \" + String(token), __unknown: true };",
+    to: "  return { mark: \"実測\", sentence: \"\", has_ranges: true, counts_as_measured: true };",
+    run: ["prototype/test-display-browser.mjs"],
+    expect: "落ちる",
+  },
+  {
+    label: "項目単位の候補表示を潰す(印から機械の手掛かりを外す)",
+    file: "prototype/build.mjs",
+    from: '  return \'<span class="rv rv-\' + esc(s) + \'" data-review="\' + esc(s) + \'"',
+    to: '  return \'<span class="rv rv-\' + esc(s) + \'" data-was-review="\' + esc(s) + \'"',
+    run: ["prototype/test-display-browser.mjs"],
+    expect: "落ちる",
+  },
+  {
+    label: "架空の印を潰す(registry の fictional を偽にする)",
+    file: "gold-model/registry.json",
+    from: '"fictional": true',
+    to: '"fictional": false',
+    // 潰すと、架空の対象が実在の対象と見分けがつかなくなる。
+    run: ["prototype/test-display-browser.mjs"],
+    expect: "落ちる",
+  },
+  {
+    label: "12 節へ畳んだ中身を作る(実装・証拠へ行くのに操作が増える)",
+    file: "prototype/build.mjs",
+    from: "    <h3>12. Code / Test / Evidence(実現と証拠)</h3>",
+    to: "    <h3>12. Code / Test / Evidence(実現と証拠)</h3><details><summary>実装と証拠</summary></details>",
+    // 台帳 v3.2-16 の操作数の予算(3)は、入れ子の要素で既に上限である。
+    // 一つ畳むだけで超える。**構造で守る。**
+    run: ["prototype/test-display-browser.mjs"],
+    expect: "落ちる",
+  },
 ];
 
 const work = mkdtempSync(join(tmpdir(), "system-map-mutation-"));

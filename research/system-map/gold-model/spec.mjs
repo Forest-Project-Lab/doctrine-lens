@@ -52,6 +52,8 @@ export const EVIDENCE_KEYS = Object.freeze([...(def("Evidence").required ?? die(
 export const AUTHORITIES = enumOf("TraceAnchor", ["properties", "authority"]);
 /** アンカーの種別の全体集合。 */
 export const TARGET_KINDS = enumOf("TraceAnchor", ["properties", "target_kind"]);
+/** 要素の種別の全体集合。境界の内外はこれから導く(直書きしない)。 */
+export const ELEMENT_KINDS = enumOf("SystemElement", ["properties", "kind"]);
 /** 出所の判定。present / silent。 */
 export const SOURCE_VERDICTS = enumOf("Source", ["properties", "verdict"]);
 /** 模型の schema 値。 */
@@ -84,6 +86,11 @@ export const OVERLAY_CANDIDATE = Object.freeze({
   authority: pol("overlay_candidate").authority,
   target_kind: pol("overlay_candidate").target_kind,
 });
+/**
+ * 画面が使う語。**語彙そのものはここに無い** —— schema.json と生成器が正本であり、
+ * これは対応表である。覆えない語が出たときに黙って既知の語へ寄せないための表でもある。
+ */
+export const DISPLAY = Object.freeze(pol("display"));
 
 // ---- 突き合わせ(読み込みの時点で止める) ----
 if (typeof MAX_OPS !== "number" || !Number.isInteger(MAX_OPS) || MAX_OPS < 1) {
@@ -117,6 +124,32 @@ if (!AUTHORITIES.includes(OVERLAY_CANDIDATE.authority)) {
 }
 if (!TARGET_KINDS.includes(OVERLAY_CANDIDATE.target_kind)) {
   die(`policy.overlay_candidate.target_kind が schema.json の target_kind に無い: ${OVERLAY_CANDIDATE.target_kind}`);
+}
+// ---- 表示の語が、語彙を過不足なく覆っているか(読み込みの時点で止める) ----
+// 覆えていない語は、画面で黙って別の語になる。実際 rev_state は三値なのに画面の分岐が
+// 二値で、`unknown`(記録した rev が履歴に無い)が「記録時 rev と同一」として出ていた。
+// **足りないのも余っているのも同じ罪である** —— 余りは死んだ語が溜まった印であり、
+// どちらも「表と語彙が別々に動いている」ことを言っている。
+{
+  const bijective = (what, keys, vocab) => {
+    const a = [...keys].filter((k) => !k.startsWith("$")).sort();
+    const b = [...vocab].sort();
+    if (a.length !== b.length || a.some((x, i) => x !== b[i])) {
+      die(`表示の語 ${what} が語彙の全単射でない:\n  表示 ${JSON.stringify(a)}\n  語彙 ${JSON.stringify(b)}`);
+    }
+  };
+  bijective("display.verification_status", Object.keys(DISPLAY.verification_status ?? {}), STATES);
+  bijective("display.review_status", Object.keys(DISPLAY.review_status ?? {}), REVIEW_STATUSES);
+  bijective("display.element_kind", Object.keys(DISPLAY.element_kind ?? {}), ELEMENT_KINDS);
+  bijective("display.anchor_kind", Object.keys(DISPLAY.anchor_kind ?? {}), TARGET_KINDS);
+  // 「実測」と言ってよいのはどれか。表が二つ以上を実測と呼び始めたら、画面の言葉が
+  // 生成器より緩くなる。数だけは正本の側で固定しておく。
+  const spendMeasured = Object.entries(DISPLAY.overlay_status_entry ?? {})
+    .filter(([k, v]) => !k.startsWith("$") && v.counts_as_measured === true).map(([k]) => k);
+  if (spendMeasured.length !== 2) {
+    die(`「実測」と名乗れる状態がちょうど二つでない: ${JSON.stringify(spendMeasured)}`);
+  }
+  if (!DISPLAY.unknown_token?.mark) die("policy.display.unknown_token が無い(未知の語の落とし所が無い)");
 }
 
 // ---- 対象(registry.json が並びを持ち、id は模型自身が持つ) ----

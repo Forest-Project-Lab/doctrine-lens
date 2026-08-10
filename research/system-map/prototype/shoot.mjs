@@ -10,8 +10,9 @@
 // **撮る枚は模型の一覧から導く。** 以前は 13 枚の名前と対象を直書きしていたので、
 // 対象を増やしても撮る枚は増えず、並べ替えると `t1`/`t2`/`t3` という名前が別の対象を
 // 指した —— どちらも落ちないので気付けない。名前も id から作る(位置の番号を使わない)。
-import { execSync } from "node:child_process";
-import { mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, execSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadModels, targetIds } from "../gold-model/spec.mjs";
@@ -53,7 +54,16 @@ if (drill) {
 }
 const anyTarget = ids[0];
 plan.push({ file: "impact.png", target: anyTarget, view: "impact", note: "変更影響画面 — 答えの正本は既存 Lens と明記(混ぜない)" });
-plan.push({ file: "inspect.png", target: anyTarget, view: "inspect", note: "検査画面 — M-13(実ブラウザ)・M-14(実経路)の判定と全要素の到達表" });
+plan.push({ file: "inspect.png", target: anyTarget, view: "inspect", note: "検査画面 — 判定の表と、了解の記録(この緑が検めていないこと)" });
+// 実測 overlay の画面。**出荷物ではない** —— 既定の build は overlay を読まない。
+if (drill) {
+  const s = slugOf(drill.target);
+  plan.push({
+    file: `overlay-panel-${s}.png`, target: drill.target, view: "system",
+    select: drill.element, scrollDetail: true, element: "#detail", overlay: true,
+    note: "【出荷物ではない】--overlay-dir で組んだ変種の 12 節 — 実測の状態・rev の照合・言っていないこと(source_limits)",
+  });
+}
 
 // **何を撮るつもりかは、撮る前に外から確かめられる。** ブラウザも作業木も要らない。
 if (argv.includes("--print-plan")) {
@@ -97,13 +107,23 @@ const takenAt = new Date().toISOString();
 const VIEWPORT = { width: 1440, height: 900 };
 const url = "file://" + join(here, "index.html");
 
+// overlay を積んだ変種は一時の置き場にだけ出す(出荷物を書き換えない)。
+const variantDir = mkdtempSync(join(tmpdir(), "shoot-overlay-"));
+const variantUrl = plan.some((s) => s.overlay)
+  ? (() => {
+    const out = join(variantDir, "index.html");
+    execFileSync(process.execPath, [join(here, "build.mjs"), "--out", out, "--overlay-dir", join(here, "..", "overlay")], { cwd: here, stdio: "pipe" });
+    return "file://" + out;
+  })()
+  : null;
+
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: VIEWPORT });
 await p.goto(url);
 
 for (const s of plan) {
   // 毎回まっさらから組み直す(前の枚の選択やドリルを引きずらない)。
-  await p.reload();
+  await p.goto(s.overlay ? variantUrl : url);
   await p.selectOption("#target", s.target);
   await p.locator(`nav button[data-v="${s.view}"]`).click();
   if (s.select) await p.locator(`svg g[data-el="${s.select}"]`).click();
@@ -118,6 +138,7 @@ for (const s of plan) {
 }
 
 await b.close();
+rmSync(variantDir, { recursive: true, force: true });
 
 writeFileSync(join(shotsDir, "README.md"), `# 静止画(所有者の UIUX 確認用)
 
@@ -127,6 +148,10 @@ writeFileSync(join(shotsDir, "README.md"), `# 静止画(所有者の UIUX 確認
 
 撮る枚は模型の一覧から導く(\`registry.json\` の役割 build)。名前は対象の id から作る ——
 位置の番号を使わない(並べ替えたときに別の対象を指さないため)。
+
+**【出荷物ではない】と付いた枚は \`--overlay-dir\` で組んだ変種の画面である。**
+出荷する \`index.html\` は overlay を同梱しない(build の段は \`--overlay-dir\` を渡さない)ので、
+この画面は VSIX では出ない。
 
 issue へ貼るときは **commit を固定した URL** を使う(枝の名前は動く):
 
