@@ -1,11 +1,8 @@
 {
-  "doctrine": {
-    "root_basename": "0.11.0"
-  },
   "entries": [
     {
       "anchor_id": "a-consequence-code",
-      "current_rev": "7ea09b82a94d8dd0ae8f6ac893e44ddfd34bb9fc",
+      "current_rev": "34bd338fd19532f18316ff365cc0c5d57ed21d0c",
       "path": "src/model/consequence.ts",
       "ranges_now": [
         {
@@ -24,7 +21,7 @@
     },
     {
       "anchor_id": "a-bridge-code",
-      "current_rev": "7ea09b82a94d8dd0ae8f6ac893e44ddfd34bb9fc",
+      "current_rev": "34bd338fd19532f18316ff365cc0c5d57ed21d0c",
       "path": "src/doctrine/trace.ts",
       "ranges_now": [
         {
@@ -43,7 +40,7 @@
     },
     {
       "anchor_id": "a-view-code",
-      "current_rev": "7ea09b82a94d8dd0ae8f6ac893e44ddfd34bb9fc",
+      "current_rev": "34bd338fd19532f18316ff365cc0c5d57ed21d0c",
       "path": "src/model/view.ts",
       "ranges_now": [
         {
@@ -61,9 +58,13 @@
       "status": "measured"
     }
   ],
-  "generated_at": "2026-08-10",
+  "generated_at": "2026-08-13",
   "generated_at_source": "測った rev の commit 日",
-  "generated_from_rev": "7ea09b82a94d8dd0ae8f6ac893e44ddfd34bb9fc",
+  "generated_from_rev": "34bd338fd19532f18316ff365cc0c5d57ed21d0c",
+  "generator": {
+    "name": "trace-index.py",
+    "version": "0.12.0"
+  },
   "schema": "system-map/overlay/0.1",
   "source": "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した返す値",
   "source_limits": "上流の走査は、印が意味の上で正しい場所に打たれているかを判定しない。改名・移動も追わない。ここで言えるのは「この rev で、この経路に、この指紋の範囲が在った」までである。",
