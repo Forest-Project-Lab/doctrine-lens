@@ -2,11 +2,11 @@
   "schema": "system-map/doctrine-pin/1",
   "$comment": "上流 doctrine の実体を固定する(ADR-031 決定6)。tag は動かせるが commit は動かせないので、CI は commit を取りに行き `git rev-parse HEAD` で照合する。手元の門は、引いた実体の版をここと突き合わせ、食い違えば静かに測らずに申告する。",
   "plugin": "doctrine@forest-project-lab",
-  "version": "0.11.0",
-  "tag": "v0.11.0",
-  "commit": "03fb4bfc8be46e23b42cb94622609b9aa5fcabcd",
+  "version": "0.12.0",
+  "tag": "v0.12.0",
+  "commit": "62f33ad8256270492fdb703927d56e7e0b6b383b",
   "allow_autodetect": true,
-  "recorded_at": "2026-08-09",
-  "recorded_because": "手元の導入実体が 0.10.0、上流が 0.11.0 を出しており、全ての門が 0.10.0 に対して回っていることを誰も申告していなかった(doctrine#212 第2信)。0.11.0 で scripts/map-draft-check.py と skills/system-map-draft/ が入る。",
+  "recorded_at": "2026-08-13",
+  "recorded_because": "0.12.0 で、宣言済みの読み口(dep-graph/1・trace-index/1・docs-audit/1)が **測った木の版を自分で名乗る**ようになった(source_revision / source_dirty / generator。doctrine#294 の P1)。それまで overlay は git を別に叩いて版を記録しており、叩いた瞬間と CLI が読んだ瞬間がずれても誰も気付けなかった。あわせて第一門(map-draft-check)が INC-035 で強化され、0.11.0 では素通りしていた「錨の無い出所」を機械検証不能として数えるようになった —— **同じ模型の機械検証不能が 10 件から 40 件へ増える。減ったのではなく、見えるようになった。**",
   "$comment_autodetect": "allow_autodetect を真にしているのは、npm script(docs:check ほか)が導入済みの実体をそのまま使えるようにするためである。**食い違いを黙らせるためではない** —— 解決した版と commit は毎回 stderr に出す。再現性が要る段(overlay 生成・system-map の CI)は --require-pin を付け、食い違えば止まる。"
 }

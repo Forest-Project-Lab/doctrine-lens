@@ -108,23 +108,39 @@ function traceOf(prefix) {
   const root = repos.get(prefix);
   const docs = docsRoots.get(prefix);
   let result;
-  if (!root) result = { status: "unbound-repo", reason: `接頭 ${prefix} が --repo で束ねられていない`, ranges: [], findings: [] };
-  else if (!docs) result = { status: "unbound-repo", reason: `接頭 ${prefix} の統治木が --docs-root で束ねられていない`, ranges: [], findings: [] };
+  // `self` は道具が名乗る自己記述 —— 測った木の版・汚れ・道具の版(doctrine 0.12.0 / ICD-002・ICD-005)。
+  // **これが在る限り、こちらで git を叩いて版を作らない。** 叩くと、叩いた瞬間と CLI が
+  // 読んだ瞬間がずれ、ずれても誰も気付けない(それが版を足してもらった理由である)。
+  const blank = { revision: undefined, dirty: undefined, generator: null };
+  if (!root) result = { status: "unbound-repo", reason: `接頭 ${prefix} が --repo で束ねられていない`, ranges: [], findings: [], self: blank };
+  else if (!docs) result = { status: "unbound-repo", reason: `接頭 ${prefix} の統治木が --docs-root で束ねられていない`, ranges: [], findings: [], self: blank };
   else {
     try {
       const out = execFileSync(python, [join(pluginRoot, "scripts", "trace-index.py"), "--root", root, "--docs-root", docs, "--format", "json"], RUN);
-      if (!out.trim()) result = { status: "unverifiable", reason: "終了コードは 0 だが返す値が空である", ranges: [], findings: [] };
+      if (!out.trim()) result = { status: "unverifiable", reason: "終了コードは 0 だが返す値が空である", ranges: [], findings: [], self: blank };
       else {
         let t;
-        try { t = JSON.parse(out); } catch (e) { t = null; result = { status: "unverifiable", reason: `返す値が JSON でない — ${out.slice(0, 200)}`, ranges: [], findings: [] }; }
+        try { t = JSON.parse(out); } catch (e) { t = null; result = { status: "unverifiable", reason: `返す値が JSON でない — ${out.slice(0, 200)}`, ranges: [], findings: [], self: blank }; }
         if (t) {
-          if (t.schema !== "trace-index/1") result = { status: "unverifiable", reason: `想定外の schema: ${t.schema}`, ranges: [], findings: [] };
+          if (t.schema !== "trace-index/1") result = { status: "unverifiable", reason: `想定外の schema: ${t.schema}`, ranges: [], findings: [], self: blank };
           // 上流は findings を返している。以前はそれを捨てていた。捨てると
           // 「走査は成功したが所見が在る」を「所見なし」と同じ形で出すことになる。
           // 所見は捨てない。ただし **経路ごとに絞る** —— 木全体の件数を記録へ入れると、
           // overlay 自身の内容が次の走査の所見を増やし、同じ入力から違う物が出る
           // (実測で 7 → 9 に動いた。自分の記録が自分の測定を変えていた)。
-          else result = { status: "measured", reason: null, ranges: t.ranges ?? [], findings: t.findings ?? [] };
+          else {
+            // 版を名乗らない道具(0.12.0 より前)なら undefined のまま置く。
+            // **「名乗らなかった」を「null(分からない)」と混ぜない** —— 前者は道具が古く、
+            // 後者は道具が調べて分からなかった、という別の事実である。
+            result = {
+              status: "measured", reason: null, ranges: t.ranges ?? [], findings: t.findings ?? [],
+              self: {
+                revision: "source_revision" in t ? t.source_revision : undefined,
+                dirty: "source_dirty" in t ? t.source_dirty : undefined,
+                generator: t.generator ?? null,
+              },
+            };
+          }
         }
       }
     } catch (e) {
@@ -134,30 +150,52 @@ function traceOf(prefix) {
         : e?.code === "ENOBUFS"
           ? `返す値が受け皿(${RUN.maxBuffer} バイト)を超えた`
           : `CLI が失敗した — ${brief(e.stderr ?? e.message, 200)}`;
-      result = { status: "unverifiable", reason: why, ranges: [], findings: [] };
+      result = { status: "unverifiable", reason: why, ranges: [], findings: [], self: blank };
     }
   }
   traceCache.set(prefix, result);
   return result;
 }
 
+/**
+ * 束ねた木の汚れ。**道具が名乗った値だけを使う。**
+ *   true/false  道具が見て答えた
+ *   null        道具が言わなかった(古い道具)、または道具が調べて分からなかった
+ * 自分で `git status` を叩かない —— 叩いた瞬間と CLI が読んだ瞬間はずれる。
+ */
+const dirtyOf = (prefix) => traceOf(prefix).self?.dirty ?? null;
+
+/** 道具そのものの版。同じ実体を全ての接頭で使うので、自分の木の分を代表に採る。 */
+const generatorOf = (prefix) => traceOf(prefix).self?.generator ?? null;
+
+/**
+ * 測った木の版。**道具が名乗ればそれを使う。**
+ * 名乗らない道具(0.12.0 より前)のときだけ、こちらで見た値へ落ちる —— そのときは
+ * 「見た瞬間」と「CLI が読んだ瞬間」がずれうる。落ちたことは記録に残らないので、
+ * 固定を上げることでしか閉じられない(だから固定を上げた)。
+ */
+const revisionOf = (prefix) => {
+  const t = traceOf(prefix);
+  return "revision" in (t.self ?? {}) ? (t.self.revision ?? null) : gitOf(prefix).head;
+};
+
 const revCache = new Map();
 function gitOf(prefix) {
   if (revCache.has(prefix)) return revCache.get(prefix);
   const root = repos.get(prefix);
   const run = (args) => { try { return execFileSync("git", args, { cwd: root, encoding: "utf8", timeout: timeoutMs }).trim(); } catch { return null; } };
+  // **版と汚れは、もう自分で作らない**(宣言済みの読み口が名乗る。上の traceOf を見よ)。
+  // ここに残すのは、道具が答えない二つだけである ——
+  //   committed_on  測った rev の commit 日(壁時計を読まないため)
+  //   shallow       浅い複製かどうか(rev_state の照合が history を要るため)
+  // 二つとも「道具が言わないので、こちらで見た」と分かる形で記録する。
   const head = root ? run(["rev-parse", "HEAD"]) : null;
-  // **git でない木は「汚れていない」ではなく「分からない」である。**
-  // 以前は `(null || "") !== ""` が偽になり、由来ゼロの木が清らかな木として
-  // 記録されていた —— 分からないことを、問題が無いことに変換していた。
-  const dirtyRaw = root ? run(["status", "--porcelain"]) : null;
   const shallowRaw = root ? run(["rev-parse", "--is-shallow-repository"]) : null;
   const info = {
     head,
     // 壁時計を読まない。記録する日付は **測った rev についての事実**にする。
     // 解決できなければ日付を合成せず null で言う。
     committed_on: head ? run(["show", "-s", "--format=%cs", head]) : null,
-    dirty: dirtyRaw === null ? null : dirtyRaw !== "",
     shallow: shallowRaw === null ? null : shallowRaw === "true",
   };
   revCache.set(prefix, info);
@@ -179,18 +217,18 @@ for (const model of loadModels("overlay")) {
       continue;
     }
     const t = traceOf(parsed.repo);
-    const g = gitOf(parsed.repo);
+    const observedRev = revisionOf(parsed.repo);
     if (t.status === "unbound-repo" || t.status === "unverifiable") {
       entries.push({
         anchor_id: a.id, status: t.status, repo: parsed.repo, path: parsed.path, raw_target: a.target,
-        reason: t.reason, recorded_rev: a.source_revision ?? null, current_rev: g.head, rev_state: "unknown", ranges_now: [],
+        reason: t.reason, recorded_rev: a.source_revision ?? null, current_rev: observedRev, rev_state: "unknown", ranges_now: [],
       });
       continue;
     }
     const ranges = t.ranges.filter((r) => r.path === parsed.path);
     const findings = (t.findings ?? []).filter((f) => f.path === parsed.path);
     // 記録した rev が履歴に無ければ、進んだとも同じとも言えない。
-    const known = g.head && a.source_revision
+    const known = observedRev && a.source_revision
       ? (() => { try { execFileSync("git", ["cat-file", "-e", `${a.source_revision}^{commit}`], { cwd: repos.get(parsed.repo) }); return true; } catch { return false; } })()
       : false;
     entries.push({
@@ -203,8 +241,8 @@ for (const model of loadModels("overlay")) {
         ? (findings.length ? `この経路について上流の所見 ${findings.length} 件: ${[...new Set(findings.map((f) => f.check ?? f.code))].sort().join(", ")}` : null)
         : "走査は成功したが、この経路に注釈対が無い",
       recorded_rev: a.source_revision ?? null,
-      current_rev: g.head,
-      rev_state: !known ? "unknown" : g.head === a.source_revision ? "same" : "advanced",
+      current_rev: observedRev,
+      rev_state: !known ? "unknown" : observedRev === a.source_revision ? "same" : "advanced",
       ranges_now: ranges.map((r) => ({ id: r.id, begin_line: r.begin_line, end_line: r.end_line, fingerprint: r.fingerprint })),
     });
   }
@@ -216,6 +254,7 @@ for (const model of loadModels("overlay")) {
 
   const selfPrefix = "doctrine-lens";
   const g = gitOf(selfPrefix);
+  const selfDirty = dirtyOf(selfPrefix);
   // **測る対象が一つも無かったことを、測って何も無かったことと同じ形にしない。**
   // 以前は候補 0 件の対象が `measured` + 記録 0 件で出ていた —— どの `.some()` も
   // 空配列では偽なので、何も測っていない走行が最良の状態を名乗っていた。
@@ -223,7 +262,7 @@ for (const model of loadModels("overlay")) {
     ? OVERLAY_EMPTY_STATUS
     : entries.some((e) => ["unverifiable", "unbound-repo", "unparsed"].includes(e.status))
       ? "unverifiable"
-      : entries.some((e) => e.status === "degraded") || g.dirty || g.shallow
+      : entries.some((e) => e.status === "degraded") || selfDirty === true || g.shallow
         ? "degraded"
         : "measured";
   overlays.push({
@@ -239,11 +278,14 @@ for (const model of loadModels("overlay")) {
     source_limits:
       "上流の走査は、印が意味の上で正しい場所に打たれているかを判定しない。改名・移動も追わない。" +
       "ここで言えるのは「この rev で、この経路に、この指紋の範囲が在った」までである。",
-    doctrine: { root_basename: pluginRoot.split(/[\\/]/).filter(Boolean).pop() ?? null },
-    generated_from_rev: g.head,
+    // **道具が自分の名と版を名乗る**(doctrine 0.12.0)。以前は導入先の置き場の名から
+    // 版を推していた —— 置き場の名は改名できるので、版の証拠にならなかった。
+    generator: generatorOf(selfPrefix),
+    generated_from_rev: revisionOf(selfPrefix),
     generated_at: g.committed_on,
     generated_at_source: g.committed_on ? "測った rev の commit 日" : null,
-    worktree: { dirty: g.dirty, shallow: g.shallow },
+    // dirty は道具が名乗った値。shallow は道具が言わないので、こちらで見た値である。
+    worktree: { dirty: selfDirty, shallow: g.shallow },
     entries,
   });
 }
@@ -253,7 +295,7 @@ for (const model of loadModels("overlay")) {
 // 開発中は --allow-dirty と --out-dir で一時の置き場へ出す。
 if (!flag("--check") && !flag("--allow-dirty")) {
   // 「分からない」を汚れと数えない(数えると、git でない木で常に止まる)。
-  const dirtyPrefix = [...repos.keys()].filter((p) => gitOf(p).dirty === true);
+  const dirtyPrefix = [...repos.keys()].filter((p) => dirtyOf(p) === true);
   if (dirtyPrefix.length) {
     die(
       `作業木が汚れている(${dirtyPrefix.join(", ")})。記録する rev と、実際に測った物が食い違う。\n` +
