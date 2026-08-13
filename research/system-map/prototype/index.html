@@ -187,6 +187,8 @@ function overlayHeader() {
     "生成した rev " + esc(shortRev(o.generated_from_rev)) +
     " / 生成した日 " + esc(o.generated_at ?? "—") +
     "(" + esc(o.generated_at_source ?? "日付の出所の記録なし") + ")<br>" +
+    // **どの版の道具が測ったか**も出所である。道具が自分で名乗る(上流 0.12.0)。
+    "測った道具 " + esc(o.generator ? o.generator.name + " " + o.generator.version : "道具が自分の版を名乗らなかった") + "<br>" +
     "この overlay 全体の状態 <b>［" + esc(roll.mark) + "］" + esc(o.status) + "</b>" +
     " / 作業木 " + esc(wt(o.worktree?.dirty, "汚れていた", "清かった")) +
     "・" + esc(wt(o.worktree?.shallow, "浅い複製", "完全な複製")) + "<br>" +

@@ -24,11 +24,14 @@ import { fileURLToPath } from "node:url";
 import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 import { TARGETS } from "../gold-model/spec.mjs";
 
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const repoRoot = join(root, "..", "..");
 const today = todayFrom(process.argv.slice(2));
 const work = mkdtempSync(join(tmpdir(), "system-map-chaos-"));
+/** 固定した上流の版。**直書きしない** —— 固定を上げた日に、試験だけが古い版を守る。 */
+const PINNED_VERSION = JSON.parse(readFileSync(join(root, "doctrine.pin.json"), "utf8")).version;
 
 const cases = [];
 const only = (() => { const i = process.argv.indexOf("--only"); return i >= 0 ? process.argv[i + 1] : null; })();
@@ -109,7 +112,7 @@ await check("固定とずれた実体を掴んだとき、家風の失敗で止�
 });
 
 await check("版が合っても commit を確かめられないことを、確かめられると言わない", async () => {
-  const { configDir } = fakePlugin("0.11.0");
+  const { configDir } = fakePlugin(PINNED_VERSION);
   const bin = join(repoRoot, "tools", "doctrine-path.mjs");
   const env = { ...process.env, CLAUDE_CONFIG_DIR: configDir, SYSTEMMAP_DOCTRINE_PATH: "" };
   const pinned = run(process.execPath, [bin, "--json", "--require-pin"], { env });
