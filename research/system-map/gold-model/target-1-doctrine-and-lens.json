@@ -1,5 +1,5 @@
 {
-  "schema": "system-map/gold-model/0.1",
+  "schema": "system-map/gold-model/0.2",
   "target": "doctrine-and-lens",
   "$comment": "対象1: 文書統治の系(doctrine)と、その帰結を映す拡張機能(doctrine-lens)。全値は起草エージェントの候補(review_status=proposed)であり、所有者の確認まで正本ではない。出所の checked_at は実際に確認した日。",
   "elements": [

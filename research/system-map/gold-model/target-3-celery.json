@@ -1,5 +1,5 @@
 {
-  "schema": "system-map/gold-model/0.1",
+  "schema": "system-map/gold-model/0.2",
   "target": "celery",
   "$comment": "対象3: イベント駆動系(Celery)。出所は公開文書のみ(issue 204 の G-8 報告2件で取得済みの引用)。当方は Celery を運用しておらず、全契約は文書の主張の写し(claimed)か、文書の沈黙の記録(unknown)である。planned/failed/stale は自然に発生しなかった — これは Phase 0 の所見として decisions/ に記録する。全値 proposed。",
   "elements": [

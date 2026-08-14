@@ -1,5 +1,5 @@
 {
-  "schema": "system-map/gold-model/0.1",
+  "schema": "system-map/gold-model/0.2",
   "target": "lens-shipping",
   "$comment": "対象2: Lens の出荷プロセス(人+運用+外部システム)。手動の公開経路と、実際に起きた stale .vsix 事故を含む。全値 proposed。",
   "elements": [
