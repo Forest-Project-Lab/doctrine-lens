@@ -1,5 +1,5 @@
 {
-  "schema": "system-map/gold-model/0.1",
+  "schema": "system-map/gold-model/0.2",
   "target": "fixture-rare-states(架空)",
   "$comment": "この対象は【架空】である。H 層 T6(希少状態 planned/failed/stale の読み分け)専用の練習例。実在の三対象に希少状態を捏造して混ぜないための分離(所有者指示 2026-08-04 項6)。全ての出所・証拠も架空であり、その旨を各所に明記する。unknown は実在対象に実例があるため、この fixture には置かない(架空の負の出所を作らないため)。",
   "elements": [
