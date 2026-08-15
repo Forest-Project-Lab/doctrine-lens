@@ -576,205 +576,239 @@
       "id": "model:id-unique",
       "invariant": "M-01",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:parent-acyclic",
       "invariant": "M-02",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:flow-endpoints",
       "invariant": "M-03",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:child-crossing-aggregated",
       "invariant": "M-04",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:contract-shape",
       "invariant": "M-05",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:verified-has-evidence",
       "invariant": "M-06",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:review-status-present",
       "invariant": "M-07a",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:no-proposed-in-canonical",
       "invariant": "M-07b",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:no-doc-edge-flows",
       "invariant": "M-08",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:flow-labelled",
       "invariant": "M-09",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:single-freshness-authority",
       "invariant": "M-10",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:unknown-has-negative-source",
       "invariant": "M-11",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:no-ghost-in-scenarios",
       "invariant": "M-12",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:na-has-reason",
       "invariant": "M-15",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:evidence-fingerprinted",
       "invariant": "M-16",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:anchor-target-grammar",
       "invariant": "M-17",
       "gate": "model",
-      "module": "gold-model/check-model.mjs"
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     },
     {
       "id": "model:schema-shape",
       "invariant": "M-18",
       "gate": "model",
-      "module": "gold-model/validate-schema.mjs"
+      "module": "gold-model/validate-schema.mjs",
+      "judges": "model"
     },
     {
       "id": "build:no-runtime-fetch",
       "invariant": "M-13",
       "gate": "build",
-      "module": "prototype/gates.mjs"
+      "module": "prototype/gates.mjs",
+      "judges": "artifact"
     },
     {
       "id": "build:reachability",
       "invariant": "M-14",
       "gate": "build",
-      "module": "prototype/gates.mjs"
+      "module": "prototype/gates.mjs",
+      "judges": "model"
     },
     {
       "id": "browser:no-external-request",
       "invariant": "M-13",
       "gate": "browser-m13",
-      "module": "prototype/test-m13-browser.mjs"
+      "module": "prototype/test-m13-browser.mjs",
+      "judges": "artifact"
     },
     {
       "id": "browser:ops-count",
       "invariant": "M-14",
       "gate": "browser-m14",
-      "module": "prototype/test-m14-browser.mjs"
+      "module": "prototype/test-m14-browser.mjs",
+      "judges": "artifact"
     },
     {
       "id": "browser:label-no-overlap",
       "invariant": "M-L1",
       "gate": "browser-labels",
-      "module": "prototype/test-labels-browser.mjs"
+      "module": "prototype/test-labels-browser.mjs",
+      "judges": "artifact"
     },
     {
       "id": "meta:single-source",
       "invariant": "M-S1",
       "gate": "single-source",
-      "module": "prototype/test-single-source.mjs"
+      "module": "prototype/test-single-source.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:gate-fires",
       "invariant": "M-N1",
       "gate": "unit",
-      "module": "prototype/test-gates.mjs"
+      "module": "prototype/test-gates.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:registry-consistent",
       "invariant": "M-R1",
       "gate": "registry",
-      "module": "prototype/test-registry.mjs"
+      "module": "prototype/test-registry.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:negatives-fire",
       "invariant": "M-N2",
       "gate": "negatives",
-      "module": "prototype/test-negatives.mjs"
+      "module": "prototype/test-negatives.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:rules-load-bearing",
       "invariant": "M-N3",
       "gate": "mutation",
-      "module": "prototype/test-mutation.mjs"
+      "module": "prototype/test-mutation.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:targets-wired",
       "invariant": "M-W1",
       "gate": "targets-wired",
-      "module": "prototype/test-targets-wired.mjs"
+      "module": "prototype/test-targets-wired.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:overlay-indexing",
       "invariant": "M-W2",
       "gate": "targets-wired",
-      "module": "prototype/test-targets-wired.mjs"
+      "module": "prototype/test-targets-wired.mjs",
+      "judges": "gate"
     },
     {
       "id": "build:display-vocabulary",
       "invariant": "M-19",
       "gate": "display-static",
-      "module": "prototype/test-display-static.mjs"
+      "module": "prototype/test-display-static.mjs",
+      "judges": "artifact"
     },
     {
       "id": "browser:display-total",
       "invariant": "M-19",
       "gate": "browser-display",
-      "module": "prototype/test-display-browser.mjs"
+      "module": "prototype/test-display-browser.mjs",
+      "judges": "artifact"
     },
     {
       "id": "browser:distinction-in-words",
       "invariant": "M-20",
       "gate": "browser-display",
-      "module": "prototype/test-display-browser.mjs"
+      "module": "prototype/test-display-browser.mjs",
+      "judges": "artifact"
     },
     {
       "id": "meta:chaos-tolerated",
       "invariant": "M-C1",
       "gate": "chaos",
-      "module": "prototype/test-chaos.mjs"
+      "module": "prototype/test-chaos.mjs",
+      "judges": "gate"
     },
     {
       "id": "meta:requirements-complete",
       "invariant": "M-Q1",
       "gate": "registry",
-      "module": "prototype/test-registry.mjs"
+      "module": "prototype/test-registry.mjs",
+      "judges": "gate"
     }
   ],
   "acknowledgements": [
@@ -1077,5 +1111,6 @@
         "test-display-browser.mjs"
       ]
     }
-  ]
+  ],
+  "$comment_judges": "checkers[].judges — その検査器が何を判ずるか。model=模型だけを入力にして判ずる(起草者へ差し出す要件になる)/artifact=生成物や実ブラウザの振る舞いを判ずる/gate=門そのものを見る。起草者へ差し出す要件の一覧はこの欄で絞る(validate.mjs --requirements)。"
 }

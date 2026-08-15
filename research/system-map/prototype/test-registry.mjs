@@ -168,6 +168,17 @@ rt("どの検査器も黙って消えない(要件か、理由つきの除外か
     if (!all.includes(id)) rv("requirements.unknown_checker", `一覧が登録されていない検査器 ${id} を挙げている`);
   }
   for (const r of REQ.not_covered ?? []) if (!r.why) rv("requirements.no_reason", `除外した ${r.checker} に理由が無い`);
+  // **除外の側へ回すことで消せてしまう穴を塞ぐ。**
+  // 変異の表が実測で見つけた —— 要件から落とした検査器は「消える」のではなく
+  // 「理由つきの除外」になり、理由が在るので前の検めを素通りしていた。
+  const judges = new Map(checkers.map((c) => [c.id, c.judges]));
+  for (const r of REQ.not_covered ?? []) {
+    if (judges.get(r.checker) === "model") rv("requirements.model_excluded", `模型を判ずる検査器 ${r.checker} を除外の側へ回している`);
+    if (r.judges !== judges.get(r.checker)) rv("requirements.judges_mismatch", `${r.checker} の分類が登録と違う: ${r.judges} ≠ ${judges.get(r.checker)}`);
+  }
+  for (const id of [...judges.keys()]) {
+    if (judges.get(id) === "model" && !listed.has(id)) rv("requirements.model_missing", `模型を判ずる検査器 ${id} が要件に現れない`);
+  }
 });
 
 rt("要件が名指す不変条件が、登録と一致する", () => {
