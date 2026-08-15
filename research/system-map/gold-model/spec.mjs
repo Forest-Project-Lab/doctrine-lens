@@ -152,6 +152,16 @@ if (!TARGET_KINDS.includes(OVERLAY_CANDIDATE.target_kind)) {
   if (!DISPLAY.unknown_token?.mark) die("policy.display.unknown_token が無い(未知の語の落とし所が無い)");
 }
 
+// ---- 検査器が「何を判ずるか」の分類(読み込みの時点で止める) ----
+// 分類が無いと、起草者へ差し出す要件の一覧(validate.mjs --requirements)から
+// **黙って漏れる**。新しい検査器を足したその場で止める。
+export const JUDGES = Object.freeze(["model", "artifact", "gate"]);
+for (const c of REGISTRY.checkers ?? []) {
+  if (!JUDGES.includes(c.judges)) {
+    die(`checkers[${c.id}].judges が ${JUDGES.join("/")} のいずれでもない: ${c.judges}(何を判ずるかを分類すること)`);
+  }
+}
+
 // ---- 対象(registry.json が並びを持ち、id は模型自身が持つ) ----
 const rawTargets = REGISTRY.targets;
 if (!Array.isArray(rawTargets) || rawTargets.length === 0) die("registry.json に targets が無い");

@@ -116,6 +116,15 @@ const MUTATIONS = [
     expect: "落ちる",
   },
   {
+    label: "要件の一覧から一つ落とす(起草者へ差し出す物を黙って減らす)",
+    file: "gold-model/validate.mjs",
+    from: '    if (c.judges === "model") {',
+    to: '    if (c.judges === "model" && c.id !== "model:id-unique") {',
+    // 落とすと、その検査器が要件にも除外にも現れず M-Q1 が鳴る。
+    run: ["prototype/test-registry.mjs"],
+    expect: "落ちる",
+  },
+  {
     label: "伝送不成立の扱いを潰す(開けなかったことを「別の場所へ開いた」と数える)",
     file: "prototype/test-m14-browser.mjs",
     // 伝送そのものが成立しなかったのか、別の場所へ開いたのかを分けているのがここ。

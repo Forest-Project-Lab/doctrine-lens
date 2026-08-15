@@ -9,7 +9,9 @@
 // どこにも実装が無いまま、validate.mjs が「プロトタイプ側で検める」と印字していた。
 //
 // ここが検めるのは対応そのものであり、判定の中身ではない。中身は各門が見る。
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { REGISTRY, TARGETS } from "../gold-model/spec.mjs";
@@ -118,18 +120,114 @@ t("了解の記録が実在する不変条件と対象を指す", () => {
   }
 });
 
+// ---- 起草者へ差し出す要件の一覧(M-Q1) ----
+// なぜ要るか: 当方の器は「形(schema.json)」と「不変条件」の二層で、後者は schema に
+// 書けない。上流の起草者はそれを知る術が無く、散文の手引きを写すしかなかった ——
+// **写しは割れる**(実測: 上流の必須欄が当方の器と食い違い、M-18 と M-14 の両方で落ちた)。
+// 要件を機械可読で差し出し、写しでなく参照にする。
+//
+// ここが検めるのは **一覧が過不足なく覆っているか**である。中身の正しさは各門が見る。
+const reqViolations = [];
+let reqChecked = 0;
+const rt = (name, fn) => {
+  reqChecked++;
+  const before = reqViolations.length;
+  try { fn(); } catch (e) { reqViolations.push({ code: "requirements.threw", message: `${name}: 検めが例外で止まった — ${String(e.message).replace(/\s+/g, " ").slice(0, 200)}` }); }
+  console.log((reqViolations.length === before ? "ok   " : "NG   ") + name);
+};
+const rv = (code, message) => reqViolations.push({ code, message });
+
+let REQ = null;
+rt("要件の一覧を機械可読で差し出す口が在る", () => {
+  const out = execFileSync(process.execPath, [join(here, "..", "gold-model", "validate.mjs"), "--requirements", "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  REQ = JSON.parse(out);
+  if (REQ.schema !== "system-map/requirements/1") rv("requirements.schema", `要件の一覧の schema が想定外: ${REQ.schema}`);
+});
+
+rt("差し出す器の指紋が、実物と一致する", () => {
+  if (!REQ) return rv("requirements.absent", "一覧を取れていないので検められない");
+  const path = join(here, "..", "gold-model", "schema.json");
+  const body = readFileSync(path);
+  const sha = createHash("sha256").update(body).digest("hex");
+  const schema = JSON.parse(body.toString("utf8"));
+  if (REQ.container?.id !== schema.$id) rv("requirements.container_id", `器の名が食い違う: ${REQ.container?.id} ≠ ${schema.$id}`);
+  if (REQ.container?.sha256 !== sha) rv("requirements.container_sha", "器の指紋が食い違う(一覧が古い器を指している)");
+});
+
+rt("どの検査器も黙って消えない(要件か、理由つきの除外か)", () => {
+  if (!REQ) return rv("requirements.absent", "一覧を取れていないので検められない");
+  const listed = new Set((REQ.requirements ?? []).map((r) => r.checker));
+  const excluded = new Set((REQ.not_covered ?? []).map((r) => r.checker));
+  const all = checkers.map((c) => c.id);
+  for (const id of all) {
+    const inReq = listed.has(id), inEx = excluded.has(id);
+    if (!inReq && !inEx) rv("requirements.dropped", `検査器 ${id} が要件にも除外にも現れない(黙って消えている)`);
+    if (inReq && inEx) rv("requirements.both", `検査器 ${id} が要件と除外の両方に在る`);
+  }
+  for (const id of [...listed, ...excluded]) {
+    if (!all.includes(id)) rv("requirements.unknown_checker", `一覧が登録されていない検査器 ${id} を挙げている`);
+  }
+  for (const r of REQ.not_covered ?? []) if (!r.why) rv("requirements.no_reason", `除外した ${r.checker} に理由が無い`);
+  // **除外の側へ回すことで消せてしまう穴を塞ぐ。**
+  // 変異の表が実測で見つけた —— 要件から落とした検査器は「消える」のではなく
+  // 「理由つきの除外」になり、理由が在るので前の検めを素通りしていた。
+  const judges = new Map(checkers.map((c) => [c.id, c.judges]));
+  for (const r of REQ.not_covered ?? []) {
+    if (judges.get(r.checker) === "model") rv("requirements.model_excluded", `模型を判ずる検査器 ${r.checker} を除外の側へ回している`);
+    if (r.judges !== judges.get(r.checker)) rv("requirements.judges_mismatch", `${r.checker} の分類が登録と違う: ${r.judges} ≠ ${judges.get(r.checker)}`);
+  }
+  for (const id of [...judges.keys()]) {
+    if (judges.get(id) === "model" && !listed.has(id)) rv("requirements.model_missing", `模型を判ずる検査器 ${id} が要件に現れない`);
+  }
+});
+
+rt("要件が名指す不変条件が、登録と一致する", () => {
+  if (!REQ) return rv("requirements.absent", "一覧を取れていないので検められない");
+  const byId = new Map(checkers.map((c) => [c.id, c]));
+  const stmt = new Map(invariants.map((i) => [i.id, i.statement]));
+  for (const r of REQ.requirements ?? []) {
+    const c = byId.get(r.checker);
+    if (c && r.invariant !== c.invariant) rv("requirements.invariant_mismatch", `${r.checker} の不変条件が登録と違う: ${r.invariant} ≠ ${c.invariant}`);
+    if (r.statement !== stmt.get(r.invariant)) rv("requirements.statement_copy", `${r.checker} の文言が登録の写しになっている(登録から導くこと)`);
+  }
+});
+
+rt("負例で裏づけた要件が、実在する負例を指す", () => {
+  if (!REQ) return rv("requirements.absent", "一覧を取れていないので検められない");
+  const neg = JSON.parse(readFileSync(join(here, "..", "gold-model", "negatives.json"), "utf8")).cases ?? [];
+  const byCase = new Map(neg.map((n) => [n.id, n]));
+  for (const r of REQ.requirements ?? []) {
+    for (const p of r.proven_by ?? []) {
+      const n = byCase.get(p.id);
+      if (!n) { rv("requirements.no_such_negative", `${r.checker} が実在しない負例 ${p.id} を指す`); continue; }
+      if (n.expect?.checker !== r.checker) rv("requirements.negative_mismatch", `負例 ${p.id} が別の検査器(${n.expect?.checker})を試している`);
+    }
+    // **裏づけの無い要件は、無いと言う。** 黙って「証明済み」に混ぜない。
+    const proven = (r.proven_by ?? []).length > 0;
+    if (r.proven !== proven) rv("requirements.proven_flag", `${r.checker} の proven が実体と違う`);
+  }
+});
+
+// **両方を数える。** 片方だけ見て「全件通過」と刷ると、要約の行が嘘をつく。
+const allFindings = [...violations, ...reqViolations];
 console.log(
-  violations.length === 0
-    ? `\n全件通過(不変条件 ${invariants.length} 件・検査器 ${checkers.length} 件・段 ${gates.length} 件・了解 ${ACKNOWLEDGEMENTS.length} 件)`
-    : `\n${violations.length} 件の所見`,
+  allFindings.length === 0
+    ? `\n全件通過(不変条件 ${invariants.length} 件・検査器 ${checkers.length} 件・段 ${gates.length} 件・了解 ${ACKNOWLEDGEMENTS.length} 件・要件の一覧 ${reqChecked} 検査)`
+    : `\n${allFindings.length} 件の所見`,
 );
-for (const x of violations) console.log(`  - ${x.message}`);
+for (const x of allFindings) console.log(`  - ${x.message}`);
 
 const today = todayFrom(process.argv.slice(2));
-const records = [verdict({
-  invariant: "M-R1", checker: "meta:registry-consistent", target: "gold-model/registry.json",
-  examined: checked, examined_unit: "対応の検査", violations,
-})];
+const records = [
+  verdict({
+    invariant: "M-R1", checker: "meta:registry-consistent", target: "gold-model/registry.json",
+    examined: checked, examined_unit: "対応の検査", violations,
+  }),
+  verdict({
+    invariant: "M-Q1", checker: "meta:requirements-complete", target: "gold-model/registry.json",
+    examined: reqChecked, examined_unit: "要件の一覧の検査", violations: reqViolations,
+  }),
+];
 const reportPath = reportPathFrom(process.argv.slice(2));
 if (reportPath) writeReport(reportPath, "registry", records);
 process.exit(gateExitCode(records, today.date));
