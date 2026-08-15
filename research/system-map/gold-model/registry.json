@@ -561,6 +561,14 @@
       "checkers": [
         "meta:chaos-tolerated"
       ]
+    },
+    {
+      "id": "M-Q1",
+      "statement": "起草者へ差し出す要件の一覧が、模型を判ずる検査器を過不足なく覆い、器の指紋と一致する",
+      "source": "doctrine#294 第2信 §3-3(当方の提案)・上流 ADR-165 決定6",
+      "checkers": [
+        "meta:requirements-complete"
+      ]
     }
   ],
   "checkers": [
@@ -761,6 +769,12 @@
       "invariant": "M-C1",
       "gate": "chaos",
       "module": "prototype/test-chaos.mjs"
+    },
+    {
+      "id": "meta:requirements-complete",
+      "invariant": "M-Q1",
+      "gate": "registry",
+      "module": "prototype/test-registry.mjs"
     }
   ],
   "acknowledgements": [
