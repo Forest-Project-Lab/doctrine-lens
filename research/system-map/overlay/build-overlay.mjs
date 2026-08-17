@@ -28,6 +28,7 @@ import { parseAnchorTarget } from "../lib/anchor-target.mjs";
 import { overlayCandidates } from "../lib/overlay-candidates.mjs";
 import { stringifyStable } from "../lib/stable-json.mjs";
 import { writeAtomic, sweepStale } from "../lib/atomic-write.mjs";
+import { revState } from "../lib/rev-state.mjs";
 import { slugOf, assertUniqueSlugs } from "../lib/target-slug.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -227,10 +228,6 @@ for (const model of loadModels("overlay")) {
     }
     const ranges = t.ranges.filter((r) => r.path === parsed.path);
     const findings = (t.findings ?? []).filter((f) => f.path === parsed.path);
-    // 記録した rev が履歴に無ければ、進んだとも同じとも言えない。
-    const known = observedRev && a.source_revision
-      ? (() => { try { execFileSync("git", ["cat-file", "-e", `${a.source_revision}^{commit}`], { cwd: repos.get(parsed.repo) }); return true; } catch { return false; } })()
-      : false;
     entries.push({
       anchor_id: a.id,
       status: ranges.length ? (findings.length ? "degraded" : "measured") : "no-ranges",
@@ -242,7 +239,12 @@ for (const model of loadModels("overlay")) {
         : "走査は成功したが、この経路に注釈対が無い",
       recorded_rev: a.source_revision ?? null,
       current_rev: observedRev,
-      rev_state: !known ? "unknown" : observedRev === a.source_revision ? "same" : "advanced",
+      // **規則は書かない。宣言から導いた一箇所を呼ぶ**(`lib/rev-state.mjs`。上流 ICD-002)。
+      rev_state: revState({
+        recordedRev: a.source_revision ?? null,
+        currentRev: observedRev,
+        currentDirty: dirtyOf(parsed.repo),
+      }),
       ranges_now: ranges.map((r) => ({ id: r.id, begin_line: r.begin_line, end_line: r.end_line, fingerprint: r.fingerprint })),
     });
   }

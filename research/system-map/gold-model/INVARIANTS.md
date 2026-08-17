@@ -53,6 +53,7 @@
 | M-20 | 区別を色や線だけに載せない(境界の内外・候補と確認済・架空の対象・門が認めなかった実現先を語で言う) | `browser:distinction-in-words` | PR6・所有者指示 2026-08-04 §4 |
 | M-C1 | 壊れた環境・落ちた道具・競合する走行のもとで、道具は黙って誤らない —— 必ず判定を出すか、明示の非合格で止まる | `meta:chaos-tolerated` | 所有者のカオス一覧・PR7 |
 | M-Q1 | 起草者へ差し出す要件の一覧が、模型を判ずる検査器を過不足なく覆い、器の指紋と一致する | `meta:requirements-complete` | doctrine#294 第2信 §3-3・上流 ADR-165 決定6 |
+| M-F1 | 鮮度の三値は上流の宣言(ICD-002・ADR-172 決定3)から導き、こちらで再定義しない。不明を同一に丸めない | `overlay:rev-state-declared` | 上流 `doctrine_docs/graph/ICD.md`・doctrine#294 第13信 §6 |
 | M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |
 | M-R1 | 不変条件と検査器が一対一で対応する | `meta:registry-consistent` | ADR-031 決定8 |
 | M-N2 | 負例の表の各行で、名指した検査器が名指した判定と符丁を出す | `meta:negatives-fire` | ADR-031 決定8・ADR-017 |

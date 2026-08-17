@@ -50,6 +50,18 @@ const RULES = [
     re: /overlay-[\w-]+\.json/g,
   },
   {
+    id: "鮮度の規則の再定義",
+    why: "上流 ICD-002 が『読み手はこの規則を再定義しない』と宣言している。規則が二箇所に在ると片方だけ直る —— 現に、汚れた木を『同一(照合済)』と断言していた",
+    re: /rev_state\s*:\s*(?!revState\b)[^,\n]*[?=]/g,
+    allow: (rel) => rel === "lib/rev-state.mjs",
+  },
+  {
+    id: "完全 SHA の綴り",
+    why: "同上。鮮度の判定に使う『完全 SHA か』の判定が散ると、片方だけが短縮形を通す",
+    re: /\[0-9a-f\]\{40\}/g,
+    allow: (rel) => rel === "lib/rev-state.mjs",
+  },
+  {
     id: "実現先として認める種別",
     why: "validate 側と build 側で食い違ったまま気付けない(上流 #212 ギャップ7 の形)",
     re: /\[\s*"code_range"\s*,\s*"test"\s*\]/g,

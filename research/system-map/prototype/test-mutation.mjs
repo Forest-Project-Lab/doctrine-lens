@@ -31,6 +31,16 @@ const src = join(here, "..");
 /** 潰す先と、潰したときに**落ちなくなるはずの**確かめ。 */
 const MUTATIONS = [
   {
+    // 出荷していた欠陥そのものを復元する潰し —— 汚れた木でも「同一(照合済)」と
+    // 断言していた。宣言(上流 ICD-002)から導いた表が鳴らなければ、規則は飾りである。
+    label: "鮮度の規則から汚れの条件を落とす(汚れた木を「同一」と断言させる)",
+    file: "lib/rev-state.mjs",
+    from: "  if (currentDirty !== false) return \"unknown\";",
+    to: "  if (false) return \"unknown\";",
+    run: ["overlay/test-rev-state.mjs"],
+    expect: "落ちる",
+  },
+  {
     label: "空判定の規則を潰す(見た件数 0 でも合格を名乗れるようにする)",
     file: "gold-model/report.mjs",
     from: "  if (examined === 0) {",

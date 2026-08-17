@@ -33,6 +33,20 @@ const tokensOf = (text, prop) => {
   return out;
 };
 
+/**
+ * 規則を関数へ括り出した綴りから語を採る —— `return "…"` の右側だけ。
+ *
+ * 鮮度の三値は `rev_state:` の右側に直書きされなくなった(上流 ICD-002 が
+ * 「読み手はこの規則を再定義しない」と宣言したので、`lib/rev-state.mjs` の一箇所へ寄せた)。
+ * 走査元を移し忘れたとき、この段は **ERROR で止まった** —— 語が 1 件しか採れず、
+ * 下限 3 に満たなかったからである。合っていた回に化けなかった。
+ */
+const returnsOf = (text) => {
+  const out = new Set();
+  for (const m of text.matchAll(/\breturn\s+"([a-z][a-z0-9_-]{2,})"/g)) out.add(m[1]);
+  return out;
+};
+
 const marks = (table) => Object.entries(table ?? {}).filter(([k]) => !k.startsWith("$"));
 const keys = (table) => marks(table).map(([k]) => k);
 
@@ -66,7 +80,14 @@ const overlaySrc = src("overlay/build-overlay.mjs");
 const gatesSrc = src("prototype/gates.mjs");
 
 compare("overlay のアンカー状態が表と一致する", tokensOf(overlaySrc, "status"), DISPLAY.overlay_status_entry, 6);
-compare("rev_state が表と一致する", tokensOf(overlaySrc, "rev_state"), DISPLAY.rev_state, 3);
+// 鮮度の三値は規則の正本(`lib/rev-state.mjs`)が返す語である。生成器が直書きする
+// `rev_state:` の右側(測れなかった枝の `unknown`)も足して、**両方の出所を合わせて**突き合わせる。
+compare(
+  "rev_state が表と一致する",
+  new Set([...returnsOf(src("lib/rev-state.mjs")), ...tokensOf(overlaySrc, "rev_state")]),
+  DISPLAY.rev_state,
+  3,
+);
 compare("到達の状態が表と一致する", tokensOf(gatesSrc, "status"), DISPLAY.reachability_status, 4);
 
 // 「実測」と名乗れる状態はちょうど二つである(spec.mjs が読み込みで検めるが、
