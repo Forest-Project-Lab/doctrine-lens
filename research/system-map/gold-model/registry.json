@@ -183,15 +183,15 @@
       "rev_state": {
         "same": {
           "mark": "記録時 rev と同一(照合済)",
-          "sentence": "記録した rev が履歴に在り、いまの rev と同じである"
+          "sentence": "記録時といまの rev が共に完全 SHA で等しく、いまの木に未コミットの変更が無い"
         },
-        "advanced": {
-          "mark": "記録時 rev から前進",
-          "sentence": "記録した rev は履歴に在るが、いまの rev はその先にある(記録時の内容とは限らない)"
+        "differs": {
+          "mark": "記録時 rev と相違",
+          "sentence": "記録時といまの rev が共に完全 SHA で異なる。どちらが先かは測っていない"
         },
         "unknown": {
-          "mark": "記録時 rev が履歴に無い",
-          "sentence": "同一とも前進とも言えない。この範囲について鮮度は判定していない"
+          "mark": "鮮度は判定していない",
+          "sentence": "どちらかの rev が完全 SHA でないか、いまの木の汚れが真か解決できない。同一とも相違とも言えない"
         }
       },
       "element_kind": {
@@ -569,6 +569,14 @@
       "checkers": [
         "meta:requirements-complete"
       ]
+    },
+    {
+      "id": "M-F1",
+      "statement": "鮮度の三値は上流の宣言(ICD-002・ADR-172 決定3)から導き、こちらで再定義しない。不明を同一に丸めない",
+      "source": "上流 doctrine_docs/graph/ICD.md「測った木の版と作り手」・#294 第13信 §6",
+      "checkers": [
+        "overlay:rev-state-declared"
+      ]
     }
   ],
   "checkers": [
@@ -808,6 +816,13 @@
       "invariant": "M-Q1",
       "gate": "registry",
       "module": "prototype/test-registry.mjs",
+      "judges": "gate"
+    },
+    {
+      "id": "overlay:rev-state-declared",
+      "invariant": "M-F1",
+      "gate": "overlay",
+      "module": "overlay/test-rev-state.mjs",
       "judges": "gate"
     }
   ],
@@ -1064,6 +1079,15 @@
       "cmd": [
         "node",
         "test-chaos.mjs"
+      ]
+    },
+    {
+      "id": "overlay",
+      "label": "鮮度の規則が上流の宣言と一致する",
+      "cwd": "overlay",
+      "cmd": [
+        "node",
+        "test-rev-state.mjs"
       ]
     },
     {

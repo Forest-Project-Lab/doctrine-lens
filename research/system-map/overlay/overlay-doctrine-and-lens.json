@@ -2,7 +2,7 @@
   "entries": [
     {
       "anchor_id": "a-consequence-code",
-      "current_rev": "02883f001f02198a0e7b3b9d6d2c2318485a1e48",
+      "current_rev": "7054f3fa569044d36da7f110bb52f75bd3402b16",
       "path": "src/model/consequence.ts",
       "ranges_now": [
         {
@@ -16,12 +16,12 @@
       "reason": null,
       "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "repo": "doctrine-lens",
-      "rev_state": "advanced",
+      "rev_state": "differs",
       "status": "measured"
     },
     {
       "anchor_id": "a-bridge-code",
-      "current_rev": "02883f001f02198a0e7b3b9d6d2c2318485a1e48",
+      "current_rev": "7054f3fa569044d36da7f110bb52f75bd3402b16",
       "path": "src/doctrine/trace.ts",
       "ranges_now": [
         {
@@ -35,12 +35,12 @@
       "reason": null,
       "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "repo": "doctrine-lens",
-      "rev_state": "advanced",
+      "rev_state": "differs",
       "status": "measured"
     },
     {
       "anchor_id": "a-view-code",
-      "current_rev": "02883f001f02198a0e7b3b9d6d2c2318485a1e48",
+      "current_rev": "7054f3fa569044d36da7f110bb52f75bd3402b16",
       "path": "src/model/view.ts",
       "ranges_now": [
         {
@@ -54,16 +54,16 @@
       "reason": null,
       "recorded_rev": "30b060f4aa75c4ba2bc8b303bc71090dd6bf7e49",
       "repo": "doctrine-lens",
-      "rev_state": "advanced",
+      "rev_state": "differs",
       "status": "measured"
     }
   ],
-  "generated_at": "2026-08-14",
+  "generated_at": "2026-08-17",
   "generated_at_source": "測った rev の commit 日",
-  "generated_from_rev": "02883f001f02198a0e7b3b9d6d2c2318485a1e48",
+  "generated_from_rev": "7054f3fa569044d36da7f110bb52f75bd3402b16",
   "generator": {
     "name": "trace-index.py",
-    "version": "0.13.0"
+    "version": "0.14.0"
   },
   "schema": "system-map/overlay/0.1",
   "source": "上流 ICD 002 trace-index-api(trace-index/1)を build 時に実行した返す値",

@@ -1,0 +1,15 @@
+出荷していた規則を、上流の宣言(ICD.md:62 / ADR-172 決定3)の表に掛ける
+
+  OK  共に完全SHA・等しい・汚れ false                         期待 same     実際 same
+  NG  等しいが、いまの木が汚れている                              期待 unknown  実際 same
+  NG  等しいが、汚れが解決できない                               期待 unknown  実際 same
+  NG  共に完全SHA・異なる                                  期待 differs  実際 advanced
+  NG  異なる。汚れは既に在る差を消さない                            期待 differs  実際 advanced
+  OK  記録時が null                                    期待 unknown  実際 unknown
+  OK  いまが null                                     期待 unknown  実際 unknown
+  OK  両方 null                                      期待 unknown  実際 unknown
+  NG  記録時が短縮形                                      期待 unknown  実際 advanced
+  NG  いまが記号名                                       期待 unknown  実際 advanced
+  NG  記録時が完全SHAでない(実データに在る形)                       期待 unknown  実際 advanced
+
+7 件が宣言と食い違う / 全 11 件
