@@ -22,7 +22,7 @@
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.unmarked_files",
       "section": "1 測れていないもの",
-      "value": 150
+      "value": 125
     },
     {
       "derived": true,
@@ -112,7 +112,7 @@
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.unmarked_files",
       "section": "3 走査が届いた範囲",
-      "value": 150
+      "value": 125
     },
     {
       "derived": false,
@@ -124,25 +124,25 @@
       "derived": true,
       "from": "docs-audit/1 の trace_coverage.excluded の値の和",
       "section": "3 走査が届いた範囲",
-      "value": 61
+      "value": 68
     },
     {
       "derived": true,
       "from": "上の四つの和",
       "section": "3 走査が届いた範囲",
-      "value": 246
+      "value": 228
     },
     {
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.reached_files",
       "section": "3 走査が届いた範囲",
-      "value": 246
+      "value": 228
     },
     {
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.excluded.binary",
       "section": "3 走査が届いた範囲",
-      "value": 21
+      "value": 28
     },
     {
       "derived": false,
@@ -694,7 +694,7 @@
       "derived": false,
       "from": "docs-audit/1 の totals.advisory",
       "section": "6 所見",
-      "value": 59
+      "value": 98
     },
     {
       "derived": false,
@@ -712,7 +712,7 @@
       "derived": false,
       "from": "docs-audit/1 の counts_by_check.trace_marker_suspect",
       "section": "6 所見",
-      "value": 30
+      "value": 69
     },
     {
       "derived": false,
@@ -730,25 +730,25 @@
       "derived": true,
       "from": "counts_by_check の値の和",
       "section": "6 所見",
-      "value": 60
+      "value": 99
     },
     {
       "derived": false,
       "from": "docs-audit/1 の findings[] の長さ",
       "section": "6 所見",
-      "value": 60
+      "value": 99
     },
     {
       "derived": true,
       "from": "trace-index/1 の findings[] のうち code === \"trace_marker_suspect\" の件数",
       "section": "6 所見",
-      "value": 30
+      "value": 69
     },
     {
       "derived": true,
       "from": "trace-index/1 の findings[] のうち path が research/system-map/ で始まる件数",
       "section": "6 所見",
-      "value": 30
+      "value": 69
     },
     {
       "derived": false,
@@ -790,7 +790,7 @@
       "derived": false,
       "from": "trace-index/1 の findings[] の長さ",
       "section": "8 口の点呼",
-      "value": 30
+      "value": 69
     },
     {
       "derived": false,
@@ -808,7 +808,7 @@
       "derived": false,
       "from": "docs-audit/1 の findings[] の長さ",
       "section": "8 口の点呼",
-      "value": 60
+      "value": 99
     },
     {
       "derived": false,
@@ -832,13 +832,13 @@
       "derived": true,
       "from": "trace-index/1 の返り値の行数 − 載せた 40 行",
       "section": "9 生の返り値",
-      "value": 377
+      "value": 611
     },
     {
       "derived": true,
       "from": "docs-audit/1 の返り値の行数 − 載せた 40 行",
       "section": "9 生の返り値",
-      "value": 700
+      "value": 1012
     },
     {
       "derived": false,
@@ -848,5 +848,5 @@
     }
   ],
   "schema": "system-map/number-ledger/1",
-  "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc"
+  "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3"
 }

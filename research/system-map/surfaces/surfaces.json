@@ -8,7 +8,7 @@
   "same_tree": true,
   "same_tree_reason": null,
   "schema": "system-map/surfaces/1",
-  "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+  "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
   "surfaces": [
     {
       "data": {
@@ -20,7 +20,7 @@
         "root": "doctrine_docs",
         "schema": "model-index/1",
         "source_dirty": false,
-        "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc"
+        "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3"
       },
       "generator": {
         "name": "render-projection.py",
@@ -30,7 +30,7 @@
       "reason": null,
       "schema_expected": "model-index/1",
       "source_dirty": false,
-      "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+      "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
       "status": "captured",
       "why": "この木に在る意味モデルの一覧。0 件は『まだ書いていない』であって『無くてよい』ではない"
     },
@@ -6531,7 +6531,7 @@
         "root": "doctrine_docs",
         "schema": "dep-graph/1",
         "source_dirty": false,
-        "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc"
+        "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3"
       },
       "generator": {
         "name": "dep-graph.py",
@@ -6541,7 +6541,7 @@
       "reason": null,
       "schema_expected": "dep-graph/1",
       "source_dirty": false,
-      "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+      "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
       "status": "captured",
       "why": "文書どうしの依存辺。統治の形そのもの"
     },
@@ -6568,67 +6568,37 @@
           },
           {
             "code": "trace_marker_suspect",
-            "line": 747,
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
-            "path": "research/system-map/gold-model/target-1-doctrine-and-lens.json"
-          },
-          {
-            "code": "trace_marker_suspect",
-            "line": 784,
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
-            "path": "research/system-map/gold-model/target-1-doctrine-and-lens.json"
-          },
-          {
-            "code": "trace_marker_suspect",
-            "line": 15,
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
-            "path": "research/system-map/overlay/overlay-doctrine-and-lens.json"
-          },
-          {
-            "code": "trace_marker_suspect",
-            "line": 34,
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
-            "path": "research/system-map/overlay/overlay-doctrine-and-lens.json"
-          },
-          {
-            "code": "trace_marker_suspect",
-            "line": 74,
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
-            "path": "research/system-map/prototype/index.html"
-          },
-          {
-            "code": "trace_marker_suspect",
-            "line": 277,
+            "line": 275,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 283,
+            "line": 281,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 289,
+            "line": 287,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 295,
+            "line": 293,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 301,
+            "line": 299,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 307,
+            "line": 305,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/prototype/system-view.html"
           },
@@ -6682,49 +6652,313 @@
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7123,
+            "line": 6602,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7131,
+            "line": 6608,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7139,
+            "line": 6614,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7147,
+            "line": 6620,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7155,
+            "line": 6626,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7163,
+            "line": 6632,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7171,
+            "line": 6638,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           },
           {
             "code": "trace_marker_suspect",
-            "line": 7179,
+            "line": 6644,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6650,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6656,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6662,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6668,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6674,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6680,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6686,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6692,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6698,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6704,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6710,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6716,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6722,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 6728,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7264,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7272,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7280,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7288,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7296,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7304,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7312,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7320,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7328,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7336,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7344,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7352,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7360,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7368,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7376,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7384,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7392,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7400,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7408,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7416,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7424,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7432,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7440,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7448,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7456,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7464,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7472,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7480,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7488,
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
+            "path": "research/system-map/surfaces/surfaces.json"
+          },
+          {
+            "code": "trace_marker_suspect",
+            "line": 7496,
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)",
             "path": "research/system-map/surfaces/surfaces.json"
           }
@@ -6962,7 +7196,7 @@
         "root": "doctrine_lens",
         "schema": "trace-index/1",
         "source_dirty": false,
-        "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc"
+        "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3"
       },
       "generator": {
         "name": "trace-index.py",
@@ -6972,7 +7206,7 @@
       "reason": null,
       "schema_expected": "trace-index/1",
       "source_dirty": false,
-      "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+      "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
       "status": "captured",
       "why": "仕様からコードへの注釈対。**指紋まで採れている唯一の実測**"
     },
@@ -7022,7 +7256,7 @@
         ],
         "counts_by_check": {
           "stray_document": 29,
-          "trace_marker_suspect": 30,
+          "trace_marker_suspect": 69,
           "trace_stale": 1
         },
         "findings": [
@@ -7230,7 +7464,7 @@
             "check": "stray_document",
             "doc_id": "",
             "message": "統治木の外の .md が未分類。docs-curate(external-md-intake)で分類し doctrine_docs/_system/.md-intake へ記録する",
-            "path": "research/system-map/prototype/shots/README.md",
+            "path": "research/system-map/prototype/shots-system-view/README.md",
             "refs": [],
             "severity": "advisory"
           },
@@ -7261,14 +7495,6 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(15 行目)",
-            "path": "research/system-map/overlay/overlay-doctrine-and-lens.json",
-            "refs": [],
-            "severity": "advisory"
-          },
-          {
-            "check": "trace_marker_suspect",
-            "doc_id": "",
             "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(23 行目)",
             "path": "research/system-map/decisions/phase-2-baseline/logs/docs-check.log",
             "refs": [],
@@ -7293,7 +7519,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(277 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(275 行目)",
             "path": "research/system-map/prototype/system-view.html",
             "refs": [],
             "severity": "advisory"
@@ -7301,7 +7527,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(283 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(281 行目)",
             "path": "research/system-map/prototype/system-view.html",
             "refs": [],
             "severity": "advisory"
@@ -7309,7 +7535,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(289 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(287 行目)",
             "path": "research/system-map/prototype/system-view.html",
             "refs": [],
             "severity": "advisory"
@@ -7317,7 +7543,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(295 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(293 行目)",
             "path": "research/system-map/prototype/system-view.html",
             "refs": [],
             "severity": "advisory"
@@ -7325,7 +7551,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(301 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(299 行目)",
             "path": "research/system-map/prototype/system-view.html",
             "refs": [],
             "severity": "advisory"
@@ -7333,16 +7559,8 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(307 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(305 行目)",
             "path": "research/system-map/prototype/system-view.html",
-            "refs": [],
-            "severity": "advisory"
-          },
-          {
-            "check": "trace_marker_suspect",
-            "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(34 行目)",
-            "path": "research/system-map/overlay/overlay-doctrine-and-lens.json",
             "refs": [],
             "severity": "advisory"
           },
@@ -7413,7 +7631,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7123 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6602 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7421,7 +7639,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7131 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6608 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7429,7 +7647,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7139 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6614 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7437,7 +7655,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7147 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6620 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7445,7 +7663,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7155 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6626 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7453,7 +7671,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7163 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6632 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7461,7 +7679,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7171 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6638 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7469,7 +7687,7 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7179 行目)",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6644 行目)",
             "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
@@ -7477,24 +7695,352 @@
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(74 行目)",
-            "path": "research/system-map/prototype/index.html",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6650 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
           },
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(747 行目)",
-            "path": "research/system-map/gold-model/target-1-doctrine-and-lens.json",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6656 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
           },
           {
             "check": "trace_marker_suspect",
             "doc_id": "",
-            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(784 行目)",
-            "path": "research/system-map/gold-model/target-1-doctrine-and-lens.json",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6662 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6668 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6674 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6680 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6686 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6692 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6698 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6704 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6710 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6716 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6722 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(6728 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7264 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7272 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7280 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7288 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7296 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7304 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7312 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7320 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7328 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7336 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7344 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7352 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7360 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7368 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7376 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7384 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7392 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7400 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7408 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7416 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7424 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7432 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7440 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7448 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7456 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7464 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7472 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7480 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7488 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
+            "refs": [],
+            "severity": "advisory"
+          },
+          {
+            "check": "trace_marker_suspect",
+            "doc_id": "",
+            "message": "印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin <TYPE>-<NNN>」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)(7496 行目)",
+            "path": "research/system-map/surfaces/surfaces.json",
             "refs": [],
             "severity": "advisory"
           },
@@ -7516,7 +8062,7 @@
         "schema": "docs-audit/1",
         "session": "f1bdae4d-4dbb-49a4-acb1-40e0be788c57",
         "source_dirty": false,
-        "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+        "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
         "today": "2026-08-17",
         "top_findings": [
           {
@@ -7681,14 +8227,14 @@
           }
         ],
         "totals": {
-          "advisory": 59,
+          "advisory": 98,
           "error": 0,
           "warn": 1
         },
         "trace_coverage": {
           "annotated_files": 31,
           "excluded": {
-            "binary": 21,
+            "binary": 28,
             "dot_file": 8,
             "gitignored_file": 1,
             "md_suffix": 31,
@@ -7708,7 +8254,7 @@
             "symlink_dir": 0,
             "unreadable_dir": 0
           },
-          "reached_files": 246,
+          "reached_files": 228,
           "spec_coverage": {
             "no_code": 0,
             "traced": 6,
@@ -7716,7 +8262,7 @@
           },
           "stagnation_streak": 0,
           "truncated": false,
-          "unmarked_files": 150
+          "unmarked_files": 125
         }
       },
       "generator": {
@@ -7727,7 +8273,7 @@
       "reason": null,
       "schema_expected": "docs-audit/1",
       "source_dirty": false,
-      "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc",
+      "source_revision": "d5f91a39a6fa9662cd57df1928645a34977c04f3",
       "status": "captured",
       "why": "統治木そのものの検査。被覆と所見"
     }
