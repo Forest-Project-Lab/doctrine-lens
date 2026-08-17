@@ -6,7 +6,9 @@
 // 「読み手はこの規則を再定義しない」と明記されている。こちらの実装はそこから導いた
 // `lib/rev-state.mjs` の一箇所だけに在るべきで、表と実装が食い違えば鳴る必要がある。
 //
-// 出荷していた旧規則は宣言と**四点**食い違っていた(`decisions/phase-3-freshness/` に生ログ):
+// 出荷していた旧規則は宣言と**四点**食い違っていた(`decisions/phase-3-freshness/` に生ログ)。
+// 規則を持っていた生成器(overlay)は手書きの模型を測る物だったので破棄したが、
+// **規則そのものは上流の宣言から導いた物**なので残す —— 新しい画面も同じ規則を使う。
 //   1. `source_dirty` を判定に入れていなかった —— 汚れた木でも「同一(照合済)」と断言した
 //   2. 完全 SHA かどうかを検めず、ただの文字列比較だった
 //   3. 宣言に無い条件(記録した rev が履歴に在るか)を足していた
@@ -79,5 +81,5 @@ const records = [verdict({
   violations,
 })];
 const reportPath = reportPathFrom(process.argv.slice(2));
-if (reportPath) writeReport(reportPath, "overlay", records);
+if (reportPath) writeReport(reportPath, "freshness", records);
 process.exit(gateExitCode(records, today.date));

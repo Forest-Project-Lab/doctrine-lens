@@ -39,18 +39,11 @@
 | M-10 | 各 `TraceAnchor` の鮮度判定の権威がちょうど一つ | `model:single-freshness-authority` | v3.2-10 |
 | M-11 | `unknown` の `Contract` は `verdict: silent` の負の出所を最低 1 件持つ | `model:unknown-has-negative-source` | v3.2-5 補強1 |
 | M-12 | `Scenario.steps` の `actor`/`receiver`/`flow` は静的構造に実在する id を指す | `model:no-ghost-in-scenarios` | §7.3 |
-| M-13 | 道具が読むのは doctrine の宣言済み CLI の実行の返す値だけ | `build:no-runtime-fetch` ・ `browser:no-external-request` | v3.2-14 |
-| M-14 | 要素→コードまたは証拠への到達が規定操作数以内 | `build:reachability` ・ `browser:ops-count` | v3.2-3・16 |
 | M-15 | `not_applicable` の `Contract` は `na_reason` と present の出所を持つ | `model:na-has-reason` | doctrine S1 |
 | M-16 | `verified` の `Evidence` は `fingerprint` を持つ。または `version` に commit SHA を置く | `model:evidence-fingerprinted` | doctrine S2 |
 | M-18 | 模型が `schema.json` に適合する(形と語彙の全体) | `model:schema-shape` | `gold-model/schema.json` |
 | M-17 | 実現先になりうるアンカーの指す先は、URL かリポジトリ接頭つきの相対経路である | `model:anchor-target-grammar` | `schema.json` の `TraceAnchor.target`(S4) |
-| M-L1 | SVG のラベル同士が視覚的に重ならない | `browser:label-no-overlap` | レビュー指摘 2026-08-04 §4 |
 | M-S1 | M 層の事実が正本の外に手書きされておらず、正本を迂回して対象を握る口も残っていない | `meta:single-source` | ADR-031 決定8・実行原則5 |
-| M-W1 | 対象を一つ増やすと、対象を列挙する全ての場所がそれを拾う(位置ではなく id で指す) | `meta:targets-wired` | ADR-031 決定8・PR5 |
-| M-W2 | 実測 overlay は宣言した対象で索き、壊れ・未知の形・未知の対象・重複・空の実測を黙って通さない | `meta:overlay-indexing` | ADR-031 決定5・PR5 |
-| M-19 | 生成器が出しうる状態は、画面でそれぞれ別の文になる。表に無い状態を既知の語へ黙って読み替えない | `build:display-vocabulary`・`browser:display-total` | PR6・所有者指示 2026-08-04 §4 |
-| M-20 | 区別を色や線だけに載せない(境界の内外・候補と確認済・架空の対象・門が認めなかった実現先を語で言う) | `browser:distinction-in-words` | PR6・所有者指示 2026-08-04 §4 |
 | M-C1 | 壊れた環境・落ちた道具・競合する走行のもとで、道具は黙って誤らない —— 必ず判定を出すか、明示の非合格で止まる | `meta:chaos-tolerated` | 所有者のカオス一覧・PR7 |
 | M-Q1 | 起草者へ差し出す要件の一覧が、模型を判ずる検査器を過不足なく覆い、器の指紋と一致する | `meta:requirements-complete` | doctrine#294 第2信 §3-3・上流 ADR-165 決定6 |
 | M-F1 | 鮮度の三値は上流の宣言(ICD-002・ADR-172 決定3)から導き、こちらで再定義しない。不明を同一に丸めない | `overlay:rev-state-declared` | 上流 `doctrine_docs/graph/ICD.md`・doctrine#294 第13信 §6 |
@@ -58,9 +51,7 @@
 | M-V1 | 出荷する画面は宣言済み読み口が返した値だけから描く。手書きの模型の中身が一文字も混ざらない | `screen:no-authored-facts` | 所有者決定 2026-08-16・doctrine#294 第5信 |
 | M-V2 | 画面に出る数は全て build の台帳に載り、出所を名乗る。綴りへ焼き込んだ数は出荷できない | `screen:numbers-have-provenance` | 設計の審査 2026-08-17 |
 | M-V3 | 画面が示す内訳は、口が名乗る総数に閉じる。閉じない内訳を黙って出荷しない | `build:closures-hold` | 設計の審査 2026-08-17 |
-| M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |
 | M-R1 | 不変条件と検査器が一対一で対応する | `meta:registry-consistent` | ADR-031 決定8 |
-| M-N2 | 負例の表の各行で、名指した検査器が名指した判定と符丁を出す | `meta:negatives-fire` | ADR-031 決定8・ADR-017 |
 | M-N3 | 判定を支える規則を潰すと、対応する確かめが実際に変わる | `meta:rules-load-bearing` | ADR-017・ADR-031 決定5 |
 
 **M-07 は二つに割れている。** 前半(`review_status` が在る)は最初から実装が在ったが、

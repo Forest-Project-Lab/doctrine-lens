@@ -100,9 +100,12 @@ function capture(s) {
   try {
     out = execFileSync(python, [join(pluginRoot, "scripts", s.script), ...s.args], RUN);
   } catch (e) {
-    const why = e.code === "ETIMEDOUT" || e.signal === "SIGTERM"
-      ? `時間切れ(${timeoutMs}ms)`
-      : /maxBuffer/i.test(String(e.message)) ? "返す値が受け皿の上限を超えた"
+    // **上限超過を時間切れと言わない。** どちらも SIGTERM で殺されるので、
+    // 時間切れを先に見ると上限超過が「時間切れ」に化ける(カオスの門が実測で捕まえた)。
+    const why = /maxBuffer|ENOBUFS/i.test(String(e.message) + String(e.code))
+      ? `返す値が受け皿の上限(${RUN.maxBuffer} byte)を超えた`
+      : e.code === "ETIMEDOUT" || e.signal === "SIGTERM"
+        ? `時間切れ(${timeoutMs}ms)`
         : `CLI が失敗した(終了コード ${e.status ?? "不明"})`;
     return { ...base, status: "unverifiable", reason: `${why} — ${brief(e.stderr ?? e.message)}`, data: null };
   }

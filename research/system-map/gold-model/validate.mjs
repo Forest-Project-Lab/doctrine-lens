@@ -16,12 +16,12 @@
 // 以前ここに在った M-13/M-14 の無条件 SKIP(模型を一切見ない二行)は消した。
 // 委譲は印字された言い訳ではなく registry.json の checkers が持つ事実であり、
 // その検査器が実際に判定を出したかは verify.mjs が検める。
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runModelCheckers, MODEL_CHECKERS } from "./check-model.mjs";
-import { REGISTRY } from "./spec.mjs";
+import { managedModels, REGISTRY } from "./spec.mjs";
 import { verdict, reportPathFrom, writeReport, formatRecord, ackFor, gateExitCode, todayFrom } from "./report.mjs";
 
 const argv = process.argv.slice(2);
@@ -44,7 +44,13 @@ if (argv.includes("--requirements")) {
   const body = readFileSync(schemaPath);
   const schema = JSON.parse(body.toString("utf8"));
   const stmt = new Map((REGISTRY.invariants ?? []).map((i) => [i.id, i.statement]));
-  const negatives = JSON.parse(readFileSync(join(here, "negatives.json"), "utf8")).cases ?? [];
+  // **負例は手書きの模型へ当てる物だった。** 模型を破棄したので負例も無い ——
+  // 「裏づけが在るのに読めなかった」と「裏づけがそもそも無い」を混ぜない。
+  const negPath = join(here, "negatives.json");
+  const negatives = existsSync(negPath) ? (JSON.parse(readFileSync(negPath, "utf8")).cases ?? []) : [];
+  const negativesNote = existsSync(negPath)
+    ? null
+    : "負例は手書きの模型へ当てる物であり、模型を破棄した 2026-08-17 に一緒に失われた。**この一覧のどの要件も、破ると門が鳴ることを確かめていない。**";
 
   // 除外の理由は綴りを増やさず、その検査器が何を判ずるかから言う。
   const WHY = {
@@ -95,6 +101,7 @@ if (argv.includes("--requirements")) {
     requirements,
     not_covered: notCovered,
     limits: [
+      ...(negativesNote ? [negativesNote] : []),
       "意味の正しさは検めない。その要素が本当に在るか、その流れが実際に起きるかは見ていない。",
       "`proven: false` の要件は、**破ると門が鳴ることを確かめていない**。要件として述べているだけである。",
       "形(必須欄・語彙)は container の一枚が正本であり、ここには写していない。",
@@ -107,7 +114,33 @@ if (argv.includes("--requirements")) {
 
 const reportPath = reportPathFrom(argv);
 const today = todayFrom(argv);
-const files = argv.filter((a, i) => !a.startsWith("--") && argv[i - 1] !== "--report" && argv[i - 1] !== "--today");
+let files = argv.filter((a, i) => !a.startsWith("--") && argv[i - 1] !== "--report" && argv[i - 1] !== "--today");
+
+// **手書きの模型を持たない**(所有者決定 2026-08-17)。引数が無ければ、検める対象は
+// doctrine が管理する物だけ —— `model-index/1` の捕獲から引く。
+// 0 件なら**検査器ごとに「検める対象を持たない」と言う**。黙って通さない。
+const managed = files.length === 0 ? managedModels() : null;
+if (managed) {
+  files = managed.models.map((m) => resolve(here, "..", "..", "..", "doctrine_docs", m.projection_path));
+  if (files.length === 0) {
+    const records0 = Object.entries(MODEL_CHECKERS).map(([id, c]) => verdict({
+      invariant: c.invariant, checker: id, target: "(doctrine が管理する模型)",
+      examined: 0, examined_unit: c.unit ?? "模型",
+      violations: [],
+    }));
+    for (const r of records0) r.note = managed.reason;
+    const t0 = {};
+    for (const r of records0) t0[r.verdict] = (t0[r.verdict] ?? 0) + 1;
+    const acked0 = records0.filter((r) => r.verdict !== "PASS" && ackFor(r, today.date)).length;
+    console.log(`== doctrine が管理する模型 ==`);
+    console.log(`  ${managed.reason}`);
+    for (const r of records0) console.log(`  ${String(r.invariant).padEnd(6)} ${r.checker.padEnd(34)} ${r.verdict}`);
+    console.log(`\n計: ${Object.entries(t0).map(([k, v]) => `${k} ${v}`).join(" / ")}(うち了解済 ${acked0})`);
+    console.log("※ VACUOUS・SKIP・ERROR は PASS ではない。合計に混ぜない。");
+    if (reportPath) writeReport(reportPath, "model", records0);
+    process.exit(gateExitCode(records0, today.date));
+  }
+}
 if (files.length === 0) {
   console.error("usage: node validate.mjs <model.json> [...] [--report <path>]");
   process.exit(2);

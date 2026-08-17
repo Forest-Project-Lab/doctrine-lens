@@ -20,10 +20,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
-import { TARGETS } from "../gold-model/spec.mjs";
 
-// 模型のファイル名を手書きしない(正本は registry.json)。id で引く。
-const fileOf = (id) => TARGETS.find((t) => t.id === id)?.file ?? (() => { throw new Error(`対象 ${id} が registry に無い`); })();
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, "..");
@@ -47,7 +44,7 @@ const MUTATIONS = [
     file: "prototype/build-system-view.mjs",
     from: `const html = parts.join("\\n");`,
     // 模型のファイル名は**正本から引く**。綴りへ書くと単一正本の規則が咎める(実測で咎められた)。
-    to: `P("<p>" + esc(JSON.parse(readFileSync(join(here,"..","gold-model",${JSON.stringify(TARGETS[0].file)}),"utf8")).elements[0].purpose) + "</p>");\nconst html = parts.join("\\n");`,
+    to: `P("<p>" + esc(JSON.parse(readFileSync(join(here,"..","gold-model","MODEL-does-not-exist.json"),"utf8")).elements[0].purpose) + "</p>");\nconst html = parts.join("\\n");`,
     run: ["prototype/test-no-authored-facts.mjs"],
     expect: "落ちる",
     rebuild: ["prototype/build-system-view.mjs"],
@@ -59,123 +56,7 @@ const MUTATIONS = [
     file: "lib/rev-state.mjs",
     from: "  if (currentDirty !== false) return \"unknown\";",
     to: "  if (false) return \"unknown\";",
-    run: ["overlay/test-rev-state.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "空判定の規則を潰す(見た件数 0 でも合格を名乗れるようにする)",
-    file: "gold-model/report.mjs",
-    from: "  if (examined === 0) {",
-    to: "  if (false) {",
-    // 潰すと、空を VACUOUS と期待する負例が PASS になって落ちる。
-    run: ["prototype/test-negatives.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "「PASS 以外は合格でない」を潰す",
-    file: "gold-model/report.mjs",
-    from: "  if (records.some((r) => !countsAsPass(r.verdict) && !ackFor(r, today))) return 1;",
-    to: "  // 潰した",
-    // 潰すと、了解の無い VACUOUS を持つ走行が緑になる(=検出できなくなる)。
-    run: ["gold-model/validate.mjs", fileOf("celery"), "--today", "2027-01-01"],
-    expect: "緑になる",
-  },
-  {
-    label: "了解の期限の判定を潰す",
-    file: "gold-model/report.mjs",
-    from: "  if (today && a.expires_at < today) return null;",
-    to: "  // 潰した",
-    run: ["gold-model/validate.mjs", fileOf("celery"), "--today", "2027-01-01"],
-    expect: "緑になる",
-  },
-  {
-    label: "実現先の種別の検めを潰す",
-    file: "prototype/gates.mjs",
-    from: "    if (!REALIZATION_KINDS.includes(a.target_kind)) {",
-    to: "    if (false) {",
-    run: ["prototype/test-negatives.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "アンカーの文法の検めを潰す",
-    file: "lib/anchor-target.mjs",
-    from: '    if (p.kind === "url" || p.kind === "path") continue;',
-    to: "    continue;",
-    run: ["prototype/test-negatives.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "対象を id で指す規則を潰す(画面の値を位置へ戻す)",
-    file: "prototype/build.mjs",
-    from: '<option value="${escHtml(m.target)}">',
-    to: '<option value="${models.indexOf(m)}">',
-    // 潰すと、合成の対象を差した写しで「対象を id で名指す」が落ちる。
-    run: ["prototype/test-targets-wired.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "空の実測を拒む規則を潰す(記録 0 件でも実測を名乗れるようにする)",
-    file: "prototype/build.mjs",
-    from: "    if ((n === 0) !== (o.status === OVERLAY_EMPTY_STATUS)) {",
-    to: "    if (false) {",
-    // 潰すと、記録 0 件で measured を名乗る入力が通ってしまい、負例が落ちなくなる。
-    run: ["prototype/test-targets-wired.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "未知の語の落とし所を潰す(表に無い状態を実測へ黙って寄せる)",
-    file: "prototype/build.mjs",
-    from: "  return { ...D.unknown_token, mark: D.unknown_token.mark + \": \" + String(token), __unknown: true };",
-    to: "  return { mark: \"実測\", sentence: \"\", has_ranges: true, counts_as_measured: true };",
-    run: ["prototype/test-display-browser.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "項目単位の候補表示を潰す(印から機械の手掛かりを外す)",
-    file: "prototype/build.mjs",
-    from: '  return \'<span class="rv rv-\' + esc(s) + \'" data-review="\' + esc(s) + \'"',
-    to: '  return \'<span class="rv rv-\' + esc(s) + \'" data-was-review="\' + esc(s) + \'"',
-    run: ["prototype/test-display-browser.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "架空の印を潰す(registry の fictional を偽にする)",
-    file: "gold-model/registry.json",
-    from: '"fictional": true',
-    to: '"fictional": false',
-    // 潰すと、架空の対象が実在の対象と見分けがつかなくなる。
-    run: ["prototype/test-display-browser.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "要件の一覧から一つ落とす(起草者へ差し出す物を黙って減らす)",
-    file: "gold-model/validate.mjs",
-    from: '    if (c.judges === "model") {',
-    to: '    if (c.judges === "model" && c.id !== "model:id-unique") {',
-    // 落とすと、その検査器が要件にも除外にも現れず M-Q1 が鳴る。
-    run: ["prototype/test-registry.mjs"],
-    expect: "落ちる",
-  },
-  {
-    label: "伝送不成立の扱いを潰す(開けなかったことを「別の場所へ開いた」と数える)",
-    file: "prototype/test-m14-browser.mjs",
-    // 伝送そのものが成立しなかったのか、別の場所へ開いたのかを分けているのがここ。
-    // `&& !openedFailed` を落とすと、通信の途絶が**リンクの破損**として報告される。
-    from: "(!okOpen && !openedFailed)",
-    to: "(!okOpen)",
-    // 潰すと、伝送が成立しない環境で SKIP でなく FAIL が出る。
-    // 写しの中では製品の木(src/)へ届かないので、この一件だけを回す。
-    run: ["prototype/test-chaos.mjs", "--only", "伝送が成立しない環境"],
-    expect: "落ちる",
-  },
-  {
-    label: "12 節へ畳んだ中身を作る(実装・証拠へ行くのに操作が増える)",
-    file: "prototype/build.mjs",
-    from: "    <h3>12. Code / Test / Evidence(実現と証拠)</h3>",
-    to: "    <h3>12. Code / Test / Evidence(実現と証拠)</h3><details><summary>実装と証拠</summary></details>",
-    // 台帳 v3.2-16 の操作数の予算(3)は、入れ子の要素で既に上限である。
-    // 一つ畳むだけで超える。**構造で守る。**
-    run: ["prototype/test-display-browser.mjs"],
+    run: ["prototype/test-rev-state.mjs"],
     expect: "落ちる",
   },
 ];

@@ -162,53 +162,31 @@ for (const c of REGISTRY.checkers ?? []) {
   }
 }
 
-// ---- 対象(registry.json が並びを持ち、id は模型自身が持つ) ----
-const rawTargets = REGISTRY.targets;
-if (!Array.isArray(rawTargets) || rawTargets.length === 0) die("registry.json に targets が無い");
+// ---- 検める模型(doctrine が管理する物だけ) ----
+//
+// **手書きの模型を持たない**(所有者決定 2026-08-17)。検める対象は、上流の宣言済み読み口
+// `model-index/1` が列挙した物だけである。捕獲は `surfaces/surfaces.json` に在る。
+//
+// いま 0 件である。**それは欠陥ではなく、この木の実態である** —— 意味モデルを一件も
+// 統治していない。模型の検査器はその事実を「検める対象を持たない」として言う。
 
-const KNOWN_ROLES = Object.keys(REGISTRY.roles ?? {});
-if (KNOWN_ROLES.length === 0) die("registry.json に roles の説明が無い");
-
-const loaded = rawTargets.map((t, i) => {
-  if (!t.file) die(`targets[${i}] に file が無い`);
-  const path = join(here, t.file);
-  const model = readJson(path);
-  if (model.schema !== MODEL_SCHEMA_ID) {
-    die(`${t.file} の schema が ${MODEL_SCHEMA_ID} でない: ${model.schema}`);
-  }
-  if (!model.target) die(`${t.file} に target が無い`);
-  const roles = t.roles ?? [];
-  for (const r of roles) if (!KNOWN_ROLES.includes(r)) die(`${t.file} の役割 ${r} が registry.roles に無い`);
-  return { id: model.target, file: t.file, path, roles: Object.freeze([...roles]), fictional: t.fictional === true, model };
-});
-
-{
-  const ids = loaded.map((t) => t.id);
-  const dup = ids.filter((x, i) => ids.indexOf(x) !== i);
-  if (dup.length) die(`対象の id が重複している: ${[...new Set(dup)].join(", ")}`);
-  for (const r of KNOWN_ROLES) {
-    if (!loaded.some((t) => t.roles.includes(r))) die(`役割 ${r} を持つ対象が一つも無い(死んだ役割)`);
-  }
+/** 捕獲から、doctrine が管理する模型の投影を引く。捕獲が無ければ空(嘘の 0 と区別できるよう理由を持つ)。 */
+export function managedModels() {
+  const capPath = join(here, "..", "surfaces", "surfaces.json");
+  if (!existsSync(capPath)) return { models: [], reason: "読み口の捕獲が無い(surfaces/capture.mjs を回していない)" };
+  let cap;
+  try { cap = JSON.parse(readFileSync(capPath, "utf8")); }
+  catch (e) { return { models: [], reason: `捕獲を読めない: ${e.message}` }; }
+  const mi = (cap.surfaces ?? []).find((s) => s.id === "model-index");
+  if (!mi) return { models: [], reason: "捕獲に model-index/1 が無い" };
+  if (mi.status !== "captured") return { models: [], reason: `model-index/1 を測れなかった: ${mi.reason}` };
+  const list = mi.data?.models ?? [];
+  return {
+    models: list.map((m) => ({ id: m.id, target: m.target, projection_path: m.projection_path, path: m.projection_path })),
+    // **0 件は「測って 0 件だった」である。「測れなかった」ではない。**
+    reason: list.length === 0 ? "doctrine が管理する模型が 0 件である(口は走り、空の一覧を返した)" : null,
+  };
 }
-
-/** 並びは registry.json の targets の順。build の並びと画面の並びが一致する。 */
-export const TARGETS = Object.freeze(loaded.map((t) => Object.freeze({ id: t.id, file: t.file, path: t.path, roles: t.roles, fictional: t.fictional })));
-
-/** 役割で絞った対象。役割を渡さなければ全部。 */
-export function targetsWithRole(role) {
-  if (role === undefined) return TARGETS;
-  if (!KNOWN_ROLES.includes(role)) die(`未知の役割: ${role}`);
-  return TARGETS.filter((t) => t.roles.includes(role));
-}
-
-/** 役割で絞ったファイル名。validate.mjs へ渡す引数など。 */
-export const targetFiles = (role) => targetsWithRole(role).map((t) => t.file);
-
-/** 役割で絞った id。 */
-export const targetIds = (role) => targetsWithRole(role).map((t) => t.id);
-
-/** 役割で絞った模型(読み直す。呼び手が壊しても他へ波及させない)。 */
-export const loadModels = (role) => targetsWithRole(role).map((t) => readJson(t.path));
 
 // 画面が対象を指す値は **id そのもの**である。翻訳する口は置かない。
 //
@@ -224,12 +202,10 @@ export const loadModels = (role) => targetsWithRole(role).map((t) => readJson(t.
 export const GATES = Object.freeze(
   (REGISTRY.gates ?? die("registry.json に gates が無い")).map((g) => {
     const args = [...(g.cmd ?? []).slice(1)];
-    if (g.args_from) {
-      const m = /^targets:(\w+)$/.exec(g.args_from);
-      if (!m) die(`gates[${g.id}].args_from の形が想定外: ${g.args_from}`);
-      args.push(...targetFiles(m[1]));
-    }
-    if (!g.cwd || !["gold-model", "prototype", "overlay"].includes(g.cwd)) die(`gates[${g.id}].cwd が想定外: ${g.cwd}`);
+    // **段へ模型のファイル名を渡す口はもう無い。** 手書きの模型を持たないので、
+    // 検める模型は `validate.mjs` が `model-index/1` の捕獲から自分で引く。
+    if (g.args_from) die(`gates[${g.id}].args_from はもう使わない(手書きの対象を持たない): ${g.args_from}`);
+    if (!g.cwd || !["gold-model", "prototype", "surfaces"].includes(g.cwd)) die(`gates[${g.id}].cwd が想定外: ${g.cwd}`);
     // 段ごとの時間切れ。無いと、ぶら下がった段で走行は落ちずに**止まる**
     // (止まった走行は、遅い走行と見分けがつかない)。
     const timeoutMs = g.timeout_ms ?? 600000;

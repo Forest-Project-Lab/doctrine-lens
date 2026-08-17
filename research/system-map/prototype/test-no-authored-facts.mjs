@@ -46,79 +46,63 @@ const shipped = existsSync(SHIPPED) ? readFileSync(SHIPPED, "utf8") : null;
 if (!shipped) err(V1, "出荷物を読む", `${SHIPPED} が無い。先に build-system-view.mjs を回すこと`);
 
 // ---------------------------------------------------------------- M-V1
-const modelFiles = existsSync(MODEL_DIR) ? readdirSync(MODEL_DIR).filter((f) => /^(target-|fixture-).*\.json$/.test(f)) : [];
-if (modelFiles.length === 0) err(V1, "手書き模型を見つける", `${MODEL_DIR} に target-*/fixture-* が一つも無い。走査が壊れている疑いがある`);
+// **手書きの模型は 2026-08-17 に全て破棄した。** よって検めるのは
+// 「漏れていないか」ではなく「**存在せず、読めない**」である。
+//
+//   1. 手書きの模型が木に一つも無い
+//   2. 生成器が読むのは捕獲一枚(と lib)だけである —— 綴りを静的に走査する
+//   3. 出荷物に捕獲の散文・環境・押せる連結・外部の取得が無い
 
-const authored = new Set();
-for (const f of modelFiles) stringsOf(JSON.parse(readFileSync(join(MODEL_DIR, f), "utf8")), authored);
+const modelFiles = existsSync(MODEL_DIR)
+  ? readdirSync(MODEL_DIR).filter((f) => /^(target-|fixture-).*\.json$/.test(f))
+  : [];
+if (modelFiles.length) ng(V1, "screen.authored_model_present", "手書きの模型が木に一つも無い", `${modelFiles.length} 件が在る: ${modelFiles.join(", ")}`);
+else ok(V1, "手書きの模型が木に一つも無い");
 
-// **捕獲そのものにも手書きの散文が在る。** capture.mjs が各口へ添えた `why`、
-// 最上位の `$comment`・`captured_from`・`same_tree_reason` は、測定値ではなく人が書いた字である。
-// 測定値の顔をして画面に出れば、手書きを排した意味が無くなる。
+// **生成器の入力を綴りで縛る。** 捕獲以外を読めば、そこから手書きが入りうる。
+{
+  const src = readFileSync(join(here, "build-system-view.mjs"), "utf8");
+  const reads = [...src.matchAll(/readFileSync\(([^)]*)\)/g)].map((m) => m[1].replace(/\s+/g, " ").trim());
+  const bad = reads.filter((r) => !/surfacesPath/.test(r));
+  if (bad.length) ng(V1, "screen.builder_reads_other", "生成器が読むのは捕獲一枚だけ", `他を読んでいる: ${bad.slice(0, 3).join(" / ")}`);
+  else ok(V1, `生成器が読むのは捕獲一枚だけ(readFileSync ${reads.length} 箇所)`);
+
+  const imports = [...src.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1]);
+  const outside = imports.filter((i2) => !i2.startsWith("node:") && !i2.startsWith("../lib/") && !i2.startsWith("../gold-model/report.mjs"));
+  if (outside.length) ng(V1, "screen.builder_imports_other", "生成器が取り込むのは道具だけ", outside.join(" / "));
+  else ok(V1, `生成器が取り込むのは道具だけ(取り込み ${imports.length} 件)`);
+}
+
+// 捕獲そのものの散文(capture.mjs が書いた字)が画面に出ていないこと。
 const capturePr = new Set();
 if (existsSync(SURFACES)) {
   const cap = JSON.parse(readFileSync(SURFACES, "utf8"));
   for (const k of ["$comment", "same_tree_reason"]) if (typeof cap[k] === "string") capturePr.add(cap[k]);
   stringsOf(cap.captured_from ?? {}, capturePr);
-  for (const s of cap.surfaces ?? []) if (typeof s.why === "string") capturePr.add(s.why);
+  for (const s2 of cap.surfaces ?? []) if (typeof s2.why === "string") capturePr.add(s2.why);
 } else {
   err(V1, "読み口の捕獲を読む", `${SURFACES} が無い。先に surfaces/capture.mjs を回すこと`);
 }
-
-/**
- * 読み口が返した値の全文。**部分一致で照合する。**
- *
- * 完全一致だと偽陽性が出る —— 実測で二件出た。`Forest-Project-Lab` は文書が front-matter で
- * 挙げた URL の一部として口が返しており、**手書き模型そのものの名**は
- * **上流の道具がその手書き模型そのものについて挙げた所見の `path`** として返している。
- * どちらも画面が模型を読んだのではなく、**道具が測って返した値**である。
- * 咎めれば、道具が我々の木を正しく測ったことを咎めることになる。
- */
-let measuredText = "";
-if (existsSync(SURFACES)) {
-  const cap = JSON.parse(readFileSync(SURFACES, "utf8"));
-  measuredText = JSON.stringify((cap.surfaces ?? []).map((s) => s.data ?? null));
-}
-const isMeasured = (s) => measuredText.includes(s);
-
-/** 咎める候補。短い字・記号だけの字は落とす(偶然一致しても何も言えない)。 */
-const distinctive = (s) => {
-  const t = String(s).trim();
+const distinctive = (s2) => {
+  const t = String(s2).trim();
   if (t.length < 6) return false;
   if (t.length < 12 && !/[ぁ-んァ-ン一-龥]/.test(t)) return false;
   return true;
 };
-const candidates = [...authored].filter((s) => !isMeasured(s) && distinctive(s));
 const proseCands = [...capturePr].filter(distinctive);
-
-const MIN = 100;
-if (candidates.length < MIN) err(V1, "手書き模型にだけ在る字句を採る", `候補が ${candidates.length} 件しかない(下限 ${MIN})。走査が壊れている疑いがある —— 「混ざっていない」と読み替えない`);
-else ok(V1, `手書き模型にだけ在る字句を採る(${candidates.length} 件)`);
-
 if (proseCands.length < 3) err(V1, "捕獲の散文を採る", `候補が ${proseCands.length} 件しかない(下限 3)。capture.mjs の綴りと食い違っている疑いがある`);
 else ok(V1, `捕獲の散文を採る(${proseCands.length} 件)`);
 
 if (shipped) {
-  const leaked = candidates.filter((s) => shipped.includes(s));
-  if (leaked.length) ng(V1, "screen.authored_fact_leak", "出荷物に手書き模型の字句が無い", `${leaked.length} 件が在る。例: ${leaked.slice(0, 3).map((s) => JSON.stringify(s.slice(0, 44))).join(" / ")}`);
-  else ok(V1, `出荷物に手書き模型の字句が無い(${candidates.length} 件を照合)`);
-
-  const prose = proseCands.filter((s) => shipped.includes(s));
-  if (prose.length) ng(V1, "screen.capture_prose_leak", "出荷物に捕獲の散文が無い", `${prose.length} 件が在る。例: ${prose.slice(0, 2).map((s) => JSON.stringify(s.slice(0, 44))).join(" / ")}`);
+  const prose = proseCands.filter((s2) => shipped.includes(s2));
+  if (prose.length) ng(V1, "screen.capture_prose_leak", "出荷物に捕獲の散文が無い", `${prose.length} 件が在る`);
   else ok(V1, `出荷物に捕獲の散文が無い(${proseCands.length} 件を照合)`);
 
-  // 名指しも同じ規律で見る。道具が所見の `path` としてその名を返したなら、それは測定値である。
-  const named = modelFiles.filter((f) => shipped.includes(f) && !isMeasured(f));
-  if (named.length) ng(V1, "screen.model_file_named", "出荷物が手書き模型を名指していない", named.join(", "));
-  else ok(V1, "出荷物が手書き模型を名指していない");
-
-  // 環境の漏れ。機械をまたいで共有する頁に、他人の置き場と走行の id を刻まない。
-  const env = [["/workspaces/", "絶対経路"], ["/home/", "絶対経路"], ['"session"', "走行の識別子"]].filter(([p]) => shipped.includes(p));
-  if (env.length) ng(V1, "screen.environment_leak", "出荷物に環境が漏れていない", env.map(([p, w]) => `${p}(${w})`).join(" / "));
+  const env = [["/workspaces/", "絶対経路"], ["/home/", "絶対経路"], ['"session"', "走行の識別子"]].filter(([pp]) => shipped.includes(pp));
+  if (env.length) ng(V1, "screen.environment_leak", "出荷物に環境が漏れていない", env.map(([pp, w]) => `${pp}(${w})`).join(" / "));
   else ok(V1, "出荷物に環境が漏れていない");
 
-  // 偽の到達路を作らない。押せる連結も外部の取得も置かない。
-  const inter = [["<script", "script"], ["<a href", "連結"], ["<button", "釦"], ["<select", "選択欄"], ["<input", "入力欄"], ["src=", "外部の取得"]].filter(([p]) => shipped.includes(p));
+  const inter = [["<script", "script"], ["<a href", "連結"], ["<button", "釦"], ["<select", "選択欄"], ["<input", "入力欄"], ["src=", "外部の取得"]].filter(([pp]) => shipped.includes(pp));
   if (inter.length) ng(V1, "screen.interactive_element", "押せる連結も外部の取得も無い", inter.map(([, w]) => w).join(" / "));
   else ok(V1, "押せる連結も外部の取得も無い");
 }

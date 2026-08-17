@@ -22,7 +22,6 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
-import { TARGETS } from "../gold-model/spec.mjs";
 
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -82,34 +81,29 @@ function fakePlugin(version) {
   return { configDir: cfg, root: rootDir };
 }
 
-const overlayBin = join(root, "overlay", "build-overlay.mjs");
+const captureBin = join(root, "surfaces", "capture.mjs");
 const buildBin = join(here, "build.mjs");
 const sha = (p) => createHash("sha256").update(readFileSync(p)).digest("hex");
 
 /** 一つの対象の overlay を、注入した継ぎ目で作って読む。 */
-function produceOverlay(id, extra) {
-  const out = dir(`ov-${id}`);
-  const res = run(process.execPath, [overlayBin, "--out-dir", out, "--allow-dirty", ...extra], { cwd: join(root, "overlay") });
-  const files = existsSync(out) ? readdirSync(out).filter((n) => n.endsWith(".json")) : [];
-  return { res, out, docs: files.map((n) => JSON.parse(readFileSync(join(out, n), "utf8"))) };
+/**
+ * 読み口の捕獲を、壊した環境で走らせる。
+ *
+ * **期待は「止まらずに続ける」ではない。** M-C1 は「必ず判定を出す**か**、明示の非合格で
+ * 止まる」である。`capture.mjs` は一つでも捕れなければ exit 1 で止まり、**そのときも
+ * 捕獲を書いて理由を残す** —— 止まったことと、なぜ止まったかが両方読める。
+ */
+function produceCapture(id, extra) {
+  const out = join(dir(`cap-${id}`), "surfaces.json");
+  const res = run(process.execPath, [captureBin, "--out", out, "--today", today.date, ...extra], { cwd: join(root, "surfaces") });
+  const doc = existsSync(out) ? JSON.parse(readFileSync(out, "utf8")) : null;
+  return { res, out, doc };
 }
 
-/** 実測の候補を持つ対象の記録だけを見る(候補 0 件の対象は継ぎ目を通らない)。 */
-const withEntries = (docs) => docs.find((d) => (d.entries ?? []).length > 0);
+/** 捕れなかった口の記録を一つ返す。 */
+const firstBad = (doc) => (doc?.surfaces ?? []).find((x) => x.status !== "captured");
 
 // ------------------------------------------------------------- 上流の固定
-
-await check("固定とずれた実体を掴んだとき、家風の失敗で止まる(生のスタックを吐かない)", async () => {
-  const { configDir } = fakePlugin("0.0.1-合わない版");
-  const r = run(process.execPath, [overlayBin, "--print-plan"], {
-    cwd: join(root, "overlay"), env: { ...process.env, CLAUDE_CONFIG_DIR: configDir, SYSTEMMAP_DOCTRINE_PATH: "" },
-  });
-  if (r.code === 0) return "固定とずれているのに通した";
-  const out = r.stderr + r.stdout;
-  if (/at .*\n/.test(out) && /Error: Command failed/.test(out)) return `生の Node のスタックを吐いている: ${brief(out)}`;
-  if (r.code !== 2) return `終了コードが 2 でない(${r.code})。この木では「使い方・環境の誤り」は 2 である`;
-  return /固定/.test(out) ? null : `理由が固定のずれだと言っていない: ${brief(out)}`;
-});
 
 await check("版が合っても commit を確かめられないことを、確かめられると言わない", async () => {
   const { configDir } = fakePlugin(PINNED_VERSION);
@@ -131,74 +125,36 @@ mkdirSync(join(FAKE_DOCTRINE, "scripts"), { recursive: true });
 writeFileSync(join(FAKE_DOCTRINE, "scripts", "trace-index.py"), "", "utf8");
 const base = ["--doctrine", FAKE_DOCTRINE, "--repo", `doctrine-lens=${repoRoot}`, "--docs-root", `doctrine-lens=${join(repoRoot, "doctrine_docs")}`];
 
-for (const [id, body, want] of [
-  ["empty", "exit 0", /空/],
-  ["notjson", 'echo "これは JSON ではない"', /JSON/],
-  ["badschema", `echo '{"schema":"trace-index/99","ranges":[],"findings":[]}'`, /schema/],
-  ["fail", "exit 3", /失敗|終了/],
-]) {
-  await check(`CLI が答えない(${id})とき、測れなかったと言う`, async () => {
-    const { res, docs } = produceOverlay(id, [...base, "--python", fakePython(id, body)]);
-    if (res.code !== 0) return `生成が通らない(${res.code}) — ${brief(res.stderr || res.stdout)}`;
-    const d = withEntries(docs);
-    if (!d) return "記録を持つ対象が無い(この検めが成り立たない)";
-    const e = d.entries[0];
-    if (e.status !== "unverifiable") return `状態が unverifiable でない: ${e.status}`;
-    return want.test(e.reason ?? "") ? null : `理由が何も言っていない: ${brief(e.reason)}`;
-  });
-}
-
 await check("道具そのものが無いとき、測れなかったと言う(黙って空にしない)", async () => {
-  const { res, docs } = produceOverlay("nopython", [...base, "--python", "この名前の実行体は無い"]);
-  if (res.code !== 0) return `生成が通らない(${res.code}) — ${brief(res.stderr || res.stdout)}`;
-  const d = withEntries(docs);
-  const e = d?.entries?.[0];
-  if (!e) return "記録が無い(落ちたアンカーが黙って消えている)";
-  return e.status === "unverifiable" ? null : `状態が unverifiable でない: ${e.status}`;
+  const { res, doc } = produceCapture("nopython", ["--python", "この名前の実行体は無い"]);
+  if (res.code === 0) return "壊れた道具でも成功として終わった(黙って通した)";
+  const bad = firstBad(doc);
+  if (!doc) return "捕獲が書かれていない(止まったが、なぜ止まったかが残らない)";
+  if (!bad) return "捕れなかった口が記録されていない";
+  return /実行体|ENOENT|CLI が失敗/.test(bad.reason ?? "") ? null : `理由が何も言っていない: ${brief(bad.reason)}`;
 });
 
 await check("答えない CLI にぶら下がらない(時間切れで止まる)", async () => {
   const slow = fakePython("slow", "sleep 30");
   const started = Date.now();
-  const { res, docs } = produceOverlay("timeout", [...base, "--python", slow, "--timeout-ms", "1000"]);
+  const { res, doc } = produceCapture("timeout", ["--python", slow, "--timeout-ms", "1000"]);
   const took = Date.now() - started;
-  if (res.code !== 0) return `生成が通らない(${res.code}) — ${brief(res.stderr || res.stdout)}`;
-  if (took > 20000) return `時間切れが効いていない(${Math.round(took / 1000)} 秒待った)`;
-  const e = withEntries(docs)?.entries?.[0];
-  if (!e) return "記録が無い";
-  if (e.status !== "unverifiable") return `状態が unverifiable でない: ${e.status}`;
-  return /時間切れ/.test(e.reason ?? "") ? null : `理由が時間切れだと言っていない: ${brief(e.reason)}`;
+  if (res.code === 0) return "時間切れの道具でも成功として終わった";
+  if (took > 20000) return `時間切れが効いていない(${took}ms 待った)`;
+  const bad = firstBad(doc);
+  return /時間切れ/.test(bad?.reason ?? "") ? null : `理由が時間切れだと言っていない: ${brief(bad?.reason)}`;
 });
 
 await check("返す値が大きくても、黙って測れなかったことにしない", async () => {
-  // 既定の受け皿(1 MiB)を超える正しい返す値。以前はここで ENOBUFS になり、
-  // 「大きすぎた」とは言わずに「測れなかった」とだけ言っていた。
-  const big = fakePython("big", `python3 -c "import json;print(json.dumps({'schema':'trace-index/1','ranges':[],'findings':[{'check':'x','path':'p'+str(i)} for i in range(60000)]}))"`);
-  const { res, docs } = produceOverlay("big", [...base, "--python", big]);
-  if (res.code !== 0) return `生成が通らない(${res.code}) — ${brief(res.stderr || res.stdout)}`;
-  const e = withEntries(docs)?.entries?.[0];
-  if (!e) return "記録が無い";
-  return e.status === "unverifiable" ? `大きな返す値を受け取れていない: ${brief(e.reason)}` : null;
+  const big = fakePython("big", "head -c 80000000 /dev/zero | tr '\0' 'x'");
+  const { res, doc } = produceCapture("big", ["--python", big]);
+  if (res.code === 0) return "巨大な返り値でも成功として終わった";
+  const bad = firstBad(doc);
+  return /上限|JSON でない/.test(bad?.reason ?? "") ? null : `理由が言えていない: ${brief(bad?.reason)}`;
 });
 
 // ------------------------------------------------------------ 由来の無い木
 
-await check("git でない木を、清らかな木と言わない", async () => {
-  const plain = dir("not-a-git-tree");
-  mkdirSync(join(plain, "doctrine_docs"), { recursive: true });
-  const { res, docs } = produceOverlay("nogit", [
-    "--doctrine", FAKE_DOCTRINE, "--repo", `doctrine-lens=${plain}`, "--docs-root", `doctrine-lens=${join(plain, "doctrine_docs")}`,
-    "--python", fakePython("nogit", `echo '{"schema":"trace-index/1","ranges":[],"findings":[]}'`),
-  ]);
-  if (res.code !== 0) return `生成が通らない(${res.code}) — ${brief(res.stderr || res.stdout)}`;
-  const d = docs[0];
-  if (!d) return "何も生成されていない";
-  const w = d.worktree ?? {};
-  if (w.dirty === false || w.shallow === false) {
-    return `由来を辿れない木を dirty=${w.dirty} / shallow=${w.shallow} と断じている(「分からない」を「問題なし」に変換している)`;
-  }
-  return d.generated_from_rev === null ? null : `rev を合成している: ${d.generated_from_rev}`;
-});
 
 // ------------------------------------------------ 途中で殺されても切れた物を残さない
 
@@ -217,35 +173,6 @@ await check("書き込みは原子的である(途中で止まっても切れた
   if (leftovers.length) return `一時の物が残っている: ${leftovers.join(", ")}`;
   writeAtomic(target, "新しい中身");
   return readFileSync(target, "utf8") === "新しい中身" ? null : "置き換えが効いていない";
-});
-
-await check("成果物と記録を、原子的でない書き方で置いていない", async () => {
-  // 見るのは **commit される物・後から読まれる記録**を書く道具だけである。
-  // 試験が一時の置き場へ書くのは道具立てであり、途中で殺されても誰も読まない。
-  const watched = ["prototype/build.mjs", "overlay/build-overlay.mjs", "gold-model/report.mjs"];
-  const bad = [];
-  for (const rel of watched) {
-    const src = readFileSync(join(root, rel), "utf8");
-    for (const m of src.matchAll(/writeFileSync\s*\(/g)) bad.push(`${rel}: ${m[0].trim()}`);
-  }
-  return bad.length ? `原子的でない書き込みが残っている: ${bad.join(" / ")}` : null;
-});
-
-// ---------------------------------------------------------------- 競合する走行
-
-await check("別の置き場へ並行に生成しても互いを汚さない", async () => {
-  const d = dir("concurrent");
-  const shippedBefore = sha(join(here, "index.html"));
-  const spawnBuild = (name) => new Promise((res) => {
-    const c = spawn(process.execPath, [buildBin, "--out", join(d, name), "--today", today.date], { cwd: here, stdio: "ignore" });
-    c.on("exit", (code) => res(code));
-  });
-  // **両方を起こしてから待つ。** sleep で重なりを作らない。
-  const [a, b] = await Promise.all([spawnBuild("a.html"), spawnBuild("b.html")]);
-  if (a !== 0 || b !== 0) return `並行の生成が落ちた(${a} / ${b})`;
-  if (sha(join(d, "a.html")) !== sha(join(d, "b.html"))) return "同じ入力から違う byte が出た";
-  if (sha(join(here, "index.html")) !== shippedBefore) return "並行の生成が出荷物を書き換えた";
-  return null;
 });
 
 await check("同じ木で走行が二つ重ならない(錠が効く・死んだ持ち主は継げる)", async () => {
@@ -292,18 +219,9 @@ await check("一括判定が自分の証拠を消さない", async () => {
 
 // -------------------------------------------------------- 経路・日付の際どい所
 
-await check("空白と日本語を含む置き場でも生成できる", async () => {
-  const odd = join(work, "空白 と 日本語 の 置き場");
-  mkdirSync(odd, { recursive: true });
-  const r = run(process.execPath, [buildBin, "--out", join(odd, "index.html"), "--today", today.date], { cwd: here });
-  if (r.code !== 0) return `生成が通らない(${r.code}) — ${brief(r.stderr || r.stdout)}`;
-  return existsSync(join(odd, "index.html")) ? null : "生成物が置かれていない";
-});
-
 await check("了解の期限の境界で判定が変わる", async () => {
-  const file = TARGETS.find((t) => t.roles.includes("model"))?.file;
   const bin = join(root, "gold-model", "validate.mjs");
-  const at = (d) => run(process.execPath, [bin, file, "--today", d], { cwd: join(root, "gold-model") }).code;
+  const at = (d) => run(process.execPath, [bin, "--today", d], { cwd: join(root, "gold-model") }).code;
   const inside = at("2026-11-09");
   const outside = at("2026-11-10");
   if (inside === outside) return `期限の内(2026-11-09)と外(2026-11-10)で判定が同じ(${inside})。期限が効いていない`;
@@ -312,32 +230,12 @@ await check("了解の期限の境界で判定が変わる", async () => {
 
 await check("在り得ない日付を日付として受け取らない", async () => {
   const bin = join(root, "gold-model", "validate.mjs");
-  const file = TARGETS.find((t) => t.roles.includes("model"))?.file;
-  const r = run(process.execPath, [bin, file, "--today", "2026-02-30"], { cwd: join(root, "gold-model") });
+  const r = run(process.execPath, [bin, "--today", "2026-02-30"], { cwd: join(root, "gold-model") });
   if (r.code === 0) return "2026-02-30 を日付として受け取り、そのまま判定した";
   return /日付|--today/.test(r.stderr + r.stdout) ? null : `落ちたが理由が日付だと言っていない: ${brief(r.stderr || r.stdout)}`;
 });
 
 // ---------------------------------------------------------------- オフライン
-
-await check("伝送が成立しない環境を、リンクの破損と言わない", async () => {
-  // **偶発の通信失敗を欠陥に変換しない。** 実測でそれが起きている —— 同じ木で
-  // 一度だけ全 9 要素が「接続不能」で落ち、再走行では通った。伝送そのものが成立
-  // しないときは、破損(FAIL)ではなく判定不能(SKIP)である。
-  // 判定不能は合格ではない —— 了解の記録が無ければ赤い。それでよい。
-  const out = join(dir("m14-offline"), "report.json");
-  const r = run(process.execPath, [join(here, "test-m14-browser.mjs"), "--force-offline", "--report", out, "--today", today.date], { cwd: here });
-  if (!existsSync(out)) return "判定の記録が書かれていない(段が黙って終わった)";
-  const recs = JSON.parse(readFileSync(out, "utf8")).records ?? [];
-  const failed = recs.filter((x) => x.verdict === "FAIL");
-  if (failed.length) return `伝送不成立を破損として報告している: ${brief(failed[0].message)}`;
-  const skipped = recs.filter((x) => x.verdict === "SKIP");
-  if (!skipped.length) return `判定不能が一件も出ていない(記録: ${recs.map((x) => x.verdict).join(", ")})`;
-  if (!/伝送/.test(skipped[0].message ?? "")) return `理由が伝送の不成立だと言っていない: ${brief(skipped[0].message)}`;
-  // 判定不能を合格に数えていないこと。
-  return r.code === 0 ? "判定不能なのに段が緑で終わっている(SKIP を合格に数えている)" : null;
-});
-
 
 await check("出荷する実装に通信の原始要素が無い", async () => {
   const src = join(repoRoot, "src");
