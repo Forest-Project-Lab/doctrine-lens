@@ -122,7 +122,11 @@ const dirtyMouths = (cap.surfaces ?? []).filter((s) => s.source_dirty === true).
 const parts = [];
 const P = (s) => parts.push(s);
 
-P(`<meta charset="utf-8">
+P(`<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>統治の実態 — 宣言済み読み口が返した値だけ</title>
 <style>
 :root{--fg:#111;--bg:#fff;--dim:#666;--line:#ddd;--bad:#8a1f11;--hi:#fff8e1}
@@ -150,7 +154,9 @@ summary{cursor:default;font-weight:600}
 ul{margin:.5rem 0;padding-left:1.4rem}
 li{margin:.35rem 0}
 pre{white-space:pre-wrap;word-break:break-all;font-size:.78em;background:#fafafa;padding:.5rem;margin:.4rem 0}
-</style>`);
+</style>
+</head>
+<body>`);
 
 // ---------- 頭 ----------
 section = "0 問い";
@@ -414,6 +420,8 @@ P(`<h2>10. この画面が描かないこと</h2>
 <p class="note">上の数はすべて、この build のときに捕えた読み口の返り値から導いている。
 <b>綴りの中に測定値を書いていない</b> —— 書けば、書いたその日のうちに古びる。
 <sup class="d">導</sup> の付いた数は、口が返した値ではなく画面が数えた導出である。</p>`);
+
+P(`</body>\n</html>`);
 
 const html = parts.join("\n");
 sweepStale(outPath);

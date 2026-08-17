@@ -278,11 +278,19 @@ describe("Doctrine Lens — 拡張機能ホスト", () => {
     // 外部への経路を残さない(M-13 の規律)。
     assert.ok(html.includes("Content-Security-Policy"), "CSP が課されていない");
     assert.ok(html.includes("default-src 'none'"), "既定で全ての取得を禁じていない");
-    // 射程を偽らない画面が、そのまま出荷されている。
-    for (const phrase of ["この実測が言っていないこと", "この対象は【架空】である"]) {
+    // **出荷しているのが、読み口の返す値だけから描いた画面であること。**
+    // 2026-08-17 の所有者決定により、手書きの模型から描く画面はもう出荷しない。
+    for (const phrase of [
+      "機械が測れたのはどこまでで、その外側はどれだけ在るか",  // 画面が答える唯一の問い
+      "この画面は System Map ではない",                        // 完成と読ませない一文
+      "この画面が描かないこと",                                 // 射程の宣言
+    ]) {
       assert.ok(html.includes(phrase), `出荷した画面に「${phrase}」が無い`);
     }
-    // 対象は id で指す(添字ではない)。
-    assert.ok(/<option value="doctrine-and-lens"/.test(html), "対象を id で指していない");
+    // **偽の到達路を持たない。** 押せる連結も外部の取得も置かない(M-13 の規律)。
+    assert.ok(!html.includes("<a href"), "押せる連結が在る(この画面は外部へ通信しない)");
+    assert.ok(!/<script[\s>]/.test(html), "script が在る");
+    // 対象を選ばせる器はもう無い(模型が一つも無いので選ぶ対象が無い)。
+    assert.ok(!html.includes("<option"), "対象の選択欄が残っている");
   });
 });
