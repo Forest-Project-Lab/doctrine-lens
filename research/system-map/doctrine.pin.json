@@ -2,11 +2,11 @@
   "schema": "system-map/doctrine-pin/1",
   "$comment": "上流 doctrine の実体を固定する(ADR-031 決定6)。tag は動かせるが commit は動かせないので、CI は commit を取りに行き `git rev-parse HEAD` で照合する。手元の門は、引いた実体の版をここと突き合わせ、食い違えば静かに測らずに申告する。",
   "plugin": "doctrine@forest-project-lab",
-  "version": "0.13.0",
-  "tag": "v0.13.0",
-  "commit": "a5b9462189b751b5208a7b69520df1e8ae25076f",
+  "version": "0.14.0",
+  "tag": "v0.14.0",
+  "commit": "ec4a9415d41503642cf962737afba63bccddecad",
   "allow_autodetect": true,
-  "recorded_at": "2026-08-14",
-  "recorded_because": "0.13.0 で意味モデルの正本が統治木の中の型付き .md になり、JSON は一方通行の投影になった(ADR-163・SPEC-031)。あわせて上流が**器の形を写すのをやめ、こちらの schema.json の一枚から導く**ようになった(ADR-165・EXT-007) —— 写しが二つの出所を持って割れた実例(当方が第2信で報告した M-18・M-14 の二重の FAIL)を根から断つ変更である。当方の門で確かめた: 上流の実例 MODEL-001 の投影は、直す前は M-18 と M-14 の両方で落ち、直した後は第二門 PASS 11 / FAIL 0、第三門 M-14 PASS(到達可能な要素 4 件)。",
+  "recorded_at": "2026-08-17",
+  "recorded_because": "0.14.0 で上流が #294 第5信の 6 点に応えた(ADR-169〜172・第13信)。新しい口が二つ増える: `model-index/1`(`render-projection.py model --list`。木の中の MODEL を列挙する。当方の `registry.json` の `targets[]` の置き換え先)と、`map-draft-check/1` の `sources` 欄(出所ごとに書き手の申告 `claimed` と機械の判定 `verdict` を**分けて**返す。判定は五値で、機械検証不能を所見なしと混ぜない)。当方で照合した: 告知 commit と一致、同梱の器は 0.2 のまま byte 一致(`92fa79c3…`)、MODEL-001 の投影は当方の第二門で PASS 11 / FAIL 0。overlay が引く三道具(`trace-index.py`・`dep-graph.py`・`docs-audit.py`)は**全て不変**。あわせて出所の門が荷重を負っていることを実測した —— locator の引用 12 本を嘘に差し替えると 12/12 が `mismatched`(`D2_SOURCE_UNRESOLVED`)へ落ちる。ただし**意味の欄 41 本を嘘にしても 0 所見・12/12 `verified`** であり、この門が縛るのは「引用が実在すること」であって主張の真偽ではない(上流も SPEC-029 の射程として明言している)。",
   "$comment_autodetect": "allow_autodetect を真にしているのは、npm script(docs:check ほか)が導入済みの実体をそのまま使えるようにするためである。**食い違いを黙らせるためではない** —— 解決した版と commit は毎回 stderr に出す。再現性が要る段(overlay 生成・system-map の CI)は --require-pin を付け、食い違えば止まる。"
 }
