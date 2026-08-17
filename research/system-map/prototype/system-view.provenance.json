@@ -1,0 +1,828 @@
+{
+  "numbers": [
+    {
+      "derived": false,
+      "from": "model-index/1 の models[] の長さ",
+      "section": "0 問い",
+      "value": 0
+    },
+    {
+      "derived": true,
+      "from": "surfaces[].source_dirty === true の件数",
+      "section": "0 問い",
+      "value": 4
+    },
+    {
+      "derived": false,
+      "from": "model-index/1 の models[] の長さ",
+      "section": "1 測れていないもの",
+      "value": 0
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の nodes[] のうち type === \"MODEL\" の件数",
+      "section": "1 測れていないもの",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.unmarked_files",
+      "section": "1 測れていないもの",
+      "value": 143
+    },
+    {
+      "derived": true,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs の値の和",
+      "section": "1 測れていないもの",
+      "value": 15
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.docs_root",
+      "section": "1 測れていないもの",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.dot_dir",
+      "section": "1 測れていないもの",
+      "value": 5
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.gitignored_dir",
+      "section": "1 測れていないもの",
+      "value": 9
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.skip_dir_name",
+      "section": "1 測れていないもの",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.symlink_dir",
+      "section": "1 測れていないもの",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.pruned_dirs.unreadable_dir",
+      "section": "1 測れていないもの",
+      "value": 0
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の nodes[] のうち edges[] に src でも dst でも現れない件数",
+      "section": "1 測れていないもの",
+      "value": 10
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[].id の相異なる数",
+      "section": "1 測れていないもの",
+      "value": 7
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の nodes[] の長さ",
+      "section": "1 測れていないもの",
+      "value": 123
+    },
+    {
+      "derived": false,
+      "from": "model-index/1 の models[] の長さ",
+      "section": "2 意味モデル",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の nodes[] の長さ",
+      "section": "2 意味モデル",
+      "value": 123
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の nodes[] のうち type === \"MODEL\" の件数",
+      "section": "2 意味モデル",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.annotated_files",
+      "section": "3 走査が届いた範囲",
+      "value": 31
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.unmarked_files",
+      "section": "3 走査が届いた範囲",
+      "value": 143
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.exempt_files",
+      "section": "3 走査が届いた範囲",
+      "value": 4
+    },
+    {
+      "derived": true,
+      "from": "docs-audit/1 の trace_coverage.excluded の値の和",
+      "section": "3 走査が届いた範囲",
+      "value": 60
+    },
+    {
+      "derived": true,
+      "from": "上の四つの和",
+      "section": "3 走査が届いた範囲",
+      "value": 238
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.reached_files",
+      "section": "3 走査が届いた範囲",
+      "value": 238
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.binary",
+      "section": "3 走査が届いた範囲",
+      "value": 21
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.dot_file",
+      "section": "3 走査が届いた範囲",
+      "value": 8
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.gitignored_file",
+      "section": "3 走査が届いた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.md_suffix",
+      "section": "3 走査が届いた範囲",
+      "value": 30
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.nonregular",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.oversize",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.truncated",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.undecodable",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.excluded.unreadable",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.spec_coverage.no_code",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.spec_coverage.traced",
+      "section": "3 走査が届いた範囲",
+      "value": 6
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の trace_coverage.spec_coverage.undeclared",
+      "section": "3 走査が届いた範囲",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の長さ",
+      "section": "4 指紋の採れた範囲",
+      "value": 32
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[].id の相異なる数",
+      "section": "4 指紋の採れた範囲",
+      "value": 7
+    },
+    {
+      "derived": true,
+      "from": "id ごとの範囲数の和",
+      "section": "4 指紋の採れた範囲",
+      "value": 32
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"IMPL-001\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 10
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 217
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 7
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 5
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 206
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 261
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 347
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 520
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 185
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 98
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 45
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 215
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-001\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 9
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 231
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 330
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 190
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 85
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 70
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 86
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 71
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 62
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 65
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-006\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 4
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 152
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 839
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 408
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 272
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-005\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 3
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 78
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 88
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 259
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-004\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 2
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 161
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 1
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 116
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-007\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 2
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 557
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 598
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 14
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 134
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の ranges[] のうち id === \"SPEC-008\" の件数",
+      "section": "4 指紋の採れた範囲",
+      "value": 2
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 600
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 669
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の begin_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 16
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の end_line",
+      "section": "4 指紋の採れた範囲",
+      "value": 134
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の nodes[] の長さ",
+      "section": "5 依存の網",
+      "value": 123
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の edges[] の長さ",
+      "section": "5 依存の網",
+      "value": 263
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の edges[] のうち kind === \"intra_domain\" の件数",
+      "section": "5 依存の網",
+      "value": 258
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の edges[] のうち kind === \"cross_domain_impact\" の件数",
+      "section": "5 依存の網",
+      "value": 5
+    },
+    {
+      "derived": true,
+      "from": "種別ごとの件数の和",
+      "section": "5 依存の網",
+      "value": 263
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の edges[] のうち mirrored === true の件数",
+      "section": "5 依存の網",
+      "value": 20
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の totals.advisory",
+      "section": "6 所見",
+      "value": 36
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の totals.error",
+      "section": "6 所見",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の totals.warn",
+      "section": "6 所見",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の counts_by_check.stray_document",
+      "section": "6 所見",
+      "value": 28
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の counts_by_check.trace_marker_suspect",
+      "section": "6 所見",
+      "value": 8
+    },
+    {
+      "derived": true,
+      "from": "counts_by_check の値の和",
+      "section": "6 所見",
+      "value": 36
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の findings[] の長さ",
+      "section": "6 所見",
+      "value": 36
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の findings[] のうち code === \"trace_marker_suspect\" の件数",
+      "section": "6 所見",
+      "value": 8
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の findings[] のうち path が research/system-map/ で始まる件数",
+      "section": "6 所見",
+      "value": 8
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の checks_run[] の長さ",
+      "section": "7 検査の名簿",
+      "value": 40
+    },
+    {
+      "derived": true,
+      "from": "docs-audit/1 の counts_by_check の鍵の数",
+      "section": "7 検査の名簿",
+      "value": 2
+    },
+    {
+      "derived": false,
+      "from": "model-index/1 の models[] の長さ",
+      "section": "8 口の点呼",
+      "value": 0
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の edges[] の長さ",
+      "section": "8 口の点呼",
+      "value": 263
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の nodes[] の長さ",
+      "section": "8 口の点呼",
+      "value": 123
+    },
+    {
+      "derived": false,
+      "from": "dep-graph/1 の result[] の長さ",
+      "section": "8 口の点呼",
+      "value": 263
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の findings[] の長さ",
+      "section": "8 口の点呼",
+      "value": 8
+    },
+    {
+      "derived": false,
+      "from": "trace-index/1 の ranges[] の長さ",
+      "section": "8 口の点呼",
+      "value": 32
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の checks_run[] の長さ",
+      "section": "8 口の点呼",
+      "value": 40
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の findings[] の長さ",
+      "section": "8 口の点呼",
+      "value": 36
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の top_findings[] の長さ",
+      "section": "8 口の点呼",
+      "value": 20
+    },
+    {
+      "derived": false,
+      "from": "model-index/1 の models[] の長さ",
+      "section": "10 描かないこと",
+      "value": 0
+    }
+  ],
+  "schema": "system-map/number-ledger/1",
+  "source_revision": "36323f334189264bc43f2913d455ea49b8178813"
+}

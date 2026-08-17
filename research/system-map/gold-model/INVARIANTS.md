@@ -55,6 +55,9 @@
 | M-Q1 | 起草者へ差し出す要件の一覧が、模型を判ずる検査器を過不足なく覆い、器の指紋と一致する | `meta:requirements-complete` | doctrine#294 第2信 §3-3・上流 ADR-165 決定6 |
 | M-F1 | 鮮度の三値は上流の宣言(ICD-002・ADR-172 決定3)から導き、こちらで再定義しない。不明を同一に丸めない | `overlay:rev-state-declared` | 上流 `doctrine_docs/graph/ICD.md`・doctrine#294 第13信 §6 |
 | M-P1 | 出所が支える欄を名乗るときは、その欄がその記録に実在する。名乗らない自由は在るが、嘘の名を名乗る自由は無い | `model:supports-names-real-fields` | doctrine#294 第5信 G3・第13信 §3 |
+| M-V1 | 出荷する画面は宣言済み読み口が返した値だけから描く。手書きの模型の中身が一文字も混ざらない | `screen:no-authored-facts` | 所有者決定 2026-08-16・doctrine#294 第5信 |
+| M-V2 | 画面に出る数は全て build の台帳に載り、出所を名乗る。綴りへ焼き込んだ数は出荷できない | `screen:numbers-have-provenance` | 設計の審査 2026-08-17 |
+| M-V3 | 画面が示す内訳は、口が名乗る総数に閉じる。閉じない内訳を黙って出荷しない | `build:closures-hold` | 設計の審査 2026-08-17 |
 | M-N1 | M-13/M-14 の門が負の入力で実際に発火する | `meta:gate-fires` | 所有者判定 2026-08-04 §6・ADR-017 |
 | M-R1 | 不変条件と検査器が一対一で対応する | `meta:registry-consistent` | ADR-031 決定8 |
 | M-N2 | 負例の表の各行で、名指した検査器が名指した判定と符丁を出す | `meta:negatives-fire` | ADR-031 決定8・ADR-017 |

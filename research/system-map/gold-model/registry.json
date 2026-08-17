@@ -585,6 +585,30 @@
       "checkers": [
         "model:supports-names-real-fields"
       ]
+    },
+    {
+      "id": "M-V1",
+      "statement": "出荷する画面は宣言済み読み口が返した値だけから描く。手書きの模型の中身が一文字も混ざらない",
+      "source": "所有者決定 2026-08-16(Lens は view に徹する)・doctrine#294 第5信",
+      "checkers": [
+        "screen:no-authored-facts"
+      ]
+    },
+    {
+      "id": "M-V2",
+      "statement": "画面に出る数は全て build の台帳に載り、出所を名乗る。綴りへ焼き込んだ数は出荷できない",
+      "source": "設計の審査(2026-08-17)。焼いた数は焼いたその日のうちに古びることを実測",
+      "checkers": [
+        "screen:numbers-have-provenance"
+      ]
+    },
+    {
+      "id": "M-V3",
+      "statement": "画面が示す内訳は、口が名乗る総数に閉じる。閉じない内訳を黙って出荷しない",
+      "source": "設計の審査(2026-08-17)。除外を到達の外側と誤る形が三案とも出た",
+      "checkers": [
+        "build:closures-hold"
+      ]
     }
   ],
   "checkers": [
@@ -839,6 +863,27 @@
       "gate": "model",
       "module": "gold-model/check-model.mjs",
       "judges": "model"
+    },
+    {
+      "id": "screen:no-authored-facts",
+      "invariant": "M-V1",
+      "gate": "no-authored-facts",
+      "module": "prototype/test-no-authored-facts.mjs",
+      "judges": "artifact"
+    },
+    {
+      "id": "screen:numbers-have-provenance",
+      "invariant": "M-V2",
+      "gate": "no-authored-facts",
+      "module": "prototype/test-no-authored-facts.mjs",
+      "judges": "artifact"
+    },
+    {
+      "id": "build:closures-hold",
+      "invariant": "M-V3",
+      "gate": "system-view",
+      "module": "prototype/build-system-view.mjs",
+      "judges": "artifact"
     }
   ],
   "acknowledgements": [
@@ -1142,6 +1187,24 @@
       "cmd": [
         "node",
         "test-targets-wired.mjs"
+      ]
+    },
+    {
+      "id": "system-view",
+      "label": "統治の実態の画面を読み口の捕獲から描く",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "build-system-view.mjs"
+      ]
+    },
+    {
+      "id": "no-authored-facts",
+      "label": "出荷する画面に手書きの事実が混ざっていない",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-no-authored-facts.mjs"
       ]
     },
     {

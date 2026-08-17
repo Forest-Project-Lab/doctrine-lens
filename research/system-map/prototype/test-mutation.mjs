@@ -31,6 +31,28 @@ const src = join(here, "..");
 /** 潰す先と、潰したときに**落ちなくなるはずの**確かめ。 */
 const MUTATIONS = [
   {
+    // **数を散文へ焼き込む。** 設計の審査が最も多く挙げた過大主張の形である。
+    // 台帳を通らない数が出荷物に在れば落ちなければならない。
+    label: "画面の散文へ数を焼き込む(台帳を通さない数を出す)",
+    file: "prototype/build-system-view.mjs",
+    from: `P(\`<h2>10. この画面が描かないこと</h2>`,
+    to: `P(\`<h2>10. この画面が描かないこと</h2><p>被覆は 87 パーセントである</p>`,
+    run: ["prototype/test-no-authored-facts.mjs"],
+    expect: "落ちる",
+    rebuild: ["prototype/build-system-view.mjs"],
+  },
+  {
+    // **手書きの模型を画面が読む。** 誰かが繋ぎ直したら鳴らなければならない。
+    label: "画面が手書きの模型を読む(繋ぎ直す)",
+    file: "prototype/build-system-view.mjs",
+    from: `const html = parts.join("\\n");`,
+    // 模型のファイル名は**正本から引く**。綴りへ書くと単一正本の規則が咎める(実測で咎められた)。
+    to: `P("<p>" + esc(JSON.parse(readFileSync(join(here,"..","gold-model",${JSON.stringify(TARGETS[0].file)}),"utf8")).elements[0].purpose) + "</p>");\nconst html = parts.join("\\n");`,
+    run: ["prototype/test-no-authored-facts.mjs"],
+    expect: "落ちる",
+    rebuild: ["prototype/build-system-view.mjs"],
+  },
+  {
     // 出荷していた欠陥そのものを復元する潰し —— 汚れた木でも「同一(照合済)」と
     // 断言していた。宣言(上流 ICD-002)から導いた表が鳴らなければ、規則は飾りである。
     label: "鮮度の規則から汚れの条件を落とす(汚れた木を「同一」と断言させる)",
@@ -200,8 +222,12 @@ for (const m of MUTATIONS) {
     continue;
   }
   writeFileSync(path, before.replace(m.from, m.to), "utf8");
+  // 生成物を判ずる潰しは、**壊してから作り直さないと効かない** ——
+  // 出荷物は build が書く物であり、綴りを壊しただけでは古い出荷物が残る。
+  if (m.rebuild) runIn(m.rebuild);
   const after = runIn(m.run);
   writeFileSync(path, before, "utf8");
+  if (m.rebuild) runIn(m.rebuild); // 次の潰しのために出荷物を戻す
 
   const caught = m.expect === "落ちる" ? after !== 0 : after === 0;
   if (caught) console.log(`ok   ${m.label} — 潰すと${m.expect}(規則が判定を支えている)`);
