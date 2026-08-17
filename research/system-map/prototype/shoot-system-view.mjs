@@ -50,6 +50,10 @@ if (flag("--print-plan")) {
   process.exit(0);
 }
 
+// **汚れは像を書く前に採る。** 後で採ると、いま自分が書いた像そのものを
+// 「作業木が汚れている」と数えてしまう(実測でそう書いた)。測る物が測定で動く例である。
+const dirtyBefore = execFileSync("git", ["status", "--porcelain", "--", here], { cwd: here, encoding: "utf8" }).trim() !== "";
+
 const { chromium } = await import("playwright");
 mkdirSync(shotsDir, { recursive: true });
 for (const f of readdirSync(shotsDir)) if (f.endsWith(".png")) rmSync(join(shotsDir, f));
@@ -104,7 +108,7 @@ if (external.length) die(`出荷物が外部へ取得しに行った(自己完�
 if (errors.length) die(`画面が例外を出した: ${errors.slice(0, 2).join(" / ")}`, 1);
 
 const rev = execFileSync("git", ["rev-parse", "HEAD"], { cwd: here, encoding: "utf8" }).trim();
-const dirty = execFileSync("git", ["status", "--porcelain", "--", here], { cwd: here, encoding: "utf8" }).trim() !== "";
+const dirty = dirtyBefore;
 writeFileSync(join(shotsDir, "README.md"),
   `# 統治の実態の画面 — 静止画(全ページ)\n\n`
   + `- 撮影時点の commit: \`${rev}\`${dirty ? "（**作業木が汚れている**。この像はどの commit にも対応しない）" : ""}\n`
