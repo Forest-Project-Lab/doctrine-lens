@@ -39,9 +39,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-size:.78em;background:#fafafa
 この木にそれは <b class="num">0</b> 件である。
 ここに在るのは、四つの読み口が build 時に返した値をそのまま並べた一枚である。</p>
 <p>手書きの模型の内容は一文字も含まない（不変条件 M-V1 が機械で検める）。</p>
-<p class="bad">この頁の数は、どの commit にも対応しない作業木の値である ——
-       <b class="num derived">4</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> つの口が「未コミットの変更あり」と名乗った。
-       刻んだ <code>36323f334189</code> は、測った対象そのものを指していない。</p>
+<p>四つの口はいずれも「未コミットの変更なし」と名乗った。</p>
 </div>
 <h2>1. 木の側に無いもの</h2>
 <p>達成の数より先に、同じ大きさで置く。<b>この行は一つも消えない。</b></p>
@@ -52,7 +50,7 @@ pre{white-space:pre-wrap;word-break:break-all;font-size:.78em;background:#fafafa
   <span class="note">id を持たない MODEL 文書は上流が標準エラーへ出して飛ばす。この数は「id を持つ MODEL の数」である。</span></td></tr>
 <tr><td>MODEL 型の節点</td><td class="gapnum"><b class="num derived">0</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
   <td><b>別の口が別に返した数である。上の行と足さない。</b></td></tr>
-<tr><td>走査が届いたが印の無いファイル</td><td class="gapnum"><b class="num">143</b></td>
+<tr><td>走査が届いたが印の無いファイル</td><td class="gapnum"><b class="num">150</b></td>
   <td>仕様とコードを結ぶ手掛かりが無いファイル。</td></tr>
 <tr><td>走査が届かなかった枝</td><td class="gapnum"><b class="num derived">15</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
   <td>刈られたディレクトリの配下は<b>見ていない</b>。<code>docs_root</code> <b class="num">1</b> / <code>dot_dir</code> <b class="num">5</b> / <code>gitignored_dir</code> <b class="num">9</b> / <code>skip_dir_name</code> <b class="num">0</b> / <code>symlink_dir</code> <b class="num">0</b> / <code>unreadable_dir</code> <b class="num">0</b></td></tr>
@@ -78,15 +76,15 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
 <b><code>excluded</code> は「未到達」ではない</b> —— 触れたうえで規則により外した物である。届かなかったのは刈った枝だけである。</p>
 <table>
 <tr><td>印が在る</td><td><b class="num">31</b></td></tr>
-<tr><td>印が無い</td><td><b class="num">143</b></td></tr>
+<tr><td>印が無い</td><td><b class="num">150</b></td></tr>
 <tr><td>免除</td><td><b class="num">4</b></td></tr>
-<tr><td>規則で外した</td><td><b class="num derived">60</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
-<tr><th>合計</th><th><b class="num derived">238</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / 口が名乗る <code>reached_files</code> は <b class="num">238</b>
+<tr><td>規則で外した</td><td><b class="num derived">61</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
+<tr><th>合計</th><th><b class="num derived">246</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / 口が名乗る <code>reached_files</code> は <b class="num">246</b>
   —— 閉じている</th></tr>
 </table>
 <h3>除外の内訳（0 の鍵も消さない）</h3>
 <table><tr><th><code>binary</code></th><th><code>dot_file</code></th><th><code>gitignored_file</code></th><th><code>md_suffix</code></th><th><code>nonregular</code></th><th><code>oversize</code></th><th><code>truncated</code></th><th><code>undecodable</code></th><th><code>unreadable</code></th></tr>
-<tr><td><b class="num">21</b></td><td><b class="num">8</b></td><td><b class="num">1</b></td><td><b class="num">30</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td></tr></table>
+<tr><td><b class="num">21</b></td><td><b class="num">8</b></td><td><b class="num">1</b></td><td><b class="num">31</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td></tr></table>
 <p class="note">完全性の旗: <code>truncated</code> = false /
 <code>gitignore</code> = read</p>
 <h3>実装の指紋節の宣言</h3>
@@ -103,7 +101,7 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
 <div class="wrap">
 <h3>IMPL-001 <span class="note">範囲 <b class="num derived">10</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
 <table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
-<tr><td><code>src/extension.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">217</b></td><td><code>sha256:1b1a4a6b95f8d5a8fd664c110964a9fdc90b1b1272b12477349f55d3ed3a93a1</code></td></tr><tr><td><code>src/html.d.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">7</b></td><td><code>sha256:3c329c1613a9f39361063de9273b5f664b1f01d62784033e1f2444ae4f63a9e8</code></td></tr><tr><td><code>src/l10n.ts</code></td><td style="white-space:nowrap"><b class="num">5</b>–<b class="num">206</b></td><td><code>sha256:746fdd92db0b93ea831c24813dc5710f58371289eaa274e0d558cbd23cf39e79</code></td></tr><tr><td><code>src/panel/html.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">261</b></td><td><code>sha256:7cf27d0b82cae7e7cab9d39c6ecc1dc86dd93296033bee9707deebbd066816e1</code></td></tr><tr><td><code>src/panel/lensPanel.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">347</b></td><td><code>sha256:1986d868eac8cadfb22039b8908a2dee69ee15ef57dd0a8d513052dd7a7b7689</code></td></tr><tr><td><code>src/session.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">520</b></td><td><code>sha256:857a5cc031494a073b71adb7293373935cc38d5960ae14c81ad2c09d935ef205</code></td></tr><tr><td><code>src/shared/protocol.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">185</b></td><td><code>sha256:94664fc36b7eafc50b5468589f0f778e2f1b1bd132c443623a9024063b7c35e8</code></td></tr><tr><td><code>src/statusbar.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">98</b></td><td><code>sha256:9fc5fe287d8967449fa76d992ad8624fd79171d03ac5c6ef13b464c4be863636</code></td></tr><tr><td><code>src/systemMap.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">45</b></td><td><code>sha256:78e0c2f1804005ad2f0de684fe82325ad94061b0e2a5018a6000e199e5f69f02</code></td></tr><tr><td><code>src/test/manifest.test.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">215</b></td><td><code>sha256:6943c3efea9b1564ed39964f36ba7313217495d2c513bcdd5a3838653aa16422</code></td></tr>
+<tr><td><code>src/extension.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">217</b></td><td><code>sha256:1b1a4a6b95f8d5a8fd664c110964a9fdc90b1b1272b12477349f55d3ed3a93a1</code></td></tr><tr><td><code>src/html.d.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">7</b></td><td><code>sha256:3c329c1613a9f39361063de9273b5f664b1f01d62784033e1f2444ae4f63a9e8</code></td></tr><tr><td><code>src/l10n.ts</code></td><td style="white-space:nowrap"><b class="num">5</b>–<b class="num">206</b></td><td><code>sha256:746fdd92db0b93ea831c24813dc5710f58371289eaa274e0d558cbd23cf39e79</code></td></tr><tr><td><code>src/panel/html.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">261</b></td><td><code>sha256:7cf27d0b82cae7e7cab9d39c6ecc1dc86dd93296033bee9707deebbd066816e1</code></td></tr><tr><td><code>src/panel/lensPanel.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">347</b></td><td><code>sha256:1986d868eac8cadfb22039b8908a2dee69ee15ef57dd0a8d513052dd7a7b7689</code></td></tr><tr><td><code>src/session.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">520</b></td><td><code>sha256:857a5cc031494a073b71adb7293373935cc38d5960ae14c81ad2c09d935ef205</code></td></tr><tr><td><code>src/shared/protocol.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">185</b></td><td><code>sha256:94664fc36b7eafc50b5468589f0f778e2f1b1bd132c443623a9024063b7c35e8</code></td></tr><tr><td><code>src/statusbar.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">98</b></td><td><code>sha256:9fc5fe287d8967449fa76d992ad8624fd79171d03ac5c6ef13b464c4be863636</code></td></tr><tr><td><code>src/systemMap.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">51</b></td><td><code>sha256:1a2043dab52aff6ea8ac1dd330310557ed4d4c000535b68fdf9ffdd4a41484b2</code></td></tr><tr><td><code>src/test/manifest.test.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">215</b></td><td><code>sha256:6943c3efea9b1564ed39964f36ba7313217495d2c513bcdd5a3838653aa16422</code></td></tr>
 </table>
 <h3>SPEC-001 <span class="note">範囲 <b class="num derived">9</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
 <table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
@@ -146,30 +144,30 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
 <tr><td><code>ADR-025</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-014</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-023</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-025</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>IMPACT-014</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr></table>
 <h2>6. 所見</h2>
 <table><tr><th><code>advisory</code></th><th><code>error</code></th><th><code>warn</code></th></tr>
-<tr><td><b class="num">36</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td></tr></table>
+<tr><td><b class="num">59</b></td><td><b class="num">0</b></td><td><b class="num">1</b></td></tr></table>
 <p class="note"><b>0 の欄は「その重さの所見を 0 件返した」であって「健全である」ではない。</b>
 色でも記号でも合格として描かない。<code>advisory</code> は「機械が判定を差し控えた」であって「問題なし」ではない。</p>
 <table><tr><th>所見を返した検査</th><th>件数</th></tr>
-<tr><td><code>stray_document</code></td><td><b class="num">28</b></td></tr><tr><td><code>trace_marker_suspect</code></td><td><b class="num">8</b></td></tr>
-<tr><th>和</th><th><b class="num derived">36</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / <code>findings[]</code> は <b class="num">36</b>
+<tr><td><code>trace_marker_suspect</code></td><td><b class="num">30</b></td></tr><tr><td><code>stray_document</code></td><td><b class="num">29</b></td></tr><tr><td><code>trace_stale</code></td><td><b class="num">1</b></td></tr>
+<tr><th>和</th><th><b class="num derived">60</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / <code>findings[]</code> は <b class="num">60</b>
   —— 閉じている</th></tr></table>
 <p class="note"><b>件数だけである。中身は誰も読んでいない。</b></p>
 <h3>注釈の走査が挙げた所見</h3>
 <table><tr><th>符号</th><th>件数</th></tr>
-<tr><td><code>trace_marker_suspect</code></td><td><b class="num derived">8</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
+<tr><td><code>trace_marker_suspect</code></td><td><b class="num derived">30</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
 </table>
 <p class="note">この口は<b>重さを返さない</b> —— 検出に徹し、判定はしない（上流 ADR-156）。
 上の監査の所見と<b>同じ物を別の口から数えている場合がある。足さないこと。</b></p>
-<p class="note">このうち <b class="num derived">8</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 件は、
+<p class="note">このうち <b class="num derived">30</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 件は、
 <b>この調査自身が木へ置いた物</b>を指している。<b>この画面は、自分が測っている木を、自分の存在によって動かしている。</b></p>
 <h2>7. 検査の名簿</h2>
-<p>この版の道具が名乗る検査は <b class="num">40</b> 種。うち所見を返したのは <b class="num derived">2</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 種。</p>
+<p>この版の道具が名乗る検査は <b class="num">40</b> 種。うち所見を返したのは <b class="num derived">3</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 種。</p>
 <p class="note"><b>この数は「走った」の証跡ではない。</b> 上流はこの一覧を静的な定数として無条件に出力する ——
 走査が一つもファイルへ届かなかった走行でも同じ数が出る。
 <b>残りの検査について、この画面は「走った」とも「走らなかった」とも言えない。</b></p>
 <div class="wrap"><p><code>dead_link</code> <code>dep_cycle</code> <code>review_by_overrun</code> <code>stale_draft</code> <code>source_missing</code> <code>template_placeholder</code> <code>bad_date</code> <code>stale_proposed</code> <code>orphan</code> <code>reverse_orphan_req_no_spec</code> <code>reverse_orphan_spec_no_test</code> <code>canonical_conflict</code> <code>near_duplicate</code> <code>icd_dependency_violation</code> <code>projection_drift</code> <code>unregistered_document</code> <code>shadowed_document</code> <code>stray_document</code> <code>view_stale</code> <code>stale_current</code> <code>source_drift</code> <code>archive_integrity</code> <code>adr_not_landed</code> <code>glossary_seed_drift</code> <code>ext_anchor_broken</code> <code>ext_sole_guard_missing</code> <code>ext_sole_guard_loose</code> <code>memory_shadow</code> <code>trace_mark_error</code> <code>trace_broken_ref</code> <code>trace_deprecated_ref</code> <code>trace_stale</code> <code>trace_missing_impl</code> <code>trace_marker_suspect</code> <code>trace_scan_truncated</code> <code>trace_unexpected_impl</code> <code>trace_undeclared_impl</code> <code>trace_exempt_conflict</code> <code>trace_unmarked_backlog</code> <code>guard_liveness_gap</code></p></div>
 <h2>8. 口の点呼</h2>
-<p>四口が名乗った版は 一つ —— <code>36323f334189</code>。
+<p>四口が名乗った版は 一つ —— <code>b3f48687bbf9</code>。
 <b>これは四つの独立した証拠ではない。同じ build で同じ観測を四回写した物である。</b></p>
 <div class="wrap"><table>
 <tr><th>読み口</th><th>返したか</th><th>道具と版</th><th>測った木の版</th><th>未コミットの変更</th><th>返した配列</th></tr>
@@ -177,30 +175,30 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
 <td><code>model-index/1</code></td>
 <td>返した</td>
 <td>render-projection.py 0.14.0</td>
-<td><code>36323f334189</code></td>
-<td><b class="bad">あり</b></td>
+<td><code>b3f48687bbf9</code></td>
+<td>無し</td>
 <td class="note">models <b class="num">0</b></td>
 </tr><tr>
 <td><code>dep-graph/1</code></td>
 <td>返した</td>
 <td>dep-graph.py 0.14.0</td>
-<td><code>36323f334189</code></td>
-<td><b class="bad">あり</b></td>
+<td><code>b3f48687bbf9</code></td>
+<td>無し</td>
 <td class="note">edges <b class="num">263</b> / nodes <b class="num">123</b> / result <b class="num">263</b></td>
 </tr><tr>
 <td><code>trace-index/1</code></td>
 <td>返した</td>
 <td>trace-index.py 0.14.0</td>
-<td><code>36323f334189</code></td>
-<td><b class="bad">あり</b></td>
-<td class="note">findings <b class="num">8</b> / ranges <b class="num">32</b></td>
+<td><code>b3f48687bbf9</code></td>
+<td>無し</td>
+<td class="note">findings <b class="num">30</b> / ranges <b class="num">32</b></td>
 </tr><tr>
 <td><code>docs-audit/1</code></td>
 <td>返した</td>
 <td>docs-audit.py 0.14.0</td>
-<td><code>36323f334189</code></td>
-<td><b class="bad">あり</b></td>
-<td class="note">checks_run <b class="num">40</b> / findings <b class="num">36</b> / top_findings <b class="num">20</b></td>
+<td><code>b3f48687bbf9</code></td>
+<td>無し</td>
+<td class="note">checks_run <b class="num">40</b> / findings <b class="num">60</b> / top_findings <b class="num">20</b></td>
 </tr>
 </table></div>
 <h3>鮮度</h3>
@@ -219,8 +217,8 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
  },
  &quot;models&quot;: [],
  &quot;schema&quot;: &quot;model-index/1&quot;,
- &quot;source_dirty&quot;: true,
- &quot;source_revision&quot;: &quot;36323f334189264bc43f2913d455ea49b8178813&quot;
+ &quot;source_dirty&quot;: false,
+ &quot;source_revision&quot;: &quot;b3f48687bbf994725a31701443b7763dcb4e3afc&quot;
 }</pre>
 <p class="note">全文である(<b class="num derived">10</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行)。</p>
 </details>
@@ -309,7 +307,7 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
   },
   {
    &quot;code&quot;: &quot;trace_marker_suspect&quot;,</pre>
-<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">245</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
+<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">377</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
        <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>
 </details>
 <details><summary><code>docs-audit/1</code></summary>
@@ -353,7 +351,7 @@ MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数え�
   &quot;trace_unexpected_impl&quot;,
   &quot;trace_undeclared_impl&quot;,
   &quot;trace_exempt_conflict&quot;,</pre>
-<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">507</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
+<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">700</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
        <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>
 </details>
 <h2>10. この画面が描かないこと</h2>

@@ -7,12 +7,6 @@
       "value": 0
     },
     {
-      "derived": true,
-      "from": "surfaces[].source_dirty === true の件数",
-      "section": "0 問い",
-      "value": 4
-    },
-    {
       "derived": false,
       "from": "model-index/1 の models[] の長さ",
       "section": "1 測れていないもの",
@@ -28,7 +22,7 @@
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.unmarked_files",
       "section": "1 測れていないもの",
-      "value": 143
+      "value": 150
     },
     {
       "derived": true,
@@ -118,7 +112,7 @@
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.unmarked_files",
       "section": "3 走査が届いた範囲",
-      "value": 143
+      "value": 150
     },
     {
       "derived": false,
@@ -130,19 +124,19 @@
       "derived": true,
       "from": "docs-audit/1 の trace_coverage.excluded の値の和",
       "section": "3 走査が届いた範囲",
-      "value": 60
+      "value": 61
     },
     {
       "derived": true,
       "from": "上の四つの和",
       "section": "3 走査が届いた範囲",
-      "value": 238
+      "value": 246
     },
     {
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.reached_files",
       "section": "3 走査が届いた範囲",
-      "value": 238
+      "value": 246
     },
     {
       "derived": false,
@@ -166,7 +160,7 @@
       "derived": false,
       "from": "docs-audit/1 の trace_coverage.excluded.md_suffix",
       "section": "3 走査が届いた範囲",
-      "value": 30
+      "value": 31
     },
     {
       "derived": false,
@@ -346,7 +340,7 @@
       "derived": false,
       "from": "trace-index/1 の ranges[] の end_line",
       "section": "4 指紋の採れた範囲",
-      "value": 45
+      "value": 51
     },
     {
       "derived": false,
@@ -700,7 +694,7 @@
       "derived": false,
       "from": "docs-audit/1 の totals.advisory",
       "section": "6 所見",
-      "value": 36
+      "value": 59
     },
     {
       "derived": false,
@@ -712,43 +706,49 @@
       "derived": false,
       "from": "docs-audit/1 の totals.warn",
       "section": "6 所見",
-      "value": 0
-    },
-    {
-      "derived": false,
-      "from": "docs-audit/1 の counts_by_check.stray_document",
-      "section": "6 所見",
-      "value": 28
+      "value": 1
     },
     {
       "derived": false,
       "from": "docs-audit/1 の counts_by_check.trace_marker_suspect",
       "section": "6 所見",
-      "value": 8
+      "value": 30
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の counts_by_check.stray_document",
+      "section": "6 所見",
+      "value": 29
+    },
+    {
+      "derived": false,
+      "from": "docs-audit/1 の counts_by_check.trace_stale",
+      "section": "6 所見",
+      "value": 1
     },
     {
       "derived": true,
       "from": "counts_by_check の値の和",
       "section": "6 所見",
-      "value": 36
+      "value": 60
     },
     {
       "derived": false,
       "from": "docs-audit/1 の findings[] の長さ",
       "section": "6 所見",
-      "value": 36
+      "value": 60
     },
     {
       "derived": true,
       "from": "trace-index/1 の findings[] のうち code === \"trace_marker_suspect\" の件数",
       "section": "6 所見",
-      "value": 8
+      "value": 30
     },
     {
       "derived": true,
       "from": "trace-index/1 の findings[] のうち path が research/system-map/ で始まる件数",
       "section": "6 所見",
-      "value": 8
+      "value": 30
     },
     {
       "derived": false,
@@ -760,7 +760,7 @@
       "derived": true,
       "from": "docs-audit/1 の counts_by_check の鍵の数",
       "section": "7 検査の名簿",
-      "value": 2
+      "value": 3
     },
     {
       "derived": false,
@@ -790,7 +790,7 @@
       "derived": false,
       "from": "trace-index/1 の findings[] の長さ",
       "section": "8 口の点呼",
-      "value": 8
+      "value": 30
     },
     {
       "derived": false,
@@ -808,7 +808,7 @@
       "derived": false,
       "from": "docs-audit/1 の findings[] の長さ",
       "section": "8 口の点呼",
-      "value": 36
+      "value": 60
     },
     {
       "derived": false,
@@ -832,13 +832,13 @@
       "derived": true,
       "from": "trace-index/1 の返り値の行数 − 載せた 40 行",
       "section": "9 生の返り値",
-      "value": 245
+      "value": 377
     },
     {
       "derived": true,
       "from": "docs-audit/1 の返り値の行数 − 載せた 40 行",
       "section": "9 生の返り値",
-      "value": 507
+      "value": 700
     },
     {
       "derived": false,
@@ -848,5 +848,5 @@
     }
   ],
   "schema": "system-map/number-ledger/1",
-  "source_revision": "36323f334189264bc43f2913d455ea49b8178813"
+  "source_revision": "b3f48687bbf994725a31701443b7763dcb4e3afc"
 }
