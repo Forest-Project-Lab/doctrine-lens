@@ -577,6 +577,14 @@
       "checkers": [
         "overlay:rev-state-declared"
       ]
+    },
+    {
+      "id": "M-P1",
+      "statement": "出所が支える欄を名乗るときは、その欄がその記録に実在する。名乗らない自由は在るが、嘘の名を名乗る自由は無い",
+      "source": "doctrine#294 第5信 G3・第13信 §3(導出面に不変であることを上流が実測)",
+      "checkers": [
+        "model:supports-names-real-fields"
+      ]
     }
   ],
   "checkers": [
@@ -824,6 +832,13 @@
       "gate": "overlay",
       "module": "overlay/test-rev-state.mjs",
       "judges": "gate"
+    },
+    {
+      "id": "model:supports-names-real-fields",
+      "invariant": "M-P1",
+      "gate": "model",
+      "module": "gold-model/check-model.mjs",
+      "judges": "model"
     }
   ],
   "acknowledgements": [
@@ -987,6 +1002,36 @@
       "reason": "この架空の対象は document のアンカーを一つ持つだけで、実現先になりうる種別を持たない",
       "source": "gold-model/fixture-rare-states.json の anchors",
       "checked_at": "2026-08-09",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-P1",
+      "target": "lens-shipping",
+      "verdict": "VACUOUS",
+      "reason": "この模型の出所は一件も supports を名乗っていない。主張と出所の結びは doctrine#294 第13信 §3 で器へ足したばかりで、結んだのは対象1 の 9 件だけである。**結んでいないことは『支える出所が無い』ではなく『まだ書いていない』である** —— 画面はこの対象について主張ごとの出所を出せない",
+      "source": "gold-model/target-2-lens-shipping.json(provenance に supports を持つ出所は 0 件)",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-P1",
+      "target": "celery",
+      "verdict": "VACUOUS",
+      "reason": "同上。加えてこの対象は全 5 要素が not_applicable であり、実現の主張そのものを持たない",
+      "source": "gold-model/target-3-celery.json(provenance に supports を持つ出所は 0 件)",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-P1",
+      "target": "fixture-rare-states(架空)",
+      "verdict": "VACUOUS",
+      "reason": "同上。この対象は【架空】であり、H 層 T6(希少状態)の掃引のためだけに在る。実在の出所を持たないので結ぶ相手が無い",
+      "source": "gold-model/fixture-rare-states.json(provenance に supports を持つ出所は 0 件)",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     }

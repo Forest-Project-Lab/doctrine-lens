@@ -251,6 +251,49 @@ export const MODEL_CHECKERS = {
     },
   },
 
+  "model:supports-names-real-fields": {
+    invariant: "M-P1",
+    unit: "支える欄を名乗った出所",
+    note: "名指した欄がその記録に無ければ、画面は主張の下へ何も出せないのに『出所つき』と数える",
+    run(m) {
+      // 出所を持ちうる記録は四種(器の $defs で provenance を持つ物)。
+      const bearers = [
+        ...(m.elements ?? []).map((r) => ["elements", r]),
+        ...(m.flows ?? []).map((r) => ["flows", r]),
+        ...(m.contracts ?? []).map((r) => ["contracts", r]),
+        ...(m.scenarios ?? []).map((r) => ["scenarios", r]),
+      ];
+      let examined = 0;
+      const violations = [];
+      for (const [where, rec] of bearers) {
+        for (const [i, src] of (rec.provenance ?? []).entries()) {
+          if (!Array.isArray(src.supports)) continue; // 任意欄。書かない自由が在る
+          examined++;
+          // **書かないことと、空を書くことを同じにしない。** 空配列は「支える欄が無い」
+          // ではなく「名乗りかけてやめた」であり、器の側では落とせない(制約を足すと
+          // 受け入れる集合が狭まり版が上がる)。ここで落とす。
+          if (src.supports.length === 0) {
+            violations.push(v("model.supports_empty", `${where}/${rec.id} の出所[${i}] の supports が空である。書かないのと空を書くのは別である`));
+          }
+          for (const name of src.supports) {
+            if (typeof name !== "string" || name.trim() === "") {
+              violations.push(v("model.supports_blank_name", `${where}/${rec.id} の出所[${i}] の supports に空の名が在る`));
+              continue;
+            }
+            // **その記録に実在する欄だけを名乗れる。** 出所そのものの欄
+            // (provenance)を名指すのは自己言及なので認めない。
+            if (name === "provenance") {
+              violations.push(v("model.supports_self_reference", `${where}/${rec.id} の出所[${i}] が provenance を支えると名乗っている`));
+            } else if (!Object.hasOwn(rec, name)) {
+              violations.push(v("model.supports_unknown_field", `${where}/${rec.id} の出所[${i}] が名乗る欄 "${name}" がその記録に無い`));
+            }
+          }
+        }
+      }
+      return { examined, violations };
+    },
+  },
+
   "model:anchor-target-grammar": {
     invariant: "M-17",
     unit: "実現先になりうるアンカー",

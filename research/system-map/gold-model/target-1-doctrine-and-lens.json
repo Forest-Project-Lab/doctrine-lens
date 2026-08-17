@@ -24,7 +24,10 @@
           "source": "doctrine-lens: doctrine_docs/_system/decided-facts.md",
           "locator": "owner 欄・確定方針",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "owner"
+          ]
         }
       ],
       "review_status": "proposed",
@@ -61,7 +64,10 @@
           "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
           "locator": "第10・17項",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "not_responsible_for"
+          ]
         }
       ],
       "review_status": "proposed",
@@ -165,7 +171,11 @@
           "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
           "locator": "要求文・何を解いていないか",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "purpose",
+            "not_responsible_for"
+          ]
         },
         {
           "source": "doctrine-lens: doctrine_docs/_system/non-goals.md",
@@ -274,7 +284,10 @@
           "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
           "locator": "起点を選ぶ操作を求めない(ファイルを開くことが問い合わせ)",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "purpose"
+          ]
         }
       ],
       "review_status": "proposed",
@@ -521,7 +534,10 @@
           "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
           "locator": "ADR-014・017・019・021・023 の五つが芯",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "guarantee"
+          ]
         }
       ],
       "review_status": "proposed"
@@ -553,7 +569,11 @@
           "source": "https://github.com/Forest-Project-Lab/doctrine/pull/206",
           "locator": "検証節",
           "checked_at": "2026-08-04",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "guarantee",
+            "response_measure"
+          ]
         }
       ],
       "review_status": "proposed"
@@ -574,13 +594,19 @@
           "source": "doctrine-lens: doctrine_docs/_system/REQ-000-what-this-product-solves.md",
           "locator": "全文(性能への言及なし)",
           "checked_at": "2026-08-04",
-          "verdict": "silent"
+          "verdict": "silent",
+          "supports": [
+            "verification_status"
+          ]
         },
         {
           "source": "doctrine-lens: doctrine_docs/lens/REQ-001-zoom-navigation.md",
           "locator": "全文(応答時間の要求なし)",
           "checked_at": "2026-08-04",
-          "verdict": "silent"
+          "verdict": "silent",
+          "supports": [
+            "verification_status"
+          ]
         }
       ],
       "review_status": "proposed"
@@ -600,7 +626,10 @@
           "source": "doctrine: doctrine_docs/_system/non-goals.md@51ffa76",
           "locator": "第17項(ハザード層は採らない。採るのは主張と証跡を結ぶ形だけ)",
           "checked_at": "2026-08-03",
-          "verdict": "present"
+          "verdict": "present",
+          "supports": [
+            "na_reason"
+          ]
         }
       ],
       "review_status": "proposed",
