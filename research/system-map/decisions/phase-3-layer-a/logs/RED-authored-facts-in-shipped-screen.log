@@ -1,0 +1,5 @@
+ok   手書きにだけ在る字句を採る(555 件)
+NG   出荷物に手書きの事実が混ざっていない — 555 件が出荷物の中に在る。例: "system-map/gold-model/0.2" / "fixture-rare-states(架空)" / "この対象は【架空】である。H 層 T6(希少状態 planned/failed/stale "
+NG   出荷物が手書き模型を名指していない — fixture-rare-states.json を名指している
+
+2 件の所見 / 0 件の異常

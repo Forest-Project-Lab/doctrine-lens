@@ -6,11 +6,14 @@
 //   最小性・archive・平時コンテキスト除外(doctrine 上流 issue 210)は別タスク。
 // - 画面は research/system-map/prototype の自己完結 HTML を build 時に文字列として内蔵する。
 //   実行時の取得・外部通信・書き込みは無い(読むだけの画面。M-13 の規律のまま)。
+// - **内蔵するのは `system-view.html` である**(2026-08-17 の所有者決定)。これは上流の
+//   宣言済み読み口が返した値だけから描かれ、手書きの模型を一文字も含まない
+//   (M-V1 が機械で検める)。手書きから描く `index.html` は**もう出荷しない**。
 // - 明示の命令でだけ開く。既定の挙動(帰結画面・起動時活性化)は変えない。
 import * as vscode from "vscode";
 
 import { messages } from "./l10n.js";
-import systemMapHtml from "../research/system-map/prototype/index.html";
+import systemMapHtml from "../research/system-map/prototype/system-view.html";
 
 /** 一度きりの識別子。実行を許す script を、内蔵したその一つに限る。 */
 function nonce(): string {
@@ -25,6 +28,9 @@ function nonce(): string {
 function withCsp(html: string): string {
   const n = nonce();
   const csp = `default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${n}';`;
+  // **差し込めなければ落とす。** `<head>` を持たない HTML を内蔵すると、この置換は
+  // 黙って何もせず、CSP の無い画面がそのまま出荷される —— 欠落を正常値へ変換しない。
+  if (!html.includes("<head>")) throw new Error("embedded system view has no <head>: cannot inject CSP");
   return html
     .replace("<head>", `<head>\n<meta http-equiv="Content-Security-Policy" content="${csp}">`)
     .replace("<script>", `<script nonce="${n}">`);

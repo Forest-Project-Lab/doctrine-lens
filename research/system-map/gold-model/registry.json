@@ -251,50 +251,6 @@
       }
     }
   },
-  "targets": [
-    {
-      "file": "target-1-doctrine-and-lens.json",
-      "roles": [
-        "model",
-        "build",
-        "gates",
-        "labels",
-        "overlay"
-      ]
-    },
-    {
-      "file": "target-2-lens-shipping.json",
-      "roles": [
-        "model",
-        "build",
-        "gates",
-        "labels",
-        "overlay"
-      ]
-    },
-    {
-      "file": "target-3-celery.json",
-      "roles": [
-        "model",
-        "build",
-        "gates",
-        "labels",
-        "overlay"
-      ]
-    },
-    {
-      "file": "fixture-rare-states.json",
-      "roles": [
-        "model",
-        "build",
-        "gates",
-        "labels",
-        "overlay"
-      ],
-      "fictional": true,
-      "$comment": "架空。H 層 T6(希少状態の読み分け)専用。実在の成果物を指さない。"
-    }
-  ],
   "verdicts": {
     "$comment": "合格の桶に入るのは PASS だけである(ADR-031 決定5)。VACUOUS と SKIP は不合格であって、出所つきの了解の記録が在るときにだけ個別に許す。",
     "PASS": {
@@ -424,24 +380,6 @@
       ]
     },
     {
-      "id": "M-13",
-      "statement": "道具が読むのは doctrine の宣言済み CLI の実行の返す値だけ",
-      "source": "台帳 v3.2-14",
-      "checkers": [
-        "build:no-runtime-fetch",
-        "browser:no-external-request"
-      ]
-    },
-    {
-      "id": "M-14",
-      "statement": "要素からコードまたは証拠への到達が規定操作数以内",
-      "source": "台帳 v3.2-3・16",
-      "checkers": [
-        "build:reachability",
-        "browser:ops-count"
-      ]
-    },
-    {
       "id": "M-15",
       "statement": "not_applicable の Contract は na_reason と present の出所を持つ",
       "source": "doctrine S1(2026-08-04 登載)",
@@ -474,27 +412,11 @@
       ]
     },
     {
-      "id": "M-L1",
-      "statement": "SVG のラベル同士が視覚的に重ならない",
-      "source": "レビュー指摘 2026-08-04 §4",
-      "checkers": [
-        "browser:label-no-overlap"
-      ]
-    },
-    {
       "id": "M-S1",
       "statement": "M 層の事実(模型の一覧・実現先の種別・証跡の必須属性・七状態・操作数の上限)が正本の外に手書きされておらず、正本を迂回して対象を握る口(位置の添字・overlay のファイル名)も残っていない",
       "source": "ADR-031 決定8・実行原則5",
       "checkers": [
         "meta:single-source"
-      ]
-    },
-    {
-      "id": "M-N1",
-      "statement": "M-13/M-14 の門が負の入力で実際に発火する(発火しない門を緑と呼ばない)",
-      "source": "所有者判定 2026-08-04 §6・ADR-017",
-      "checkers": [
-        "meta:gate-fires"
       ]
     },
     {
@@ -506,52 +428,11 @@
       ]
     },
     {
-      "id": "M-N2",
-      "statement": "負例の表の各行で、名指した検査器が名指した判定と符丁を出す(門が発火する)",
-      "source": "ADR-031 決定8・ADR-017",
-      "checkers": [
-        "meta:negatives-fire"
-      ]
-    },
-    {
       "id": "M-N3",
       "statement": "判定を支える規則(空判定・非 PASS・了解の期限・種別・文法)を潰すと、対応する確かめが実際に変わる",
       "source": "ADR-017・ADR-031 決定5",
       "checkers": [
         "meta:rules-load-bearing"
-      ]
-    },
-    {
-      "id": "M-W1",
-      "statement": "対象を一つ増やすと、対象を列挙する全ての場所がそれを拾う(位置ではなく id で指す)",
-      "source": "ADR-031 決定8・PR5(複数対象 overlay と配線)",
-      "checkers": [
-        "meta:targets-wired"
-      ]
-    },
-    {
-      "id": "M-W2",
-      "statement": "実測 overlay は自分が宣言した対象で索かれ、壊れ・未知の形・未知の対象・重複・空の実測を黙って通さない",
-      "source": "ADR-031 決定5(何も検めていない合格を合格と呼ばない)・PR5",
-      "checkers": [
-        "meta:overlay-indexing"
-      ]
-    },
-    {
-      "id": "M-19",
-      "statement": "生成器が出しうる状態は、画面でそれぞれ別の文になる。表に無い状態を既知の語へ黙って読み替えない",
-      "source": "PR6(UI)・所有者指示 2026-08-04 §4",
-      "checkers": [
-        "build:display-vocabulary",
-        "browser:display-total"
-      ]
-    },
-    {
-      "id": "M-20",
-      "statement": "区別を色や線だけに載せない(境界の内外・候補と確認済・架空の対象・門が認めなかった実現先を語で言う)",
-      "source": "PR6(UI)・所有者指示 2026-08-04 §4",
-      "checkers": [
-        "browser:distinction-in-words"
       ]
     },
     {
@@ -584,6 +465,30 @@
       "source": "doctrine#294 第5信 G3・第13信 §3(導出面に不変であることを上流が実測)",
       "checkers": [
         "model:supports-names-real-fields"
+      ]
+    },
+    {
+      "id": "M-V1",
+      "statement": "出荷する画面は宣言済み読み口が返した値だけから描く。手書きの模型の中身が一文字も混ざらない",
+      "source": "所有者決定 2026-08-16(Lens は view に徹する)・doctrine#294 第5信",
+      "checkers": [
+        "screen:no-authored-facts"
+      ]
+    },
+    {
+      "id": "M-V2",
+      "statement": "画面に出る数は全て build の台帳に載り、出所を名乗る。綴りへ焼き込んだ数は出荷できない",
+      "source": "設計の審査(2026-08-17)。焼いた数は焼いたその日のうちに古びることを実測",
+      "checkers": [
+        "screen:numbers-have-provenance"
+      ]
+    },
+    {
+      "id": "M-V3",
+      "statement": "画面が示す内訳は、口が名乗る総数に閉じる。閉じない内訳を黙って出荷しない",
+      "source": "設計の審査(2026-08-17)。除外を到達の外側と誤る形が三案とも出た",
+      "checkers": [
+        "build:closures-hold"
       ]
     }
   ],
@@ -708,52 +613,10 @@
       "judges": "model"
     },
     {
-      "id": "build:no-runtime-fetch",
-      "invariant": "M-13",
-      "gate": "build",
-      "module": "prototype/gates.mjs",
-      "judges": "artifact"
-    },
-    {
-      "id": "build:reachability",
-      "invariant": "M-14",
-      "gate": "build",
-      "module": "prototype/gates.mjs",
-      "judges": "model"
-    },
-    {
-      "id": "browser:no-external-request",
-      "invariant": "M-13",
-      "gate": "browser-m13",
-      "module": "prototype/test-m13-browser.mjs",
-      "judges": "artifact"
-    },
-    {
-      "id": "browser:ops-count",
-      "invariant": "M-14",
-      "gate": "browser-m14",
-      "module": "prototype/test-m14-browser.mjs",
-      "judges": "artifact"
-    },
-    {
-      "id": "browser:label-no-overlap",
-      "invariant": "M-L1",
-      "gate": "browser-labels",
-      "module": "prototype/test-labels-browser.mjs",
-      "judges": "artifact"
-    },
-    {
       "id": "meta:single-source",
       "invariant": "M-S1",
       "gate": "single-source",
       "module": "prototype/test-single-source.mjs",
-      "judges": "gate"
-    },
-    {
-      "id": "meta:gate-fires",
-      "invariant": "M-N1",
-      "gate": "unit",
-      "module": "prototype/test-gates.mjs",
       "judges": "gate"
     },
     {
@@ -764,53 +627,11 @@
       "judges": "gate"
     },
     {
-      "id": "meta:negatives-fire",
-      "invariant": "M-N2",
-      "gate": "negatives",
-      "module": "prototype/test-negatives.mjs",
-      "judges": "gate"
-    },
-    {
       "id": "meta:rules-load-bearing",
       "invariant": "M-N3",
       "gate": "mutation",
       "module": "prototype/test-mutation.mjs",
       "judges": "gate"
-    },
-    {
-      "id": "meta:targets-wired",
-      "invariant": "M-W1",
-      "gate": "targets-wired",
-      "module": "prototype/test-targets-wired.mjs",
-      "judges": "gate"
-    },
-    {
-      "id": "meta:overlay-indexing",
-      "invariant": "M-W2",
-      "gate": "targets-wired",
-      "module": "prototype/test-targets-wired.mjs",
-      "judges": "gate"
-    },
-    {
-      "id": "build:display-vocabulary",
-      "invariant": "M-19",
-      "gate": "display-static",
-      "module": "prototype/test-display-static.mjs",
-      "judges": "artifact"
-    },
-    {
-      "id": "browser:display-total",
-      "invariant": "M-19",
-      "gate": "browser-display",
-      "module": "prototype/test-display-browser.mjs",
-      "judges": "artifact"
-    },
-    {
-      "id": "browser:distinction-in-words",
-      "invariant": "M-20",
-      "gate": "browser-display",
-      "module": "prototype/test-display-browser.mjs",
-      "judges": "artifact"
     },
     {
       "id": "meta:chaos-tolerated",
@@ -829,7 +650,7 @@
     {
       "id": "overlay:rev-state-declared",
       "invariant": "M-F1",
-      "gate": "overlay",
+      "gate": "freshness",
       "module": "overlay/test-rev-state.mjs",
       "judges": "gate"
     },
@@ -839,6 +660,27 @@
       "gate": "model",
       "module": "gold-model/check-model.mjs",
       "judges": "model"
+    },
+    {
+      "id": "screen:no-authored-facts",
+      "invariant": "M-V1",
+      "gate": "no-authored-facts",
+      "module": "prototype/test-no-authored-facts.mjs",
+      "judges": "artifact"
+    },
+    {
+      "id": "screen:numbers-have-provenance",
+      "invariant": "M-V2",
+      "gate": "no-authored-facts",
+      "module": "prototype/test-no-authored-facts.mjs",
+      "judges": "artifact"
+    },
+    {
+      "id": "build:closures-hold",
+      "invariant": "M-V3",
+      "gate": "system-view",
+      "module": "prototype/build-system-view.mjs",
+      "judges": "artifact"
     }
   ],
   "acknowledgements": [
@@ -846,203 +688,186 @@
       "$comment": "ここに載るのは「何を検めていないか」を出所つきで名指したものだけである。期限を必ず持つ。期限を過ぎた了解、および対応する判定がもう出ていない了解(対象が実データを持った等)は、それ自体が所見になる。**この一覧の長さが、この模型群について機械が何も言えていない量である。**"
     },
     {
-      "invariant": "M-04",
-      "target": "lens-shipping",
+      "invariant": "M-18",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "この模型は子要素を持たない(全 6 要素が最上位)。境界を越える子の Flow が存在しないので、親への集約を検める対象が無い",
-      "source": "gold-model/target-2-lens-shipping.json の elements(parent が非 null の要素は 0 件)",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-01",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-02",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-03",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
       "invariant": "M-04",
-      "target": "celery",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "この模型は子要素を持たない(全 5 要素が最上位)。同上",
-      "source": "gold-model/target-3-celery.json の elements",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-04",
-      "target": "fixture-rare-states(架空)",
+      "invariant": "M-05",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "この模型は子要素を持たない(全 3 要素が最上位)。同上",
-      "source": "gold-model/fixture-rare-states.json の elements",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
       "invariant": "M-06",
-      "target": "celery",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "Celery の公開文書からは verified の契約が一件も取れなかった。四契約は claimed 3・unknown 1 である。台帳 v3.2-5 (e′) により、出所が沈黙しているものは unknown のまま置く——埋めれば捏造になる",
-      "source": "https://docs.celeryq.dev/en/stable/userguide/tasks.html ・ /faq.html ・ /userguide/workers.html(gold-model/target-3-celery.json の contracts に出所を記録)",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-16",
-      "target": "celery",
+      "invariant": "M-07a",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "verified の契約が 0 件なので、その証跡も 0 件である(M-06 と同じ理由の帰結)",
-      "source": "gold-model/target-3-celery.json の contracts",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-15",
-      "target": "lens-shipping",
+      "invariant": "M-07b",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "not_applicable の契約が無い(verified 1・claimed 1・unknown 1)。要素の側には明示 NA が 5 件あるが、それは実現の非該当であって契約の状態ではない",
-      "source": "gold-model/target-2-lens-shipping.json の contracts",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-15",
-      "target": "celery",
+      "invariant": "M-08",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "not_applicable の契約が無い(claimed 3・unknown 1)",
-      "source": "gold-model/target-3-celery.json の contracts",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-09",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-10",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
       "invariant": "M-11",
-      "target": "fixture-rare-states(架空)",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "この架空の対象は希少状態(planned/failed/stale/verified/claimed/not_applicable)の読み分けが目的であり、unknown を含まない。負の出所の検査は他の三対象が受け持つ",
-      "source": "gold-model/fixture-rare-states.json の contracts ・ usability-tests/h-layer-protocol.md の T6",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-07b",
-      "target": "doctrine-and-lens",
+      "invariant": "M-12",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "confirmed の実体が一つも無く、confirmed だけを写した正本表示も実装されていない。**この不変条件はまだ一度も検められていない。** 検査器は登録され発火するが、見る対象が無いことを言うだけである",
-      "source": "gold-model/*.json(review_status の相異なる値は proposed のみ)・prototype/build.mjs(正本表示の実装なし)",
-      "checked_at": "2026-08-09",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-07b",
-      "target": "lens-shipping",
+      "invariant": "M-15",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "同上(confirmed の実体が無い)",
-      "source": "gold-model/target-2-lens-shipping.json",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-07b",
-      "target": "celery",
-      "verdict": "VACUOUS",
-      "reason": "同上(confirmed の実体が無い)",
-      "source": "gold-model/target-3-celery.json",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-07b",
-      "target": "fixture-rare-states(架空)",
-      "verdict": "VACUOUS",
-      "reason": "同上(confirmed の実体が無い)",
-      "source": "gold-model/fixture-rare-states.json",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-14",
-      "target": "celery",
-      "verdict": "VACUOUS",
-      "reason": "全 5 要素が realization: not_applicable(外部の実体であり、この木にコードも試験も無い)。到達を数える対象が 0 件である。**この対象について M-14 は何も言っていない。** 束ねて数えていた頃は、他の対象の到達で隠れていた",
-      "source": "gold-model/target-3-celery.json の elements(operator・producer・broker・worker・result-backend)",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-14",
-      "target": "fixture-rare-states(架空)",
-      "verdict": "VACUOUS",
-      "reason": "全 3 要素が realization: not_applicable(架空であり実在の成果物を指さない)。同上",
-      "source": "gold-model/fixture-rare-states.json の elements(scheduler・generator・operator)",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-17",
-      "target": "celery",
-      "verdict": "VACUOUS",
-      "reason": "この対象のアンカーは全て external_doc(公開文書)である。実現先になりうる種別(code_range/test)を一つも持たないので、指す先の文法を検める対象が無い",
-      "source": "gold-model/target-3-celery.json の anchors",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-17",
-      "target": "fixture-rare-states(架空)",
-      "verdict": "VACUOUS",
-      "reason": "この架空の対象は document のアンカーを一つ持つだけで、実現先になりうる種別を持たない",
-      "source": "gold-model/fixture-rare-states.json の anchors",
-      "checked_at": "2026-08-09",
-      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
-      "expires_at": "2026-11-09"
-    },
-    {
-      "invariant": "M-P1",
-      "target": "lens-shipping",
-      "verdict": "VACUOUS",
-      "reason": "この模型の出所は一件も supports を名乗っていない。主張と出所の結びは doctrine#294 第13信 §3 で器へ足したばかりで、結んだのは対象1 の 9 件だけである。**結んでいないことは『支える出所が無い』ではなく『まだ書いていない』である** —— 画面はこの対象について主張ごとの出所を出せない",
-      "source": "gold-model/target-2-lens-shipping.json(provenance に supports を持つ出所は 0 件)",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
       "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
       "invariant": "M-P1",
-      "target": "celery",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "同上。加えてこの対象は全 5 要素が not_applicable であり、実現の主張そのものを持たない",
-      "source": "gold-model/target-3-celery.json(provenance に supports を持つ出所は 0 件)",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
       "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     },
     {
-      "invariant": "M-P1",
-      "target": "fixture-rare-states(架空)",
+      "invariant": "M-17",
+      "target": "(doctrine が管理する模型)",
       "verdict": "VACUOUS",
-      "reason": "同上。この対象は【架空】であり、H 層 T6(希少状態)の掃引のためだけに在る。実在の出所を持たないので結ぶ相手が無い",
-      "source": "gold-model/fixture-rare-states.json(provenance に supports を持つ出所は 0 件)",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
+      "checked_at": "2026-08-17",
+      "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
+      "expires_at": "2026-11-09"
+    },
+    {
+      "invariant": "M-16",
+      "target": "(doctrine が管理する模型)",
+      "verdict": "VACUOUS",
+      "reason": "**doctrine が管理する模型が 0 件である。** 口(model-index/1)は走り、空の一覧を返した —— 測れなかったのではなく、無いと測った。手書きの模型は 2026-08-17 に全て破棄したので、この検査器が検める対象はこの木に一つも無い。**模型が現れれば自動で検める**(対象は捕獲から引く)。",
+      "source": "surfaces/surfaces.json の model-index/1(models: [])",
       "checked_at": "2026-08-17",
       "recorded_by": "doctrine-lens 側エージェント(ADR-031)",
       "expires_at": "2026-11-09"
     }
   ],
-  "roles": {
-    "model": "validate.mjs が模型単体で検める対象",
-    "build": "index.html に載せる対象(並び順が画面の並び順になる)",
-    "gates": "test-gates.mjs とブラウザ試験が掃引する対象",
-    "labels": "ラベルの重なりを掃引する対象",
-    "overlay": "宣言済み CLI の実測を重ねる対象"
-  },
   "gates": [
     {
       "id": "model",
@@ -1051,16 +876,6 @@
       "cmd": [
         "node",
         "validate.mjs"
-      ],
-      "args_from": "targets:model"
-    },
-    {
-      "id": "build",
-      "label": "build(既定 = overlay なし。M-13 静的・M-14 計算)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "build.mjs"
       ]
     },
     {
@@ -1082,33 +897,6 @@
       ]
     },
     {
-      "id": "display-static",
-      "label": "表示の語が生成器の語を覆う(字面・ブラウザ不要)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-display-static.mjs"
-      ]
-    },
-    {
-      "id": "unit",
-      "label": "M-14 計算経路の正負(test-gates)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-gates.mjs"
-      ]
-    },
-    {
-      "id": "negatives",
-      "label": "負例の表(門が発火する)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-negatives.mjs"
-      ]
-    },
-    {
       "id": "mutation",
       "label": "規則を潰すと判定が変わる(門が荷重を負っている)",
       "cwd": "prototype",
@@ -1127,59 +915,34 @@
       ]
     },
     {
-      "id": "overlay",
+      "id": "system-view",
+      "label": "統治の実態の画面を読み口の捕獲から描く",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "build-system-view.mjs"
+      ]
+    },
+    {
+      "id": "no-authored-facts",
+      "label": "出荷する画面に手書きの事実が混ざっていない",
+      "cwd": "prototype",
+      "cmd": [
+        "node",
+        "test-no-authored-facts.mjs"
+      ]
+    },
+    {
+      "id": "freshness",
       "label": "鮮度の規則が上流の宣言と一致する",
-      "cwd": "overlay",
+      "cwd": "prototype",
       "cmd": [
         "node",
         "test-rev-state.mjs"
       ]
-    },
-    {
-      "id": "targets-wired",
-      "label": "配線(合成の対象を全ての列挙が拾う・overlay を宣言した対象で索く)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-targets-wired.mjs"
-      ]
-    },
-    {
-      "id": "browser-m13",
-      "label": "M-13 実ブラウザ(操作単位 assert・オフライン・負例5)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-m13-browser.mjs"
-      ]
-    },
-    {
-      "id": "browser-m14",
-      "label": "M-14 実操作(全到達要素のクリック計測・全リンク到達)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-m14-browser.mjs"
-      ]
-    },
-    {
-      "id": "browser-labels",
-      "label": "ラベル重なり(全対象+ドリル・回帰負例)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-labels-browser.mjs"
-      ]
-    },
-    {
-      "id": "browser-display",
-      "label": "実ブラウザの表示(状態の掃引・語での区別)",
-      "cwd": "prototype",
-      "cmd": [
-        "node",
-        "test-display-browser.mjs"
-      ]
     }
   ],
-  "$comment_judges": "checkers[].judges — その検査器が何を判ずるか。model=模型だけを入力にして判ずる(起草者へ差し出す要件になる)/artifact=生成物や実ブラウザの振る舞いを判ずる/gate=門そのものを見る。起草者へ差し出す要件の一覧はこの欄で絞る(validate.mjs --requirements)。"
+  "$comment_judges": "checkers[].judges — その検査器が何を判ずるか。model=模型だけを入力にして判ずる(起草者へ差し出す要件になる)/artifact=生成物や実ブラウザの振る舞いを判ずる/gate=門そのものを見る。起草者へ差し出す要件の一覧はこの欄で絞る(validate.mjs --requirements)。",
+  "$comment_targets": "**手書きの模型を持たない**(所有者決定 2026-08-17)。検める模型は doctrine が管理する物だけであり、`surfaces/surfaces.json` の `model-index/1` が列挙した物を読む。いま 0 件である —— 18 の模型検査器が「検める対象を持たない」と言うのは、その事実の表れである。",
+  "$comment_roles": "**役割の一覧は持たない。** 手書きの模型が無くなり、対象ごとに役割を割り当てる意味が消えた(検める模型は model-index/1 が列挙する物だけである)。"
 }

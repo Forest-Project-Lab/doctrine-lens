@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>統治の実態 — 宣言済み読み口が返した値だけ</title>
+<style>
+:root{--fg:#111;--bg:#fff;--dim:#666;--line:#ddd;--bad:#8a1f11;--hi:#fff8e1}
+*{box-sizing:border-box}
+body{margin:0 auto;padding:2rem 1.25rem 6rem;max-width:64rem;font:15px/1.75 system-ui,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:var(--fg);background:var(--bg)}
+h1{font-size:1.45rem;line-height:1.5;margin:0 0 .75rem}
+h2{font-size:1.1rem;margin:2.5rem 0 .5rem;padding-top:.75rem;border-top:2px solid var(--fg)}
+h3{font-size:.98rem;margin:1.25rem 0 .25rem}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;word-break:break-all}
+table{border-collapse:collapse;width:100%;margin:.5rem 0;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:.35rem .5rem;text-align:left;vertical-align:top}
+th{background:#f6f6f6;font-weight:600}
+.num{font-variant-numeric:tabular-nums;font-weight:700}
+.derived{border-bottom:2px dotted var(--dim)}
+sup.d{font-size:.68em;color:var(--dim)}
+.unmeasured{color:var(--dim);font-weight:700}
+.undecided{color:#7a5c00;font-weight:700;background:#fff3cd;padding:0 .25em}
+.bad{color:var(--bad);font-weight:600}
+.note{color:var(--dim);font-size:.87em}
+.lead{background:var(--hi);border:1px solid #e0c98a;padding:.85rem 1rem;margin:1rem 0}
+.gapnum b{font-size:1.5rem}
+.wrap{overflow-x:auto}
+details{border:1px solid var(--line);padding:.4rem .6rem;margin:.4rem 0}
+summary{cursor:default;font-weight:600}
+ul{margin:.5rem 0;padding-left:1.4rem}
+li{margin:.35rem 0}
+pre{white-space:pre-wrap;word-break:break-all;font-size:.78em;background:#fafafa;padding:.5rem;margin:.4rem 0}
+</style>
+</head>
+<body>
+<h1>この統治木で、機械が測れたのはどこまでで、その外側はどれだけ在るか。</h1>
+<div class="lead">
+<p><b>この画面は System Map ではない。</b> System Map は MODEL 型の文書として木の中に在る物であり、
+この木にそれは <b class="num">0</b> 件である。
+ここに在るのは、四つの読み口が build 時に返した値をそのまま並べた一枚である。</p>
+<p>手書きの模型の内容は一文字も含まない（不変条件 M-V1 が機械で検める）。</p>
+<p>四つの口はいずれも「未コミットの変更なし」と名乗った。</p>
+</div>
+<h2>1. 木の側に無いもの</h2>
+<p>達成の数より先に、同じ大きさで置く。<b>この行は一つも消えない。</b></p>
+<table>
+<tr><th>何が</th><th>いくつ</th><th>この数が意味すること</th></tr>
+<tr><td>意味モデル</td><td class="gapnum"><b class="num">0</b></td>
+  <td><code>model-index/1</code> が列挙した、id を持つ MODEL 文書の数。<br>
+  <span class="note">id を持たない MODEL 文書は上流が標準エラーへ出して飛ばす。この数は「id を持つ MODEL の数」である。</span></td></tr>
+<tr><td>MODEL 型の節点</td><td class="gapnum"><b class="num derived">0</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
+  <td><b>別の口が別に返した数である。上の行と足さない。</b></td></tr>
+<tr><td>走査が届いたが印の無いファイル</td><td class="gapnum"><b class="num">125</b></td>
+  <td>仕様とコードを結ぶ手掛かりが無いファイル。</td></tr>
+<tr><td>走査が届かなかった枝</td><td class="gapnum"><b class="num derived">15</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
+  <td>刈られたディレクトリの配下は<b>見ていない</b>。<code>docs_root</code> <b class="num">1</b> / <code>dot_dir</code> <b class="num">5</b> / <code>gitignored_dir</code> <b class="num">9</b> / <code>skip_dir_name</code> <b class="num">0</b> / <code>symlink_dir</code> <b class="num">0</b> / <code>unreadable_dir</code> <b class="num">0</b></td></tr>
+<tr><td>辺を一本も持たない文書</td><td class="gapnum"><b class="num derived">10</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
+  <td>依存の網から孤立している。</td></tr>
+<tr><td>コードの範囲が返った id</td><td class="gapnum"><b class="num derived">7</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td>
+  <td>節点 <b class="num">123</b> 件のうち、コードへの印が在るのはこれだけである。</td></tr>
+</table>
+<p class="note">これらは<b>木の側に無い物</b>である。この画面が描かないと決めた物（最終節）とは別である。</p>
+<h2>2. 意味モデル</h2>
+<div class="lead">
+<p class="gapnum"><b>意味モデル <b class="num">0</b> 件</b></p>
+<p><code>model-index/1</code> は走り、空の一覧を返した。別の口も同じ方向を指す ——
+<code>dep-graph/1</code> が返した <b class="num">123</b> 節点の <code>type</code> を数えると、
+MODEL 型は <b class="num derived">0</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 件である。
+<b>二つの口が別々に返した二つの 0 であり、一つを二回数えた物ではない。足さない。</b></p>
+<p><b>この木は「誰が誰を指すか」を統治しており、「何を意味するか」を一件も統治していない。</b>
+要素も、流れも、契約も、シナリオも、この木には無い。図を描かなかったのではない —— <b>描く材料が無い。</b></p>
+<p><b>0 は状態であって功績ではない。この数を、画面の正直さの証として読まない。</b></p>
+</div>
+<h2>3. 走査が届いた範囲の内訳</h2>
+<p>上流の保存則は <code>reached = annotated + unmarked + exempt + Σexcluded</code>。
+<b><code>excluded</code> は「未到達」ではない</b> —— 触れたうえで規則により外した物である。届かなかったのは刈った枝だけである。</p>
+<table>
+<tr><td>印が在る</td><td><b class="num">31</b></td></tr>
+<tr><td>印が無い</td><td><b class="num">125</b></td></tr>
+<tr><td>免除</td><td><b class="num">4</b></td></tr>
+<tr><td>規則で外した</td><td><b class="num derived">68</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
+<tr><th>合計</th><th><b class="num derived">228</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / 口が名乗る <code>reached_files</code> は <b class="num">228</b>
+  —— 閉じている</th></tr>
+</table>
+<h3>除外の内訳（0 の鍵も消さない）</h3>
+<table><tr><th><code>binary</code></th><th><code>dot_file</code></th><th><code>gitignored_file</code></th><th><code>md_suffix</code></th><th><code>nonregular</code></th><th><code>oversize</code></th><th><code>truncated</code></th><th><code>undecodable</code></th><th><code>unreadable</code></th></tr>
+<tr><td><b class="num">28</b></td><td><b class="num">8</b></td><td><b class="num">1</b></td><td><b class="num">31</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td><td><b class="num">0</b></td></tr></table>
+<p class="note">完全性の旗: <code>truncated</code> = false /
+<code>gitignore</code> = read</p>
+<h3>実装の指紋節の宣言</h3>
+<table><tr><th><code>no_code</code></th><th><code>traced</code></th><th><code>undeclared</code></th></tr>
+<tr><td><b class="num">0</b></td><td><b class="num">6</b></td><td><b class="num">0</b></td></tr></table>
+<p class="note"><b><code>traced</code> は「実装の指紋」節を宣言している数であって、コードへ届いたことの実測ではない。</b>
+辺と同じく、これは宣言である。百分率にも進捗棒にもしない。</p>
+<h2>4. 機械が指紋まで採れた付着</h2>
+<p>範囲 <b class="num">32</b> 件が
+<b class="num derived">7</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 個の id に付いている。
+群ごとの件数の和は <b class="num derived">32</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> —— 閉じている。</p>
+<p class="note"><b>指紋は同一性しか言わない。</b> その印が意味の上で正しい場所に打たれているかは、四つの口のどれも判定しない。
+この節は「在った」を示すのであって「正しい」を示さない。</p>
+<div class="wrap">
+<h3>IMPL-001 <span class="note">範囲 <b class="num derived">10</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>src/extension.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">217</b></td><td><code>sha256:1b1a4a6b95f8d5a8fd664c110964a9fdc90b1b1272b12477349f55d3ed3a93a1</code></td></tr><tr><td><code>src/html.d.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">7</b></td><td><code>sha256:3c329c1613a9f39361063de9273b5f664b1f01d62784033e1f2444ae4f63a9e8</code></td></tr><tr><td><code>src/l10n.ts</code></td><td style="white-space:nowrap"><b class="num">5</b>–<b class="num">206</b></td><td><code>sha256:746fdd92db0b93ea831c24813dc5710f58371289eaa274e0d558cbd23cf39e79</code></td></tr><tr><td><code>src/panel/html.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">261</b></td><td><code>sha256:7cf27d0b82cae7e7cab9d39c6ecc1dc86dd93296033bee9707deebbd066816e1</code></td></tr><tr><td><code>src/panel/lensPanel.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">347</b></td><td><code>sha256:1986d868eac8cadfb22039b8908a2dee69ee15ef57dd0a8d513052dd7a7b7689</code></td></tr><tr><td><code>src/session.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">520</b></td><td><code>sha256:857a5cc031494a073b71adb7293373935cc38d5960ae14c81ad2c09d935ef205</code></td></tr><tr><td><code>src/shared/protocol.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">185</b></td><td><code>sha256:94664fc36b7eafc50b5468589f0f778e2f1b1bd132c443623a9024063b7c35e8</code></td></tr><tr><td><code>src/statusbar.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">98</b></td><td><code>sha256:9fc5fe287d8967449fa76d992ad8624fd79171d03ac5c6ef13b464c4be863636</code></td></tr><tr><td><code>src/systemMap.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">51</b></td><td><code>sha256:1a2043dab52aff6ea8ac1dd330310557ed4d4c000535b68fdf9ffdd4a41484b2</code></td></tr><tr><td><code>src/test/manifest.test.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">215</b></td><td><code>sha256:6943c3efea9b1564ed39964f36ba7313217495d2c513bcdd5a3838653aa16422</code></td></tr>
+</table>
+<h3>SPEC-001 <span class="note">範囲 <b class="num derived">9</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>src/doctrine/cli.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">231</b></td><td><code>sha256:da0cf77ce8851d9363b1ee3db91c9bed4570ab41916d0527e86337833bd7da01</code></td></tr><tr><td><code>src/doctrine/graph.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">330</b></td><td><code>sha256:6e93d947d92bd1bd7e917982c8ef8da53a0dd0af5c32fd9f36dc01f3a42452d1</code></td></tr><tr><td><code>src/doctrine/locate.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">190</b></td><td><code>sha256:f81fccd702875030065480859e734309a75822d087937e979ccd6d3f076e5b07</code></td></tr><tr><td><code>src/doctrine/model.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">85</b></td><td><code>sha256:ece367ec229fa93b36ddfcbf8f0a2cdbfbe8d5620b345327a679a2c3bd25caf8</code></td></tr><tr><td><code>src/doctrine/registry.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">70</b></td><td><code>sha256:7b33d71d2e80ecc832defd37e7b92df92b3482ecb859ea9b4633ed88b93365ad</code></td></tr><tr><td><code>src/model/cadence.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">86</b></td><td><code>sha256:dc0c51bf743bcd74392ccdc420e75252d6c68eeeb2c6e164c203defeb48fdbb7</code></td></tr><tr><td><code>src/model/paths.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">71</b></td><td><code>sha256:ebbd134facc7e7b0d8010cb0047808e48ce163b18832c9ffca80ec4d55317888</code></td></tr><tr><td><code>src/model/status.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">62</b></td><td><code>sha256:46b971cea14751ae513f2b0da58d9c103c0499ab164c76f693084450a1e8ccc1</code></td></tr><tr><td><code>src/model/workspace.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">65</b></td><td><code>sha256:2a9f70c295f7e4434f9c1091db89c59bc70488b6864efd2134a8d8f5822a71fc</code></td></tr>
+</table>
+<h3>SPEC-006 <span class="note">範囲 <b class="num derived">4</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>src/doctrine/glossary.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">152</b></td><td><code>sha256:17f05db843bf677eb5a8e2b2ac2e18244d7c1fc3a372737800fc91a0082a1aac</code></td></tr><tr><td><code>src/model/consequence.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">839</b></td><td><code>sha256:9460ab09ad8cacd9893cf49bf61b7b240a71767727b5f2e6c6a663bd09606ca0</code></td></tr><tr><td><code>src/model/view.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">408</b></td><td><code>sha256:a6ca5647d046b777692e76cd548eafe02f4c36989d2a549bc670637ce33ef81d</code></td></tr><tr><td><code>src/webview/main.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">272</b></td><td><code>sha256:c3588baa2c0b7fc0547effb7a1e1770210785375065275200983feed98aa64c7</code></td></tr>
+</table>
+<h3>SPEC-005 <span class="note">範囲 <b class="num derived">3</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>src/codelens/decorations.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">78</b></td><td><code>sha256:efc44033a3555fbc49722a4e110766a06eaac66cba3dec08f78f061db4015704</code></td></tr><tr><td><code>src/codelens/traceLens.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">88</b></td><td><code>sha256:8590a1545c100660fa047d45e916b2086930d7866f14ef6ffe20d3e2a18a6f76</code></td></tr><tr><td><code>src/model/trace.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">259</b></td><td><code>sha256:862d21d55e2a1700bbbcc100cd1a1a81e46d12f63467db2d1b40849d6a790964</code></td></tr>
+</table>
+<h3>SPEC-004 <span class="note">範囲 <b class="num derived">2</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>src/doctrine/audit.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">161</b></td><td><code>sha256:9ac13e4b3f31f000235f8de61c9750e750d04f2ceb6dc3c3bd054192bb9ece40</code></td></tr><tr><td><code>src/doctrine/trace.ts</code></td><td style="white-space:nowrap"><b class="num">1</b>–<b class="num">116</b></td><td><code>sha256:0bbbaf62be7d0a2744bc96ad7c0545c490f061355cca2c9931d2c3cb4b911094</code></td></tr>
+</table>
+<h3>SPEC-007 <span class="note">範囲 <b class="num derived">2</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>tools/mutate-check.mjs</code></td><td style="white-space:nowrap"><b class="num">557</b>–<b class="num">598</b></td><td><code>sha256:4d463f09f25e363f71324e022d348b0ce18f089d56b2e78199938986964d941f</code></td></tr><tr><td><code>tools/mutate-verdict.mjs</code></td><td style="white-space:nowrap"><b class="num">14</b>–<b class="num">134</b></td><td><code>sha256:43fe453d9c0c2f5c7123d1844ee763b2c146b62c8b1efa3a019d9d63a56d7ccc</code></td></tr>
+</table>
+<h3>SPEC-008 <span class="note">範囲 <b class="num derived">2</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></span></h3>
+<table><tr><th>経路</th><th>行</th><th>指紋（全文）</th></tr>
+<tr><td><code>tools/mutate-check.mjs</code></td><td style="white-space:nowrap"><b class="num">600</b>–<b class="num">669</b></td><td><code>sha256:bc919e137c3cdf23b6a96a339fe77fb07deeca39f77f2127fb8f6786fc90d546</code></td></tr><tr><td><code>tools/mutate-worktree.mjs</code></td><td style="white-space:nowrap"><b class="num">16</b>–<b class="num">134</b></td><td><code>sha256:cb6c53631c67d56be2ca1556bade94b68d4dc515497e084324648c2178e151ed</code></td></tr>
+</table></div>
+<p class="note">経路と行は<b>文字</b>である。押しても何も開かない —— この画面は外部へ一切通信せず、偽の到達路を作らない。</p>
+<h2>5. 文書どうしの依存</h2>
+<p>節点 <b class="num">123</b> / 辺 <b class="num">263</b>。</p>
+<table><tr><th>観測された辺の種別</th><th>件数</th></tr>
+<tr><td><code>intra_domain</code></td><td><b class="num derived">258</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr><tr><td><code>cross_domain_impact</code></td><td><b class="num derived">5</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
+<tr><th>和</th><th><b class="num derived">263</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> —— 辺の総数に閉じている</th></tr>
+</table>
+<p class="note"><b>ここに出るのは、この木で実際に観測された種別だけである。</b>
+この口は種別の語彙の一覧を返さない —— 出なかった語が在るかどうかを、この画面は知らない。
+道具の綴りにしか無い語を「0 件」として並べることはしない。</p>
+<p>両側が宣言している辺は <b class="num derived">20</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 本、
+残りは片側の申告である。<b>この辺は宣言であって、依存が実際に成り立つことの検証ではない。</b></p>
+<h3>領域を跨いだ辺（全文）</h3>
+<table><tr><th>元</th><th>先</th><th>欄</th><th>種別</th></tr>
+<tr><td><code>ADR-025</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-014</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-023</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>CHANGE-025</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr><tr><td><code>IMPACT-014</code></td><td><code>GLOSSARY-001</code></td><td><code>impacts</code></td><td><code>cross_domain_impact</code></td></tr></table>
+<h2>6. 所見</h2>
+<table><tr><th><code>advisory</code></th><th><code>error</code></th><th><code>warn</code></th></tr>
+<tr><td><b class="num">98</b></td><td><b class="num">0</b></td><td><b class="num">1</b></td></tr></table>
+<p class="note"><b>0 の欄は「その重さの所見を 0 件返した」であって「健全である」ではない。</b>
+色でも記号でも合格として描かない。<code>advisory</code> は「機械が判定を差し控えた」であって「問題なし」ではない。</p>
+<table><tr><th>所見を返した検査</th><th>件数</th></tr>
+<tr><td><code>trace_marker_suspect</code></td><td><b class="num">69</b></td></tr><tr><td><code>stray_document</code></td><td><b class="num">29</b></td></tr><tr><td><code>trace_stale</code></td><td><b class="num">1</b></td></tr>
+<tr><th>和</th><th><b class="num derived">99</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> / <code>findings[]</code> は <b class="num">99</b>
+  —— 閉じている</th></tr></table>
+<p class="note"><b>件数だけである。中身は誰も読んでいない。</b></p>
+<h3>注釈の走査が挙げた所見</h3>
+<table><tr><th>符号</th><th>件数</th></tr>
+<tr><td><code>trace_marker_suspect</code></td><td><b class="num derived">69</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup></td></tr>
+</table>
+<p class="note">この口は<b>重さを返さない</b> —— 検出に徹し、判定はしない（上流 ADR-156）。
+上の監査の所見と<b>同じ物を別の口から数えている場合がある。足さないこと。</b></p>
+<p class="note">このうち <b class="num derived">69</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 件は、
+<b>この調査自身が木へ置いた物</b>を指している。<b>この画面は、自分が測っている木を、自分の存在によって動かしている。</b></p>
+<h2>7. 検査の名簿</h2>
+<p>この版の道具が名乗る検査は <b class="num">40</b> 種。うち所見を返したのは <b class="num derived">3</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 種。</p>
+<p class="note"><b>この数は「走った」の証跡ではない。</b> 上流はこの一覧を静的な定数として無条件に出力する ——
+走査が一つもファイルへ届かなかった走行でも同じ数が出る。
+<b>残りの検査について、この画面は「走った」とも「走らなかった」とも言えない。</b></p>
+<div class="wrap"><p><code>dead_link</code> <code>dep_cycle</code> <code>review_by_overrun</code> <code>stale_draft</code> <code>source_missing</code> <code>template_placeholder</code> <code>bad_date</code> <code>stale_proposed</code> <code>orphan</code> <code>reverse_orphan_req_no_spec</code> <code>reverse_orphan_spec_no_test</code> <code>canonical_conflict</code> <code>near_duplicate</code> <code>icd_dependency_violation</code> <code>projection_drift</code> <code>unregistered_document</code> <code>shadowed_document</code> <code>stray_document</code> <code>view_stale</code> <code>stale_current</code> <code>source_drift</code> <code>archive_integrity</code> <code>adr_not_landed</code> <code>glossary_seed_drift</code> <code>ext_anchor_broken</code> <code>ext_sole_guard_missing</code> <code>ext_sole_guard_loose</code> <code>memory_shadow</code> <code>trace_mark_error</code> <code>trace_broken_ref</code> <code>trace_deprecated_ref</code> <code>trace_stale</code> <code>trace_missing_impl</code> <code>trace_marker_suspect</code> <code>trace_scan_truncated</code> <code>trace_unexpected_impl</code> <code>trace_undeclared_impl</code> <code>trace_exempt_conflict</code> <code>trace_unmarked_backlog</code> <code>guard_liveness_gap</code></p></div>
+<h2>8. 口の点呼</h2>
+<p>四口が名乗った版は 一つ —— <code>d5f91a39a6fa</code>。
+<b>これは四つの独立した証拠ではない。同じ build で同じ観測を四回写した物である。</b></p>
+<div class="wrap"><table>
+<tr><th>読み口</th><th>返したか</th><th>道具と版</th><th>測った木の版</th><th>未コミットの変更</th><th>返した配列</th></tr>
+<tr>
+<td><code>model-index/1</code></td>
+<td>返した</td>
+<td>render-projection.py 0.14.0</td>
+<td><code>d5f91a39a6fa</code></td>
+<td>無し</td>
+<td class="note">models <b class="num">0</b></td>
+</tr><tr>
+<td><code>dep-graph/1</code></td>
+<td>返した</td>
+<td>dep-graph.py 0.14.0</td>
+<td><code>d5f91a39a6fa</code></td>
+<td>無し</td>
+<td class="note">edges <b class="num">263</b> / nodes <b class="num">123</b> / result <b class="num">263</b></td>
+</tr><tr>
+<td><code>trace-index/1</code></td>
+<td>返した</td>
+<td>trace-index.py 0.14.0</td>
+<td><code>d5f91a39a6fa</code></td>
+<td>無し</td>
+<td class="note">findings <b class="num">69</b> / ranges <b class="num">32</b></td>
+</tr><tr>
+<td><code>docs-audit/1</code></td>
+<td>返した</td>
+<td>docs-audit.py 0.14.0</td>
+<td><code>d5f91a39a6fa</code></td>
+<td>無し</td>
+<td class="note">checks_run <b class="num">40</b> / findings <b class="num">99</b> / top_findings <b class="num">20</b></td>
+</tr>
+</table></div>
+<h3>鮮度</h3>
+<p>規則が返した値: <span class="undecided">不明</span></p>
+<p class="note">鮮度の規則（上流 ICD-002・ADR-172 決定3）は「記録時」と「いま」の<b>二回の観測</b>を比べる。
+この頁は静的で、build のとき一度しか測らない —— <b>記録時＝出荷物に焼いた版、いま＝観測する口が無いので未取得。</b>
+規則はこの入力に対して「不明」を返す。<b>この画面の構造では「同一」も「相違」も出ない。</b>
+規則は <code>lib/rev-state.mjs</code> の一箇所だけが持ち、この画面はその返り値を印字するだけである。</p>
+<h2>9. 四口の生の返り値</h2>
+<p class="note"><b>ここで上の要約とこの JSON が一致することは、証拠ではない。</b> 内部の整合であって、木との突き合わせではない。</p>
+<details><summary><code>model-index/1</code></summary>
+<pre>{
+ &quot;generator&quot;: {
+  &quot;name&quot;: &quot;render-projection.py&quot;,
+  &quot;version&quot;: &quot;0.14.0&quot;
+ },
+ &quot;models&quot;: [],
+ &quot;schema&quot;: &quot;model-index/1&quot;,
+ &quot;source_dirty&quot;: false,
+ &quot;source_revision&quot;: &quot;d5f91a39a6fa9662cd57df1928645a34977c04f3&quot;
+}</pre>
+<p class="note">全文である(<b class="num derived">10</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行)。</p>
+</details>
+<details><summary><code>dep-graph/1</code></summary>
+<pre>{
+ &quot;edges&quot;: [
+  {
+   &quot;dst&quot;: &quot;SPEC-001&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,
+   &quot;kind&quot;: &quot;intra_domain&quot;,
+   &quot;mirrored&quot;: false,
+   &quot;src&quot;: &quot;ADR-001&quot;
+  },
+  {
+   &quot;dst&quot;: &quot;SPEC-001&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,
+   &quot;kind&quot;: &quot;intra_domain&quot;,
+   &quot;mirrored&quot;: false,
+   &quot;src&quot;: &quot;ADR-006&quot;
+  },
+  {
+   &quot;dst&quot;: &quot;IMPL-001&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,
+   &quot;kind&quot;: &quot;intra_domain&quot;,
+   &quot;mirrored&quot;: false,
+   &quot;src&quot;: &quot;ADR-007&quot;
+  },
+  {
+   &quot;dst&quot;: &quot;SPEC-005&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,
+   &quot;kind&quot;: &quot;intra_domain&quot;,
+   &quot;mirrored&quot;: false,
+   &quot;src&quot;: &quot;ADR-007&quot;
+  },
+  {
+   &quot;dst&quot;: &quot;SPEC-001&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,
+   &quot;kind&quot;: &quot;intra_domain&quot;,
+   &quot;mirrored&quot;: false,
+   &quot;src&quot;: &quot;ADR-008&quot;
+  },
+  {
+   &quot;dst&quot;: &quot;TEST-001&quot;,
+   &quot;field&quot;: &quot;impacts&quot;,</pre>
+<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">6457</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
+       <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>
+</details>
+<details><summary><code>trace-index/1</code></summary>
+<pre>{
+ &quot;findings&quot;: [
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 23,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/decisions/phase-2-baseline/logs/docs-check.log&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 24,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/decisions/phase-2-baseline/logs/docs-check.log&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 25,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/decisions/phase-2-baseline/logs/docs-check.log&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 275,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/prototype/system-view.html&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 281,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/prototype/system-view.html&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,
+   &quot;line&quot;: 287,
+   &quot;message&quot;: &quot;印に見えるが読めない(綴りの揺れ)。書式は「注釈記号 + doctrine:begin &lt;TYPE&gt;-&lt;NNN&gt;」で、id は大文字と数字、コロンの後に空白を置かない(SPEC-026)&quot;,
+   &quot;path&quot;: &quot;research/system-map/prototype/system-view.html&quot;
+  },
+  {
+   &quot;code&quot;: &quot;trace_marker_suspect&quot;,</pre>
+<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">611</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
+       <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>
+</details>
+<details><summary><code>docs-audit/1</code></summary>
+<pre>{
+ &quot;checks_run&quot;: [
+  &quot;dead_link&quot;,
+  &quot;dep_cycle&quot;,
+  &quot;review_by_overrun&quot;,
+  &quot;stale_draft&quot;,
+  &quot;source_missing&quot;,
+  &quot;template_placeholder&quot;,
+  &quot;bad_date&quot;,
+  &quot;stale_proposed&quot;,
+  &quot;orphan&quot;,
+  &quot;reverse_orphan_req_no_spec&quot;,
+  &quot;reverse_orphan_spec_no_test&quot;,
+  &quot;canonical_conflict&quot;,
+  &quot;near_duplicate&quot;,
+  &quot;icd_dependency_violation&quot;,
+  &quot;projection_drift&quot;,
+  &quot;unregistered_document&quot;,
+  &quot;shadowed_document&quot;,
+  &quot;stray_document&quot;,
+  &quot;view_stale&quot;,
+  &quot;stale_current&quot;,
+  &quot;source_drift&quot;,
+  &quot;archive_integrity&quot;,
+  &quot;adr_not_landed&quot;,
+  &quot;glossary_seed_drift&quot;,
+  &quot;ext_anchor_broken&quot;,
+  &quot;ext_sole_guard_missing&quot;,
+  &quot;ext_sole_guard_loose&quot;,
+  &quot;memory_shadow&quot;,
+  &quot;trace_mark_error&quot;,
+  &quot;trace_broken_ref&quot;,
+  &quot;trace_deprecated_ref&quot;,
+  &quot;trace_stale&quot;,
+  &quot;trace_missing_impl&quot;,
+  &quot;trace_marker_suspect&quot;,
+  &quot;trace_scan_truncated&quot;,
+  &quot;trace_unexpected_impl&quot;,
+  &quot;trace_undeclared_impl&quot;,
+  &quot;trace_exempt_conflict&quot;,</pre>
+<p class="note"><b>切り詰めた。</b> 残り <b class="num derived">1012</b><sup class="d" title="画面が数えた導出であり、口が返した値ではない">導</sup> 行は載せていない。
+       <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>
+</details>
+<h2>10. この画面が描かないこと</h2>
+<ul>
+<li><b>［画面］</b> <code>gold-model/</code> の手書きの模型を一行も読んでいない。混ざっていないことは機械が検める。</li>
+<li><b>［木］</b> 意味モデルは <b class="num">0</b> 件。口は走り、その数を返した。<b>そして、そのままである。</b></li>
+<li><b>［画面］</b> 辺は front-matter の<b>宣言</b>である。実際にそう依存していることを、この画面も上流の道具も検めていない。</li>
+<li><b>［画面］</b> 指紋は「印が在る」ことと「その時点の同一性」以上を言わない。そのコードが仕様を満たすことは測っていない。</li>
+<li><b>［画面］</b> 「検査が走った」と言わない。名簿の大きさしか分からない（第 7 節）。</li>
+<li><b>［画面］</b> <code>excluded</code> を「未到達」と言わない。届いた上で分類された物である（第 3 節）。</li>
+<li><b>［画面］</b> 辺の種別を「語彙」と言わない。口は観測された種別しか返さない（第 5 節）。</li>
+<li><b>［画面］</b> 所見の中身を読んでいない。件数を数えただけである（第 6 節）。</li>
+<li><b>［画面］</b> 鮮度は構造上「不明」である。この頁は build 時の一点の像であり、履歴も傾向も増減も描かない。<b>開いた時点の木を、この画面は測っていない。</b></li>
+<li><b>［画面］</b> 人による評価（H 層）は行っていない。<span class="unmeasured" title="口が答えなかった、またはこの欄を返さない">—</span>（0 ではない）。</li>
+<li><b>［画面］</b> 次に何をすべきかを言わない。四つの口はいずれも優先度・期限・改善案を返さない。</li>
+<li><b>［画面］</b> <b>この画面は「System Map が完成した」ことを一切示さない。</b> 第 1 節の数が減ることが仕事であり、いまその欄には上に書いた数が在る。</li>
+</ul>
+<p class="note">上の数はすべて、この build のときに捕えた読み口の返り値から導いている。
+<b>綴りの中に測定値を書いていない</b> —— 書けば、書いたその日のうちに古びる。
+<sup class="d">導</sup> の付いた数は、口が返した値ではなく画面が数えた導出である。</p>
+</body>
+</html>

@@ -10,11 +10,11 @@
 //
 // ここが検めるのは対応そのものであり、判定の中身ではない。中身は各門が見る。
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { REGISTRY, TARGETS } from "../gold-model/spec.mjs";
+import { REGISTRY } from "../gold-model/spec.mjs";
 import { MODEL_CHECKERS } from "../gold-model/check-model.mjs";
 import { VERDICTS, ACKNOWLEDGEMENTS, verdict, reportPathFrom, writeReport, gateExitCode, todayFrom } from "../gold-model/report.mjs";
 
@@ -109,7 +109,9 @@ t("判定の語彙に、合格の桶が一つだけ在る", () => {
 
 t("了解の記録が実在する不変条件と対象を指す", () => {
   const invIds = new Set(invariants.map((i) => i.id));
-  const targetIds = new Set([...TARGETS.map((x) => x.id), "index.html", "research/system-map", "M-13/M-14 の計算経路"]);
+  // **手書きの対象はもう無い。** 了解が指してよい対象は、生成物・木そのもの・
+  // そして「doctrine が管理する模型」の三つだけである(模型の一覧は捕獲が持つ)。
+  const targetIds = new Set(["index.html", "research/system-map", "gold-model/registry.json", "(doctrine が管理する模型)"]);
   for (const a of ACKNOWLEDGEMENTS) {
     if (!invIds.has(a.invariant)) v("registry.ack_unknown_invariant", `了解の記録が知らない不変条件 ${a.invariant} を指す`);
     if (!targetIds.has(a.target)) v("registry.ack_unknown_target", `了解の記録が知らない対象 ${a.target} を指す`);
@@ -194,7 +196,11 @@ rt("要件が名指す不変条件が、登録と一致する", () => {
 
 rt("負例で裏づけた要件が、実在する負例を指す", () => {
   if (!REQ) return rv("requirements.absent", "一覧を取れていないので検められない");
-  const neg = JSON.parse(readFileSync(join(here, "..", "gold-model", "negatives.json"), "utf8")).cases ?? [];
+  // 負例は手書きの模型へ当てる物であり、模型と一緒に破棄した。
+  // **無いことを「合っていた」に化けさせない** —— 裏づけを名乗る要件が一つでも
+  // 在れば、それは実在しない負例を指していることになるので落とす。
+  const negPath = join(here, "..", "gold-model", "negatives.json");
+  const neg = existsSync(negPath) ? (JSON.parse(readFileSync(negPath, "utf8")).cases ?? []) : [];
   const byCase = new Map(neg.map((n) => [n.id, n]));
   for (const r of REQ.requirements ?? []) {
     for (const p of r.proven_by ?? []) {
