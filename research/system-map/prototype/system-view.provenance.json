@@ -817,6 +817,30 @@
       "value": 20
     },
     {
+      "derived": true,
+      "from": "model-index/1 の返り値の行数",
+      "section": "9 生の返り値",
+      "value": 10
+    },
+    {
+      "derived": true,
+      "from": "dep-graph/1 の返り値の行数 − 載せた 40 行",
+      "section": "9 生の返り値",
+      "value": 6457
+    },
+    {
+      "derived": true,
+      "from": "trace-index/1 の返り値の行数 − 載せた 40 行",
+      "section": "9 生の返り値",
+      "value": 245
+    },
+    {
+      "derived": true,
+      "from": "docs-audit/1 の返り値の行数 − 載せた 40 行",
+      "section": "9 生の返り値",
+      "value": 507
+    },
+    {
       "derived": false,
       "from": "model-index/1 の models[] の長さ",
       "section": "10 描かないこと",

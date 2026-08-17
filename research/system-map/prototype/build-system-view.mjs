@@ -394,10 +394,21 @@ const scrub = (d) => {
   const { root, session, ...rest } = d;
   return rest;
 };
+// **全文は載せない。** 載せると頁が 157,500px になり、問題が数字ではなく量に埋もれる
+// (実測: 撮影が 176 枚に割れた)。切り詰めたことは隠さず書き、全文の在り処を名指す。
+const EXCERPT_LINES = 40;
 for (const s of cap.surfaces ?? []) {
-  // **`why` は capture.mjs が書いた手書きの散文なので出さない。**
   const clean = s.status === "captured" ? scrub(s.data) : { status: s.status, reason: s.reason };
-  P(`<details><summary><code>${esc(s.schema_expected)}</code></summary><pre>${esc(JSON.stringify(clean, null, 1))}</pre></details>`);
+  const lines = JSON.stringify(clean, null, 1).split("\n");
+  const shown = lines.slice(0, EXCERPT_LINES).join("\n");
+  const cut = lines.length - EXCERPT_LINES;
+  P(`<details><summary><code>${esc(s.schema_expected)}</code></summary>
+<pre>${esc(shown)}</pre>
+${cut > 0
+    ? `<p class="note"><b>切り詰めた。</b> 残り ${num(cut, `${s.schema_expected} の返り値の行数 − 載せた ${EXCERPT_LINES} 行`, { derived: true })} 行は載せていない。
+       <b>全文はこの木の <code>research/system-map/surfaces/surfaces.json</code> に在る</b>(この画面と同じ捕獲である)。</p>`
+    : `<p class="note">全文である(${num(lines.length, `${s.schema_expected} の返り値の行数`, { derived: true })} 行)。</p>`}
+</details>`);
 }
 
 // ---------- 節 10: 描かないこと ----------

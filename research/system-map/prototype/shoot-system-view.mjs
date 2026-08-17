@@ -40,74 +40,80 @@ const slug = (h, i) => {
   return `${head}-${body}`;
 };
 
-const plan = [
-  { name: "00-full", what: "頁の全体", selector: null, open: false },
-  ...headings.map((h, i) => ({ name: slug(h, i), what: h, selector: `h2:nth-of-type(${i + 1})`, open: false })),
-  { name: "99-details-open", what: "開閉子を全て開いた状態(生の返り値)", selector: null, open: true },
-];
-
 if (flag("--print-plan")) {
-  console.log(JSON.stringify({ page, out: shotsDir, count: plan.length, shots: plan.map((p) => ({ name: p.name, what: p.what })) }, null, 2));
+  console.log(JSON.stringify({
+    page, out: shotsDir,
+    sections: headings.length,
+    plan: ["00-full(頁の全体)", "01..NN-page(視野の高さで割った全面。取りこぼしが起きない)", "zz-details-open(開閉子を全て開いた頁の全体)"],
+    section_names: headings,
+  }, null, 2));
   process.exit(0);
 }
 
 const { chromium } = await import("playwright");
 mkdirSync(shotsDir, { recursive: true });
+for (const f of readdirSync(shotsDir)) if (f.endsWith(".png")) rmSync(join(shotsDir, f));
 
+const W = 1100, H = 900;
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1100, height: 900 }, deviceScaleFactor: 2 });
+const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 const p = await ctx.newPage();
-// **外部への取得を一つも許さない。** 出荷物は自己完結である —— 通信が起きたら像ではなく
-// 設計の欠陥なので、静かに待たずに落とす。
-const外部 = [];
-p.on("request", (r) => { if (!r.url().startsWith("file:")) 外部.push(r.url()); });
+// **外部への取得を一つも許さない。** 出荷物は自己完結である。
+const external = [];
+p.on("request", (r) => { if (!r.url().startsWith("file:")) external.push(r.url()); });
 const errors = [];
 p.on("pageerror", (e) => errors.push(String(e)));
 
 await p.goto("file://" + page, { waitUntil: "load" });
 
-let n = 0;
-for (const s of plan) {
-  if (s.open) await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
-  else await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = false)));
+const shots = [];
+const shoot = async (name, what, opts) => {
+  await p.screenshot({ path: join(shotsDir, `${name}.png`), timeout: 120000, ...opts });
+  shots.push({ name, what });
+  console.log(`  撮った ${name}.png — ${what}`);
+};
 
-  const out = join(shotsDir, `${s.name}.png`);
-  if (s.selector) {
-    const el = await p.$(s.selector);
-    if (!el) die(`節が見つからない: ${s.selector}(${s.what})`, 2);
-    // 見出しから次の見出しの手前までを一枚に収める。
-    const box = await p.evaluate((sel) => {
-      const h = document.querySelector(sel);
-      let end = h.nextElementSibling;
-      let bottom = h.getBoundingClientRect().bottom;
-      while (end && end.tagName !== "H2") { bottom = end.getBoundingClientRect().bottom; end = end.nextElementSibling; }
-      const r = h.getBoundingClientRect();
-      return { x: Math.max(0, r.x - 8), y: r.y + window.scrollY - 8, width: Math.min(window.innerWidth, r.width + 16), height: Math.max(40, bottom - r.y + 16) };
-    }, s.selector);
-    await p.screenshot({ path: out, clip: { ...box, y: box.y } });
-  } else {
-    await p.screenshot({ path: out, fullPage: true });
+/** 頁の全体を、視野の高さで割って**全部**撮る。取りこぼしが原理的に起きない。 */
+const tiles = async (prefix, label) => {
+  const total = await p.evaluate(() => document.documentElement.scrollHeight);
+  const n = Math.ceil(total / H);
+  for (let i = 0; i < n; i++) {
+    const y = i * H;
+    await p.evaluate((v) => window.scrollTo(0, v), y);
+    // どこを見ているかを像の中で分かるようにする(頁の何枚目か)。
+    await shoot(`${prefix}-${String(i + 1).padStart(2, "0")}`, `${label} ${i + 1}/${n} 枚目(縦 ${y}px から)`, {});
   }
-  n++;
-  console.log(`  撮った ${s.name}.png — ${s.what}`);
-}
+  return { total, n };
+};
+
+// 1) 閉じた状態の全体一枚
+await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = false)));
+await shoot("00-full", "頁の全体(開閉子は閉じたまま)", { fullPage: true, timeout: 180000 });
+
+// 2) 閉じた状態を視野ごとに割って全部
+const closed = await tiles("page", "頁");
+
+// 3) 開閉子を全て開いた状態(生の返り値が像に残る)
+await p.evaluate(() => document.querySelectorAll("details").forEach((d) => (d.open = true)));
+await p.evaluate(() => window.scrollTo(0, 0));
+const opened = await tiles("open", "開閉子を開いた頁");
 
 await browser.close();
 
-if (外部.length) die(`出荷物が外部へ取得しに行った(自己完結でない): ${外部.slice(0, 3).join(" / ")}`, 1);
+if (external.length) die(`出荷物が外部へ取得しに行った(自己完結でない): ${external.slice(0, 3).join(" / ")}`, 1);
 if (errors.length) die(`画面が例外を出した: ${errors.slice(0, 2).join(" / ")}`, 1);
 
-// 計画に無い古い像が残ると、所有者は消えた節の像を現行として読む。**報告して落とす。**
-const orphans = readdirSync(shotsDir).filter((f) => f.endsWith(".png") && !plan.some((s) => `${s.name}.png` === f));
 const rev = execFileSync("git", ["rev-parse", "HEAD"], { cwd: here, encoding: "utf8" }).trim();
 const dirty = execFileSync("git", ["status", "--porcelain", "--", here], { cwd: here, encoding: "utf8" }).trim() !== "";
 writeFileSync(join(shotsDir, "README.md"),
-  `# 統治の実態の画面 — 静止画\n\n`
+  `# 統治の実態の画面 — 静止画(全ページ)\n\n`
   + `- 撮影時点の commit: \`${rev}\`${dirty ? "（**作業木が汚れている**。この像はどの commit にも対応しない）" : ""}\n`
-  + `- 撮った枚数: ${n}（節 ${headings.length} 個 + 全体 + 開いた状態）\n`
-  + `- **撮る枚は出荷物の \`<h2>\` から導いている。** 節を足せば自動で増える。\n\n`
-  + `| 名 | 何を撮ったか |\n|---|---|\n`
-  + plan.map((s) => `| \`${s.name}.png\` | ${s.what} |`).join("\n") + "\n", "utf8");
+  + `- 画面の節: ${headings.length} 個\n`
+  + `- **頁を視野の高さ(${H}px)で割って全部撮っている。** 取りこぼしが原理的に起きない ——\n`
+  + `  閉じた状態 ${closed.n} 枚(全高 ${closed.total}px) + 開閉子を開いた状態 ${opened.n} 枚(全高 ${opened.total}px) + 全体 1 枚。\n\n`
+  + `## 節の一覧(出荷物の \`<h2>\` から採った)\n\n`
+  + headings.map((h, i) => `${i + 1}. ${h}`).join("\n") + "\n\n"
+  + `## 撮った像\n\n| 名 | 何を撮ったか |\n|---|---|\n`
+  + shots.map((s) => `| \`${s.name}.png\` | ${s.what} |`).join("\n") + "\n", "utf8");
 
-console.log(`\n${n} 枚撮った → ${shotsDir}`);
-if (orphans.length) die(`計画に無い古い像が ${orphans.length} 枚残っている: ${orphans.join(", ")}`, 1);
+console.log(`\n${shots.length} 枚撮った → ${shotsDir}`);
