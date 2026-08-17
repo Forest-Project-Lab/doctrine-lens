@@ -1,11 +1,11 @@
 {
   "entries": [],
-  "generated_at": "2026-08-14",
+  "generated_at": "2026-08-17",
   "generated_at_source": "測った rev の commit 日",
-  "generated_from_rev": "02883f001f02198a0e7b3b9d6d2c2318485a1e48",
+  "generated_from_rev": "7054f3fa569044d36da7f110bb52f75bd3402b16",
   "generator": {
     "name": "trace-index.py",
-    "version": "0.13.0"
+    "version": "0.14.0"
   },
   "reason": "この模型に、宣言済み CLI で測れるアンカーが一つも無い(実測の候補が 0 件)。測って何も無かったのではなく、測る対象が無い。",
   "schema": "system-map/overlay/0.1",
